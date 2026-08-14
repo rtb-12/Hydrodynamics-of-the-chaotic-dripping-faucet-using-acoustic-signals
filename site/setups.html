@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experimental setups</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <path id="plink-path" d="M0 20 H120 L120.0 20.0 121.2 17.1 122.4 14.6 123.6 12.6 124.8 11.1 126.0 10.3 127.2 10.2 128.4 10.7 129.6 11.7 130.8 13.2 132.0 14.9 133.2 16.9 134.4 19.0 135.6 21.0 136.8 22.8 138.0 24.3 139.2 25.4 140.4 26.2 141.6 26.5 142.8 26.4 144.0 25.9 145.2 25.0 146.4 23.9 147.6 22.7 148.8 21.3 150.0 20.0 151.2 18.7 152.4 17.6 153.6 16.8 154.8 16.1 156.0 15.8 157.2 15.7 158.4 15.9 159.6 16.4 160.8 17.0 162.0 17.8 163.2 18.7 164.4 19.6 165.6 20.4 166.8 21.2 168.0 21.9 169.2 22.4 170.4 22.7 171.6 22.8 172.8 22.8 174.0 22.5 175.2 22.2 176.4 21.7 177.6 21.2 178.8 20.6 180.0 20.0 181.2 19.5 182.4 19.0 183.6 18.6 184.8 18.3 186.0 18.2 187.2 18.1 188.4 18.2 189.6 18.4 190.8 18.7 192.0 19.0 193.2 19.4 194.4 19.8 195.6 20.2 196.8 20.5 198.0 20.8 199.2 21.0 200.4 21.2 201.6 21.2 202.8 21.2 204.0 21.1 205.2 21.0 206.4 20.7 207.6 20.5 208.8 20.3 210.0 20.0 211.2 19.8 212.4 19.6 213.6 19.4 214.8 19.3 216.0 19.2 217.2 19.2 218.4 19.2 219.6 19.3 220.8 19.4 222.0 19.6 223.2 19.7 224.4 19.9 225.6 20.1 226.8 20.2 228.0 20.4 229.2 20.4 230.4 20.5 231.6 20.5 232.8 20.5 234.0 20.5 235.2 20.4 236.4 20.3 237.6 20.2 238.8 20.1 240.0 20.0 241.2 19.9 242.4 19.8 243.6 19.7 244.8 19.7 246.0 19.7 247.2 19.7 248.4 19.7 249.6 19.7 250.8 19.8 252.0 19.8 253.2 19.9 254.4 20.0 255.6 20.0 256.8 20.1 258.0 20.2 259.2 20.2 260.4 20.2 261.6 20.2 262.8 20.2 264.0 20.2 265.2 20.2 266.4 20.1 267.6 20.1 268.8 20.0 270.0 20.0 271.2 20.0 272.4 19.9 273.6 19.9 274.8 19.9 276.0 19.9 277.2 19.8 278.4 19.9 279.6 19.9 280.8 19.9 282.0 19.9 283.2 20.0 284.4 20.0 285.6 20.0 286.8 20.0 288.0 20.1 289.2 20.1 290.4 20.1 291.6 20.1 292.8 20.1 294.0 20.1 295.2 20.1 296.4 20.1 297.6 20.0 298.8 20.0 300.0 20.0"/>
+  <marker id="ar" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0 0 L8 4 L0 8 z"/>
+  </marker>
+</defs></svg>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+</header>
+
+<div class="shell">
+
+  <nav class="sidenav">
+    <h2>Sections</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="explainers.html">Explainers</a></li>
+      <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="build.html">Build guide</a></li>
+      <li><a href="pipeline.html">Data pipeline</a></li>
+      <li><a href="setups.html" aria-current="page">Experimental setups</a></li>
+      <li><a href="rig.html">Proposed rig</a></li>
+      <li><a href="theory.html">Theory</a></li>
+      <li><a href="papers.html">Papers</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
+    </ul>
+    <h2>On this page</h2>
+    <ul>
+      <li><a href="#survey">Survey</a></li>
+      <li><a href="#flow">Flow control</a></li>
+      <li><a href="#phillips">Phillips 2018</a></li>
+      <li><a href="#chashechkin">Chashechkin 2024</a></li>
+      <li><a href="#vazquez">Vazquez 2008</a></li>
+      <li><a href="#sekatchev">Sekatchev 2023</a></li>
+      <li><a href="#roseberry">Roseberry 2008</a></li>
+      <li><a href="#ambrav">Ambravaneswaran 2000</a></li>
+      <li><a href="#equipment">Equipment</a></li>
+    </ul>
+    <div class="tally">
+      <b>6</b> rigs in literature<br>
+      <b>2</b> pure theory<br>
+      <b>0</b> combine both
+    </div>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Reference</p>
+    <h1>Experimental setups</h1>
+    <p class="lede">Every rig in the literature, drawn in one shared visual language so they can
+    be compared on sight. Where a paper does not report a specification, the cell says so rather
+    than carrying a plausible guess, because these tables feed purchasing decisions.</p>
+
+    <h2 id="survey">Survey</h2>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead>
+          <tr><th>Study</th><th>Measured</th><th>Flow control</th><th>Detection</th><th>Camera</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Phillips 2018<br><small>Sci. Rep. 8:9515</small></td>
+            <td>Airborne + underwater acoustics</td>
+            <td>None. Single drops, 86 mm fall</td>
+            <td>Microphone + hydrophone, filter and amplifier. Models <span class="nr">not reported</span></td>
+            <td>Vision Research V2512 Mono<br>75,000 fps, 512&times;512</td>
+          </tr>
+          <tr>
+            <td>Chashechkin 2024<br><small>Tech. Phys. 69(1) 85&ndash;94</small></td>
+            <td>Acoustics + video</td>
+            <td>Single 5.0 mm drops, photodetector-triggered</td>
+            <td>Hydrophone, 0.002&ndash;100 kHz, 30 mV/Pa. Sync interface 10 MHz, 12-bit, 4 ch</td>
+            <td>Optronis CR3000x2 + FastCam 1024PCI<br><span class="nr">fps not reported</span></td>
+          </tr>
+          <tr>
+            <td>Vazquez 2008<br><small>Chem. Eng. Sci. 63:5860</small></td>
+            <td>Acoustics + pressure</td>
+            <td>Constant-pressure chamber, 3.7&times;10<sup>&minus;3</sup> m&sup3;, 70&ndash;305 ml/min</td>
+            <td>In-house piezo hydrophone at 5 cm + Motorola MPXV5004G. Sound Blaster 64 PCI, 44.1 kHz / 16 bit</td>
+            <td>MotionScope 8000S<br>1,000 fps, 160&times;140</td>
+          </tr>
+          <tr>
+            <td>Sekatchev 2023<br><small>arXiv:2307.05484</small></td>
+            <td>Drop timing</td>
+            <td>Passive head decay, 2.5 days</td>
+            <td>Phototransistor, Schmitt trigger, one-shot, Raspberry Pi. 25 ms floor</td>
+            <td class="nr">none</td>
+          </tr>
+          <tr>
+            <td>Roseberry 2008<br><small>College of Wooster</small></td>
+            <td>Drop timing</td>
+            <td>Glass bottle + Nupro fine-metering valve. Head watched by eye</td>
+            <td>HeNe laser + photodiode, Schmitt trigger, NI USB-6009 at 500 Hz</td>
+            <td class="nr">none</td>
+          </tr>
+          <tr>
+            <td>Ambravaneswaran 2000<br><small>Phys. Rev. Lett. 85(25)</small></td>
+            <td>Drop shape, video validation</td>
+            <td>Sage MP362 syringe pump, &plusmn;1%</td>
+            <td>Optical only. Contact line pinned to capillary outer edge</td>
+            <td>Kodak Ektapro intensified<br>12,000 fps</td>
+          </tr>
+          <tr>
+            <td>D&rsquo;Innocenzo 1996<br>Coullet 2004/05</td>
+            <td colspan="4" class="nr">Pure theory and simulation. No apparatus of any kind.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="flow">Four ways to hold a flow rate</h2>
+    <p>Flow rate is the bifurcation parameter, so how each group controlled it matters more than
+    almost any other choice they made. The literature contains three answers, and this project
+    proposes a fourth.</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Method</th><th>Used by</th><th>Stability</th><th>Cost of the choice</th></tr></thead>
+        <tbody>
+          <tr><td>Syringe pump</td><td>Ambravaneswaran 2000</td><td>&plusmn;1%, stated</td><td>Expensive, and the barrel empties, so run length is bounded</td></tr>
+          <tr><td>Constant-pressure chamber</td><td>Vazquez 2008</td><td class="nr">not quantified</td><td>Works for gas. The liquid equivalent is a constant-head tank</td></tr>
+          <tr><td>Metering valve on a bottle</td><td>Roseberry 2008</td><td>Head falls as the bottle drains</td><td>Runs became non-repeatable. The author says so explicitly</td></tr>
+          <tr><td>Passive head decay</td><td>Sekatchev 2023</td><td>Drifts by design</td><td>Needs per-block detrending. No operating point can be revisited</td></tr>
+          <tr><td><strong>Constant-head overflow weir</strong></td><td><a href="rig.html">This project</a></td><td>Pinned by geometry, not by a pump</td><td>Needs a sump and a pump. Degenerates into a passive sweep on demand</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2>Rigs</h2>
+    <h3>Acoustic side</h3>
+
+    <!-- ===================== PHILLIPS 2018 ===================== -->
+    <div class="rig bleed" id="phillips">
+      <div class="rig-head">
+        <h3>Phillips, Agarwal &amp; Jordan 2018</h3>
+        <span class="tagline">acoustics &middot; single drops</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 340" role="img" aria-label="Schematic of the Phillips 2018 rig: a dropper releases a drop 86 millimetres above a fish tank lined with MDF; a microphone sits above the water and a hydrophone below it, both feeding a filter and amplifier, with a high-speed camera viewing horizontally.">
+        <path class="sch" d="M248 16 h44 v22 l-10 12 h-24 l-10 -12 z"/>
+        <path class="sch" d="M260 50 h20 v10 h-20 z"/>
+        <text class="sch-label" x="300" y="32">dropper</text>
+        <circle class="sch-drop" cx="270" cy="86" r="3.5"/>
+        <circle class="sch-drop" cx="270" cy="122" r="4.5"/>
+        <text class="sch-dim" x="282" y="126">&oslash; 4.0 mm</text>
+        <path class="sch-dash" d="M212 62 V176" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="146" y="116">86 mm</text>
+        <text class="sch-dim" x="146" y="128">1.29 m/s</text>
+        <path class="sch-thin" d="M150 168 v128 h286 v-128"/>
+        <text class="sch-dim" x="150" y="312">11 mm MDF lining</text>
+        <path class="sch" d="M160 176 v112 h266 v-112"/>
+        <rect class="sch-water" x="160" y="200" width="266" height="88"/>
+        <path class="sch-thin" d="M160 200 h266"/>
+        <path class="sch-hydro" d="M372 150 V236"/>
+        <circle class="sch-hydro-f" cx="372" cy="242" r="7"/>
+        <text class="sch-label key" x="384" y="246">hydrophone</text>
+        <rect class="sch-aero" x="516" y="120" width="14" height="26" rx="7"/>
+        <path class="sch-aero" d="M523 146 V296"/>
+        <path class="sch-thin" d="M516 133 H440"/>
+        <text class="sch-label" x="538" y="136" style="fill:var(--aero)">microphone</text>
+        <rect class="sch-fill" x="620" y="204" width="76" height="46" rx="2"/>
+        <path class="sch-fill" d="M620 214 l-18 8 v14 l18 8 z"/>
+        <text class="sch-label" x="628" y="232">camera</text>
+        <text class="sch-dim" x="606" y="266">75,000 fps</text>
+        <path class="sch-dash" d="M598 230 H440"/>
+        <rect class="sch-fill" x="470" y="306" width="96" height="26" rx="2"/>
+        <text class="sch-label" x="482" y="323">FILTER / AMP</text>
+        <path class="sch-dash" d="M372 150 H418 V319 H470"/>
+      </svg>
+      </figure>
+      <figcaption>
+        Single drops, no flow control. The tank is lined with 11 mm MDF because reverberation
+        inside it makes the recorded packet <em>grow</em> before it decays. The only rig in the
+        collection with a microphone and a hydrophone on the same impact: cross-correlation peaked
+        at 0.777, and the shared dominant frequency was 8.66 kHz.
+      </figcaption>
+    </div>
+
+    <!-- ===================== CHASHECHKIN 2024 ===================== -->
+    <div class="rig bleed" id="chashechkin">
+      <div class="rig-head">
+        <h3>Chashechkin 2024</h3>
+        <span class="tagline">acoustics &middot; single drops</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 350" role="img" aria-label="Schematic of the Chashechkin 2024 rig: a droplet dispenser above a large basin with optical portholes, a photodetector gate that triggers acquisition, a hydrophone immersed in the basin, two high-speed cameras and kilowatt lighting, all synchronised by a 10 megahertz interface.">
+        <path class="sch" d="M268 14 h40 v26 l-9 12 h-22 l-9 -12 z"/>
+        <text class="sch-label" x="316" y="30">droplet dispenser</text>
+        <path class="sch-fill" d="M196 74 h20 v18 h-20 z"/>
+        <path class="sch-fill" d="M362 74 h20 v18 h-20 z"/>
+        <path class="sch-dash" d="M216 83 H362"/>
+        <text class="sch-label" x="390" y="88">photodetector trigger</text>
+        <circle class="sch-drop" cx="288" cy="118" r="5"/>
+        <text class="sch-dim" x="300" y="122">&oslash; 5.0 mm</text>
+        <path class="sch-dash" d="M232 96 V186" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="146" y="136">U = 0.63&ndash;4.85</text>
+        <text class="sch-dim" x="146" y="148">m/s</text>
+        <path class="sch" d="M120 186 v130 h390 v-130"/>
+        <rect class="sch-water" x="120" y="208" width="390" height="108"/>
+        <path class="sch-thin" d="M120 208 h390"/>
+        <text class="sch-dim" x="122" y="336">basin 1.5 &times; 0.4 &times; 0.6 m &middot; partially degassed tap water</text>
+        <path class="sch-thin" d="M120 240 h-14 v34 h14 M510 240 h14 v34 h-14"/>
+        <text class="sch-dim" x="28" y="234">optical</text>
+        <text class="sch-dim" x="28" y="246">portholes</text>
+        <path class="sch-hydro" d="M392 186 V258"/>
+        <circle class="sch-hydro-f" cx="392" cy="264" r="7"/>
+        <text class="sch-label key" x="404" y="290">hydrophone</text>
+        <text class="sch-dim" x="404" y="302">0.002&ndash;100 kHz</text>
+        <text class="sch-dim" x="404" y="314">30 mV/Pa</text>
+        <rect class="sch-fill" x="596" y="196" width="70" height="40" rx="2"/>
+        <path class="sch-fill" d="M596 204 l-16 8 v12 l16 8 z"/>
+        <text class="sch-label" x="604" y="220">cam 1</text>
+        <rect class="sch-fill" x="596" y="252" width="70" height="40" rx="2"/>
+        <path class="sch-fill" d="M596 260 l-16 8 v12 l16 8 z"/>
+        <text class="sch-label" x="604" y="276">cam 2</text>
+        <path class="sch-dash" d="M580 216 H514 M580 272 H514"/>
+        <path class="sch-fill" d="M470 30 h56 v22 h-56 z"/>
+        <text class="sch-label" x="534" y="46">1 kW + 7700 lm</text>
+        <path class="sch-dash" d="M498 52 V186"/>
+        <rect class="sch-fill" x="596" y="112" width="126" height="28" rx="2"/>
+        <text class="sch-label" x="604" y="130">SYNC 10 MHz</text>
+        <path class="sch-dash" d="M382 83 H660 V112"/>
+      </svg>
+      </figure>
+      <figcaption>
+        Event-triggered rather than continuous: the falling drop breaks a photodetector beam,
+        which starts the cameras and the recorder, so frames and pressure share one time base.
+        Every condition is repeated three times and overplotted. Note what that buys and what it
+        costs: excellent per-impact detail, but no inter-drop interval exists in the data at all.
+      </figcaption>
+    </div>
+
+    <!-- ===================== VAZQUEZ 2008 ===================== -->
+    <div class="rig bleed" id="vazquez">
+      <div class="rig-head">
+        <h3>Vazquez, Manasseh, S&aacute;nchez &amp; Metcalfe 2008</h3>
+        <span class="tagline">acoustics + pressure &middot; chaos</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 400" role="img" aria-label="Schematic of the Vazquez 2008 rig: a compressor feeds a presaturation column and a constant-pressure supply chamber, then a fine valve and rotameter, into a glass capillary at the base of a tall water tank; bubbles rise past a hydrophone while a pressure sensor sits in the capillary base and a backlit high-speed camera records the tip.">
+        <rect class="sch-fill" x="24" y="40" width="60" height="28" rx="2"/>
+        <text class="sch-label" x="30" y="58">COMP</text>
+        <path class="sch-thin" d="M84 54 H108" marker-end="url(#ar)"/>
+        <path class="sch" d="M112 22 v64 h34 v-64"/>
+        <rect class="sch-water" x="112" y="42" width="34" height="44"/>
+        <text class="sch-dim" x="98" y="100">presat.</text>
+        <path class="sch-thin" d="M146 54 H176" marker-end="url(#ar)"/>
+        <path class="sch" d="M180 32 v44 h74 v-44 z"/>
+        <text class="sch-dim" x="176" y="92">3.7&times;10&#8315;&sup3; m&sup3;</text>
+        <text class="sch-label" x="188" y="58">chamber</text>
+        <path class="sch-thin" d="M254 54 H286"/>
+        <path class="sch" d="M286 44 l22 10 v-10 l-22 10 z"/>
+        <text class="sch-dim" x="272" y="34">fine valve</text>
+        <path class="sch-thin" d="M308 54 H332"/>
+        <rect class="sch-fill" x="332" y="30" width="24" height="48" rx="2"/>
+        <text class="sch-dim" x="364" y="44">rotameter</text>
+        <text class="sch-dim" x="364" y="56">70&ndash;305 ml/min</text>
+        <path class="sch-thin" d="M344 78 V110 H286 V384" marker-end="url(#ar)"/>
+        <path class="sch" d="M180 132 v252 h212 v-252"/>
+        <rect class="sch-water" x="180" y="164" width="212" height="220"/>
+        <path class="sch-thin" d="M180 164 h212"/>
+        <text class="sch-dim" x="176" y="398">tank 0.2 &times; 0.2 &times; 0.5 m &middot; 0.4 m distilled water &middot; 22 &plusmn; 0.5 &deg;C</text>
+        <path class="sch-hydro" d="M282 384 V222"/>
+        <text class="sch-label key" x="196" y="216">capillary</text>
+        <text class="sch-dim" x="196" y="204">990 &plusmn; 10 &micro;m</text>
+        <path class="sch-dash" d="M282 222 H352" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="296" y="240">5 cm</text>
+        <circle class="sch-drop" cx="282" cy="204" r="5"/>
+        <circle class="sch-drop" cx="282" cy="184" r="6.5"/>
+        <circle class="sch-hydro-f" cx="358" cy="222" r="7"/>
+        <text class="sch-label key" x="370" y="226">hydrophone</text>
+        <rect class="sch-aero" x="272" y="372" width="20" height="12" rx="2"/>
+        <text class="sch-label" x="300" y="368" style="fill:var(--aero)">MPXV5004G</text>
+        <path class="sch-fill" d="M92 236 h34 v40 h-34 z"/>
+        <text class="sch-dim" x="56" y="230">500 W halogen</text>
+        <path class="sch-thin" d="M150 232 V280"/>
+        <text class="sch-dim" x="128" y="294">diffuser</text>
+        <path class="sch-dash" d="M126 256 H180"/>
+        <rect class="sch-fill" x="470" y="234" width="70" height="44" rx="2"/>
+        <path class="sch-fill" d="M470 244 l-18 8 v12 l18 8 z"/>
+        <text class="sch-label" x="478" y="262">camera</text>
+        <text class="sch-dim" x="460" y="294">1,000 fps</text>
+        <path class="sch-dash" d="M452 258 H392"/>
+        <rect class="sch-fill" x="470" y="150" width="164" height="28" rx="2"/>
+        <text class="sch-label" x="478" y="168">SOUND BLASTER 64</text>
+        <text class="sch-dim" x="470" y="196">44.1 kHz &middot; 16 bit &middot; 60 s</text>
+        <path class="sch-dash" d="M366 222 H552 V178"/>
+      </svg>
+      </figure>
+      <figcaption>
+        Not a faucet: air bubbling <em>up</em> from a submerged capillary. It earns its place
+        because it is the only paper applying chaos tooling to an acoustic signal, and because it
+        proves the cheap path works. Correlation dimensions of 3.4 to 5.5 came off a consumer
+        sound card. Its warning transfers too: the acoustic and pressure channels went chaotic in
+        different regimes, so one channel is not a safe proxy for the other.
+      </figcaption>
+    </div>
+
+    <h3>Chaos side</h3>
+
+    <!-- ===================== SEKATCHEV 2023 ===================== -->
+    <div class="rig bleed" id="sekatchev">
+      <div class="rig-head">
+        <h3>Sekatchev 2023</h3>
+        <span class="tagline">timing &middot; chaos</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 340" role="img" aria-label="Schematic of the Sekatchev 2023 rig: a large tank drains through an eyedropper over two and a half days; a phototransistor beam across the drop path feeds a Schmitt trigger and one-shot into a Raspberry Pi, with a bucket catching the water.">
+        <path class="sch" d="M132 20 v152 h300 v-152"/>
+        <rect class="sch-water" x="132" y="52" width="300" height="120"/>
+        <path class="sch-thin" d="M132 52 h300"/>
+        <text class="sch-dim" x="140" y="16">50 &times; 40 &times; 60 cm</text>
+        <path class="sch-dash" d="M150 82 h120" marker-end="url(#ar)"/>
+        <path class="sch-dash" d="M150 112 h120" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="150" y="76">head decays over 2.5 d</text>
+        <text class="sch-dim" x="150" y="134">= a slow flow-rate sweep</text>
+        <path class="sch" d="M268 172 h28 l-7 22 h-14 z"/>
+        <text class="sch-label" x="302" y="188">eyedropper</text>
+        <circle class="sch-drop" cx="282" cy="216" r="4"/>
+        <circle class="sch-drop" cx="282" cy="244" r="4"/>
+        <path class="sch-fill" d="M196 258 h20 v20 h-20 z"/>
+        <path class="sch-fill" d="M350 258 h20 v20 h-20 z"/>
+        <path class="sch-dash" d="M216 268 H350"/>
+        <text class="sch-label" x="152" y="252">LED</text>
+        <text class="sch-label" x="352" y="252">phototransistor</text>
+        <path class="sch" d="M212 288 l10 44 h120 l10 -44"/>
+        <rect class="sch-water" x="216" y="300" width="132" height="32"/>
+        <rect class="sch-fill" x="470" y="196" width="150" height="28" rx="2"/>
+        <text class="sch-label" x="482" y="214">SCHMITT + ONE-SHOT</text>
+        <rect class="sch-fill" x="470" y="248" width="150" height="28" rx="2"/>
+        <text class="sch-label" x="482" y="266">RASPBERRY PI</text>
+        <path class="sch-dash" d="M370 268 H470"/>
+        <path class="sch-dash" d="M545 248 V224"/>
+        <text class="sch-dim" x="470" y="296">1.17 &times; 10&#8310; drops logged</text>
+        <text class="sch-dim" x="470" y="310" style="fill:var(--aero)">25 ms floor &rarr; missed drops</text>
+      </svg>
+      </figure>
+      <figcaption>
+        No pump and no valve. The falling head <em>is</em> the experiment: as the tank drains the
+        flow rate sweeps downward and traces the bifurcation diagram in one run. The cost is that
+        no operating point can be revisited, every 200-drop block needs detrending, and the 25 ms
+        detector floor loses drops at high flow.
+      </figcaption>
+    </div>
+
+    <!-- ===================== ROSEBERRY 2008 ===================== -->
+    <div class="rig bleed" id="roseberry">
+      <div class="rig-head">
+        <h3>Roseberry 2008</h3>
+        <span class="tagline">timing &middot; chaos</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 350" role="img" aria-label="Schematic of the Roseberry 2008 rig: a glass bottle reservoir feeds a Nupro fine-metering valve; drops fall through a helium-neon laser beam onto a photodiode, whose signal passes through a Schmitt trigger to a National Instruments USB-6009 and into IgorPro, with a bucket on the floor.">
+        <path class="sch" d="M108 40 h72 v70 h-24 v14 h-24 v-14 h-24 z"/>
+        <rect class="sch-water" x="108" y="62" width="72" height="48"/>
+        <path class="sch-thin" d="M108 62 h72"/>
+        <text class="sch-dim" x="102" y="34">glass bottle</text>
+        <path class="sch-dash" d="M190 62 h26" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="220" y="58">head watched</text>
+        <text class="sch-dim" x="220" y="70">by eye only</text>
+        <path class="sch-thin" d="M144 124 V152 H292"/>
+        <path class="sch" d="M280 142 l24 10 v-10 l-24 10 z"/>
+        <text class="sch-label" x="238" y="132">Nupro metering valve</text>
+        <path class="sch-thin" d="M304 152 H316 V174"/>
+        <path class="sch" d="M308 174 h16 l-4 12 h-8 z"/>
+        <circle class="sch-drop" cx="316" cy="212" r="4"/>
+        <circle class="sch-drop" cx="316" cy="240" r="4"/>
+        <path class="sch-fill" d="M158 252 h48 v24 h-48 z"/>
+        <text class="sch-label" x="150" y="246">HeNe laser</text>
+        <path class="sch-dash" d="M206 264 H414"/>
+        <path class="sch-fill" d="M414 252 h26 v24 h-26 z"/>
+        <text class="sch-label" x="400" y="246">photodiode</text>
+        <path class="sch" d="M258 292 l12 48 h96 l12 -48"/>
+        <rect class="sch-water" x="264" y="306" width="108" height="34"/>
+        <text class="sch-dim" x="252" y="290">bucket on the floor</text>
+        <rect class="sch-fill" x="500" y="190" width="176" height="28" rx="2"/>
+        <text class="sch-label" x="510" y="208">5 V + SCHMITT TRIGGER</text>
+        <rect class="sch-fill" x="500" y="242" width="176" height="28" rx="2"/>
+        <text class="sch-label" x="510" y="260">NI USB-6009</text>
+        <rect class="sch-fill" x="500" y="294" width="176" height="28" rx="2"/>
+        <text class="sch-label" x="510" y="312">IGORPRO</text>
+        <path class="sch-dash" d="M440 264 H470 V204 H500"/>
+        <path class="sch-dash" d="M588 218 V242 M588 270 V294"/>
+        <text class="sch-dim" x="500" y="338" style="fill:var(--aero)">500 Hz &rarr; 2 ms resolution</text>
+      </svg>
+      </figure>
+      <figcaption>
+        The most reproducible small-scale build in the collection, and the clearest cautionary
+        tale. Flow rate is set by a metering valve but the bottle head is only watched by eye, and
+        the author states outright that one dataset was taken before she began monitoring it and
+        is therefore not repeatable. At 500 Hz the shortest measured intervals hold only about ten
+        samples.
+      </figcaption>
+    </div>
+
+    <!-- ===================== AMBRAVANESWARAN 2000 ===================== -->
+    <div class="rig bleed" id="ambrav">
+      <div class="rig-head">
+        <h3>Ambravaneswaran, Phillips &amp; Basaran 2000</h3>
+        <span class="tagline">drop shape &middot; theory validation</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 290" role="img" aria-label="Schematic of the Ambravaneswaran 2000 rig: a Sage MP362 syringe pump drives 70 percent glycerin and water through a capillary at a constant 40 millilitres per minute; a pendant drop forms with its contact line pinned to the capillary outer edge and is imaged by a Kodak Ektapro camera at 12,000 frames per second.">
+        <path class="sch" d="M60 48 h150 v44 h-150 z"/>
+        <rect class="sch-water" x="96" y="48" width="114" height="44"/>
+        <path class="sch-fill" d="M60 56 h30 v28 h-30 z"/>
+        <path class="sch-thin" d="M34 70 H58" marker-end="url(#ar)"/>
+        <text class="sch-label" x="62" y="36">Sage MP362 syringe pump</text>
+        <text class="sch-dim" x="62" y="112">&plusmn;1% constant rate &middot; Q = 40 mL/min</text>
+        <path class="sch-thin" d="M210 70 H336 V128"/>
+        <path class="sch" d="M324 128 v34 h24 v-34"/>
+        <text class="sch-label" x="360" y="146">capillary</text>
+        <text class="sch-dim" x="360" y="158">R = 0.15 cm</text>
+        <path class="sch" d="M324 162 c0 26 -14 34 -14 54 c0 16 12 26 26 26 c14 0 26 -10 26 -26 c0 -20 -14 -28 -14 -54"/>
+        <circle class="sch-hydro-f" cx="324" cy="162" r="3"/>
+        <circle class="sch-hydro-f" cx="348" cy="162" r="3"/>
+        <text class="sch-label key" x="150" y="176">contact line pinned</text>
+        <text class="sch-dim" x="150" y="188">to outer sharp edge</text>
+        <path class="sch-dash" d="M276 170 H318"/>
+        <text class="sch-dim" x="252" y="272">70% glycerin / water &middot; Oh = 0.069 &middot; G = 0.43 &middot; We = 0.26</text>
+        <rect class="sch-fill" x="530" y="176" width="80" height="48" rx="2"/>
+        <path class="sch-fill" d="M530 186 l-18 8 v14 l18 8 z"/>
+        <text class="sch-label" x="538" y="204">camera</text>
+        <text class="sch-dim" x="512" y="242">Kodak Ektapro &middot; 12,000 fps</text>
+        <path class="sch-dash" d="M508 202 H392"/>
+      </svg>
+      </figure>
+      <figcaption>
+        The only rig that abandons hydrostatic head entirely. A syringe pump gives &plusmn;1%, and
+        the paper measures drop <em>shape</em> rather than only interval, which is how it caught
+        hysteresis: at the same nominal flow rate the faucet drips period-1 on an increasing ramp
+        and period-2 on a decreasing one. No receiving vessel is reported, because where the drops
+        land is never the measurement.
+      </figcaption>
+    </div>
+
+    <div class="callout">
+      <b>What none of them did</b>
+      <p>Three rigs listen. Three rigs count drops. Not one does both. Phillips and Chashechkin
+      built excellent acoustic instruments and pointed them at isolated single drops, so no
+      interval sequence exists in their data. Sekatchev and Roseberry built interval recorders and
+      never attached a microphone. Vazquez did acoustic chaos properly, but on a submerged bubbler
+      rather than a faucet.</p>
+    </div>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="equipment">Equipment</h2>
+    <p>Named hardware from the papers, with what each component is actually for. The tier column
+    is an order-of-magnitude estimate for India in 2026, not a quote.</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead>
+          <tr><th>Component</th><th>Named in literature</th><th>Specification</th><th>Purpose</th><th>Tier</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Syringe pump</td><td>Sage MP362</td><td>&plusmn;1% constant rate</td><td>Gold-standard flow control. Volume-limited, so not for multi-hour runs</td><td>&#8377;1&ndash;3 L</td></tr>
+          <tr><td>Metering valve</td><td>Nupro fine-metering</td><td class="nr">model not reported</td><td>Sets drip rate downstream of a constant head. The one part worth buying properly</td><td>&#8377;3&ndash;8 k</td></tr>
+          <tr><td>Nozzle</td><td>Drummond glass capillary</td><td>990 &plusmn; 10 &micro;m ID</td><td>Sets drop diameter. Must land inside the 1&ndash;5 mm entrainment window</td><td>&#8377;1&ndash;4 k</td></tr>
+          <tr><td>Sound card</td><td>Sound Blaster 64 PCI</td><td>44.1 kHz, 16 bit, 60 s runs</td><td>Vazquez got correlation dimension from this. Any modern interface beats it</td><td>&#8377;8&ndash;25 k</td></tr>
+          <tr><td>Hydrophone</td><td>In-house piezo (Vazquez)<br>Unnamed (Chashechkin)</td><td>0.002&ndash;100 kHz, 30 mV/Pa</td><td>Underwater channel, roughly 40 dB stronger than airborne</td><td>&#8377;20&ndash;60 k</td></tr>
+          <tr><td>DAQ</td><td>NI USB-6009</td><td>500 Hz</td><td>Optical gate logging. Far too slow to serve as an acoustic clock</td><td>&#8377;15&ndash;30 k</td></tr>
+          <tr><td>Optical gate</td><td>HeNe + photodiode<br>Phototransistor</td><td>2 ms and 25 ms floors</td><td>The cross-check channel. Cheap, and it never misses a silent drop</td><td>&#8377;500&ndash;2 k</td></tr>
+          <tr><td>Pressure sensor</td><td>Motorola MPXV5004G</td><td class="nr">calibration not reported</td><td>Reports production rate rather than bubble size</td><td>&#8377;1&ndash;3 k</td></tr>
+          <tr><td>High-speed camera</td><td>Vision Research V2512 Mono</td><td>75,000 fps, 512&times;512</td><td>Bubble-scale physics only. Not needed for timing work</td><td>&#8377;50 L+</td></tr>
+          <tr><td>High-speed camera</td><td>MotionScope 8000S<br>Kodak Ektapro</td><td>1,000 fps, 160&times;140<br>12,000 fps</td><td>Enough for publishable results. The realistic tier</td><td>&#8377;2&ndash;10 L</td></tr>
+          <tr><td>Lighting</td><td>500 W halogen + diffuser<br>ReyLab Xenos RH-1000</td><td>1 kW; 7700 lm LED</td><td>Backlit shadowgraph. High frame rates are photon-starved</td><td>&#8377;3&ndash;15 k</td></tr>
+          <tr><td>Tank lining</td><td>MDF (Phillips)</td><td>11 mm</td><td>Suppresses reverberation, which otherwise makes the packet grow before it decays</td><td>&#8377;1&ndash;2 k</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Read the tier column as the actual decision. Everything Phase 1 of
+    <a href="rig.html">the proposed rig</a> needs sits in the low tens of thousands of rupees. The
+    cameras are the only entries requiring institutional access, and Vazquez demonstrates that
+    1,000 fps is enough to publish.</p>
+  </main>
+
+  <aside class="rail">
+    <div class="note">
+      <b>Reading the diagrams</b>
+      Blue marks the underwater channel, orange the airborne one, following Phillips Fig. 5.
+      Dashed lines are signal paths, thin solid lines are plumbing.
+    </div>
+    <div class="note">
+      <b>Not reported</b>
+      Italic grey means the paper is silent. Nothing in these tables is inferred.
+    </div>
+    <div class="note">
+      <b>Phillips is under-specified</b>
+      Mic and hydrophone models, tank dimensions, water depth and sample rate are all deferred to
+      an online Supplementary Note absent from the article body.
+    </div>
+    <div class="note">
+      <b>Hysteresis warning</b>
+      Ambravaneswaran et al. report hysteresis, so an increasing flow ramp will not match a
+      decreasing one. Record ramp direction with every run.
+    </div>
+    <div class="note">
+      <b>Run length warning</b>
+      D&rsquo;Innocenzo found chaotic transients lasting 2200 drops before collapsing to a
+      periodic rhythm. Short records misclassify regimes.
+    </div>
+  </aside>
+
+</div>
+
+<footer class="foot">
+  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  notes in <code>vault/</code>
+</footer>
+
+</body>
+</html>

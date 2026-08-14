@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build guide</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <path id="plink-path" d="M0 20 H120 L120.0 20.0 121.2 17.1 122.4 14.6 123.6 12.6 124.8 11.1 126.0 10.3 127.2 10.2 128.4 10.7 129.6 11.7 130.8 13.2 132.0 14.9 133.2 16.9 134.4 19.0 135.6 21.0 136.8 22.8 138.0 24.3 139.2 25.4 140.4 26.2 141.6 26.5 142.8 26.4 144.0 25.9 145.2 25.0 146.4 23.9 147.6 22.7 148.8 21.3 150.0 20.0 151.2 18.7 152.4 17.6 153.6 16.8 154.8 16.1 156.0 15.8 157.2 15.7 158.4 15.9 159.6 16.4 160.8 17.0 162.0 17.8 163.2 18.7 164.4 19.6 165.6 20.4 166.8 21.2 168.0 21.9 169.2 22.4 170.4 22.7 171.6 22.8 172.8 22.8 174.0 22.5 175.2 22.2 176.4 21.7 177.6 21.2 178.8 20.6 180.0 20.0 181.2 19.5 182.4 19.0 183.6 18.6 184.8 18.3 186.0 18.2 187.2 18.1 188.4 18.2 189.6 18.4 190.8 18.7 192.0 19.0 193.2 19.4 194.4 19.8 195.6 20.2 196.8 20.5 198.0 20.8 199.2 21.0 200.4 21.2 201.6 21.2 202.8 21.2 204.0 21.1 205.2 21.0 206.4 20.7 207.6 20.5 208.8 20.3 210.0 20.0 211.2 19.8 212.4 19.6 213.6 19.4 214.8 19.3 216.0 19.2 217.2 19.2 218.4 19.2 219.6 19.3 220.8 19.4 222.0 19.6 223.2 19.7 224.4 19.9 225.6 20.1 226.8 20.2 228.0 20.4 229.2 20.4 230.4 20.5 231.6 20.5 232.8 20.5 234.0 20.5 235.2 20.4 236.4 20.3 237.6 20.2 238.8 20.1 240.0 20.0 241.2 19.9 242.4 19.8 243.6 19.7 244.8 19.7 246.0 19.7 247.2 19.7 248.4 19.7 249.6 19.7 250.8 19.8 252.0 19.8 253.2 19.9 254.4 20.0 255.6 20.0 256.8 20.1 258.0 20.2 259.2 20.2 260.4 20.2 261.6 20.2 262.8 20.2 264.0 20.2 265.2 20.2 266.4 20.1 267.6 20.1 268.8 20.0 270.0 20.0 271.2 20.0 272.4 19.9 273.6 19.9 274.8 19.9 276.0 19.9 277.2 19.8 278.4 19.9 279.6 19.9 280.8 19.9 282.0 19.9 283.2 20.0 284.4 20.0 285.6 20.0 286.8 20.0 288.0 20.1 289.2 20.1 290.4 20.1 291.6 20.1 292.8 20.1 294.0 20.1 295.2 20.1 296.4 20.1 297.6 20.0 298.8 20.0 300.0 20.0"/>
+  <marker id="ar" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0 0 L8 4 L0 8 z"/>
+  </marker>
+</defs></svg>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+</header>
+
+<div class="shell">
+
+  <nav class="sidenav">
+    <h2>Sections</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="explainers.html">Explainers</a></li>
+      <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="build.html" aria-current="page">Build guide</a></li>
+      <li><a href="pipeline.html">Data pipeline</a></li>
+      <li><a href="setups.html">Experimental setups</a></li>
+      <li><a href="rig.html">Proposed rig</a></li>
+      <li><a href="theory.html">Theory</a></li>
+      <li><a href="papers.html">Papers</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
+    </ul>
+    <h2>On this page</h2>
+    <ul>
+      <li><a href="#shopping">Shopping list</a></li>
+      <li><a href="#overflow">How the overflows work</a></li>
+      <li><a href="#gate">The optical gate circuit</a></li>
+      <li><a href="#wiring">Wiring it up</a></li>
+      <li><a href="#software">The software</a></li>
+      <li><a href="#dayone">Day-one checks</a></li>
+    </ul>
+    <div class="tally">
+      phase 1 <b>~&#8377;45k</b><br>
+      code <b>written</b><br>
+      tests <b>19 pass</b>
+    </div>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Practical</p>
+    <h1>Build guide</h1>
+    <p class="lede">How to actually assemble this, in the order you need it, with the electronics
+    and the software specified rather than gestured at. The <a href="rig.html">rig page</a> covers
+    why the design is what it is; this page is how you make one.</p>
+
+    <h2 id="shopping">Shopping list</h2>
+    <p>Grouped by build stage, so you can order stage 1 and start while the rest is on its way.
+    Prices are order-of-magnitude estimates for India in 2026, not quotes.</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Stage</th><th>Item</th><th>Spec that matters</th><th>Est.</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="4"><strong>1. Frame<br>and tanks</strong></td><td>Acrylic tanks &times; 2</td><td>12 &times; 12 &times; 6 in, 6&ndash;8 mm wall, transparent</td><td>&#8377;4&ndash;7 k</td></tr>
+          <tr><td>Slotted angle or 20&times;20 extrusion</td><td>Enough for a frame ~1 m tall with adjustable cross-members</td><td>&#8377;3&ndash;6 k</td></tr>
+          <tr><td>Bulkhead fittings &times; 2</td><td>1/2 in BSP, tank-connector type with gaskets</td><td>&#8377;600</td></tr>
+          <tr><td>Threaded pipe + elbows</td><td>1/2 in, for the standpipe and returns</td><td>&#8377;500</td></tr>
+
+          <tr><td rowspan="4"><strong>2. Water<br>loop</strong></td><td>Sump tub</td><td>20&ndash;25 L food-grade, opaque</td><td>&#8377;500</td></tr>
+          <tr><td>Submersible pump</td><td>300&ndash;600 L/h, flow-adjustable. Must far exceed the drip rate</td><td>&#8377;800&ndash;2 k</td></tr>
+          <tr><td>Silicone tubing</td><td>8&ndash;10 mm ID, ~3 m</td><td>&#8377;400</td></tr>
+          <tr><td>Foam sheet</td><td>The sump stands on it, never bolted to the frame</td><td>&#8377;200</td></tr>
+
+          <tr><td rowspan="2"><strong>3. Drip<br>head</strong></td><td>Fine-metering needle valve</td><td>Swagelok / Nupro style. <strong>Do not economise here</strong></td><td>&#8377;3&ndash;8 k</td></tr>
+          <tr><td>Blunt dispensing tips</td><td>Luer-lock set, 0.6&ndash;2.0 mm ID, so nozzle bore is a variable</td><td>&#8377;500&ndash;1.5 k</td></tr>
+
+          <tr><td rowspan="5"><strong>4. Optical<br>gate</strong></td><td>IR LED</td><td>940 nm, 5 mm, narrow beam</td><td>&#8377;20</td></tr>
+          <tr><td>Phototransistor</td><td>940 nm matched, fast type. Avoid slow ambient-light sensors</td><td>&#8377;30</td></tr>
+          <tr><td>Resistors, capacitor</td><td>150 &Omega;, 10 k &times; 2, 1 k, 1 &micro;F film</td><td>&#8377;50</td></tr>
+          <tr><td>Perfboard, 3.5 mm jack, 5 V supply</td><td>Any USB 5 V source works</td><td>&#8377;300</td></tr>
+          <tr><td>Black heatshrink or tube</td><td>Apertures. This is what makes the gate sharp</td><td>&#8377;50</td></tr>
+
+          <tr><td rowspan="3"><strong>5. Audio</strong></td><td>Audio interface</td><td><strong>4 input channels, 96 kHz, 24 bit.</strong> Channel count is the hard requirement</td><td>&#8377;15&ndash;30 k</td></tr>
+          <tr><td>Measurement microphone</td><td>Flat to 20 kHz. Phantom or plug-in power, match the interface</td><td>&#8377;8&ndash;20 k</td></tr>
+          <tr><td>Hydrophone <span class="nr">(phase 2)</span></td><td>See <a href="rig.html#hydrophone">the derived spec</a></td><td>&#8377;20&ndash;60 k</td></tr>
+
+          <tr><td rowspan="3"><strong>6. Calibration</strong></td><td>Graduated cylinder</td><td>10 or 25 ml. Non-negotiable, it fixes your x-axis</td><td>&#8377;300</td></tr>
+          <tr><td>Thermometer</td><td>&plusmn;0.2 &deg;C. Sekatchev blamed unexplained jumps partly on temperature</td><td>&#8377;500</td></tr>
+          <tr><td>Steel rule / calipers</td><td>Fall height must be readable to a millimetre</td><td>&#8377;500</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Stages 1 to 4 plus the interface and microphone come to roughly
+    <span class="num">&#8377;40&ndash;55 k</span>, and that is a complete Phase 1 rig. The
+    hydrophone and any camera are Phase 2.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="overflow">How the overflows actually work</h2>
+
+    <p>Both constant-level devices are the same trick with no moving parts and no electronics: cut
+    a hole, fit a bulkhead, and let the water decide its own level by spilling.</p>
+
+    <div class="rig bleed proposed">
+      <div class="rig-head">
+        <h3>Two ways to pin a water level</h3>
+        <span class="tagline">cross-sections</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 300" role="img" aria-label="Two cross-sections. On the left, a header tank with a bulkhead fitting in its floor and a vertical standpipe screwed into it; water above the standpipe rim spills down it, so the level equals the standpipe height. On the right, an impact tank with a bulkhead fitting through the side wall at the desired water line, so surplus water simply runs out sideways.">
+        <text class="sch-dim" x="30" y="20">HEADER TANK &middot; bottom bulkhead + standpipe</text>
+        <path class="sch" d="M40 40 v180 h250 v-180"/>
+        <rect class="sch-water" x="40" y="96" width="250" height="124"/>
+        <path class="sch-thin" d="M40 96 h250"/>
+        <text class="sch-label key" x="46" y="90">water level</text>
+
+        <path class="sch" d="M186 96 v124 M214 96 v124"/>
+        <path class="sch-hydro" d="M180 96 h40"/>
+        <text class="sch-label key" x="228" y="112">standpipe rim</text>
+        <text class="sch-dim" x="228" y="124">sets the level</text>
+        <path class="sch-thin" d="M200 108 V210" marker-end="url(#ar)"/>
+
+        <path class="sch" d="M170 220 h60 v14 h-60 z"/>
+        <text class="sch-dim" x="238" y="232">bulkhead + gaskets</text>
+        <path class="sch" d="M186 234 v26 M214 234 v26"/>
+        <path class="sch-thin" d="M200 246 V266" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="150" y="282">to sump</text>
+
+        <path class="sch-dash" d="M60 70 h60" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="46" y="64">feed in, faster than the drip</text>
+
+        <text class="sch-dim" x="420" y="20">IMPACT TANK &middot; side bulkhead at the line</text>
+        <path class="sch" d="M420 60 v160 h250 v-160"/>
+        <rect class="sch-water" x="420" y="118" width="250" height="102"/>
+        <path class="sch-thin" d="M420 118 h250"/>
+        <text class="sch-label key" x="426" y="112">water level</text>
+
+        <path class="sch" d="M670 112 h26 v14 h-26 z"/>
+        <path class="sch-hydro" d="M670 118 H696"/>
+        <path class="sch-thin" d="M696 119 H716 V266" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="702" y="106">bulkhead</text>
+        <text class="sch-dim" x="620" y="282">to sump</text>
+
+        <circle class="sch-drop" cx="520" cy="80" r="4"/>
+        <circle class="sch-drop" cx="520" cy="102" r="4.5"/>
+        <path class="sch-hydro" d="M580 160 V186"/>
+        <circle class="sch-hydro-f" cx="580" cy="192" r="7"/>
+        <text class="sch-label key" x="592" y="196">hydrophone</text>
+        <text class="sch-dim" x="426" y="242">surplus simply runs out sideways</text>
+      </svg>
+      </figure>
+      <figcaption>
+        Header tank: a bulkhead in the floor with a vertical standpipe screwed into it. Cut the
+        standpipe to the height you want the water. Impact tank: a bulkhead straight through the
+        side wall at the water line, which is simpler because nothing has to pass through the
+        floor the drops are landing in.
+      </figcaption>
+    </div>
+
+    <p><strong>Why the header uses a standpipe rather than a side hole:</strong> a standpipe is
+    adjustable. Unscrew it, cut it shorter, and you have changed the head, which changes the
+    pressure driving the needle valve. A side hole fixes the level permanently at whatever height
+    you drilled.</p>
+
+    <p><strong>The one sizing rule:</strong> the pump must deliver considerably more than the
+    nozzle passes, so the standpipe is <em>always</em> spilling. If the pump ever falls below the
+    drip rate the level drops off the rim and the whole guarantee evaporates. A 300 L/h pump
+    against a 30 ml/min drip is a factor of 170, which is plenty of margin.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="gate">The optical gate circuit</h2>
+
+    <p>An IR beam across the drop path, and a phototransistor watching it. When a drop passes, the
+    beam dims and the voltage dips.</p>
+
+    <div class="rig bleed">
+      <div class="rig-head">
+        <h3>Photointerrupter into an audio input</h3>
+        <span class="tagline">five components</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 260" role="img" aria-label="Circuit diagram. A 5 volt rail feeds an infrared LED through a 150 ohm resistor to ground. The same rail feeds a phototransistor collector; its emitter goes through a 10k resistor to ground and also through a 1 microfarad capacitor into a 10k over 1k divider, whose tap goes to the audio jack tip with the sleeve at ground.">
+        <path class="sch" d="M40 40 H700"/>
+        <text class="sch-label" x="40" y="32">+5 V</text>
+        <path class="sch" d="M40 220 H700"/>
+        <text class="sch-label" x="40" y="238">GND</text>
+
+        <path class="sch" d="M110 40 V72"/>
+        <path class="sch" d="M96 72 h28 v26 h-28 z"/>
+        <text class="sch-dim" x="132" y="90">R1 150 &Omega;</text>
+        <path class="sch" d="M110 98 V128"/>
+        <path class="sch" d="M96 128 l14 24 l14 -24 z"/>
+        <path class="sch" d="M96 152 H124"/>
+        <path class="sch-aero" d="M128 130 l12 -10 M128 142 l12 -10"/>
+        <text class="sch-label" x="146" y="140" style="fill:var(--aero)">IR LED 940 nm</text>
+        <path class="sch" d="M110 152 V220"/>
+
+        <path class="sch-dash" d="M124 176 H286"/>
+        <circle class="sch-drop" cx="205" cy="164" r="6"/>
+        <text class="sch-dim" x="176" y="200">beam, 1&ndash;2 mm aperture each end</text>
+
+        <path class="sch" d="M300 40 V128"/>
+        <circle class="sch-fill" cx="300" cy="152" r="22"/>
+        <path class="sch" d="M290 138 V166 M290 146 H312 M290 158 H312"/>
+        <path class="sch-aero" d="M272 140 l12 8 M272 152 l12 8"/>
+        <text class="sch-label" x="300" y="112">Q1 phototransistor</text>
+        <path class="sch" d="M300 174 V190"/>
+        <path class="sch" d="M286 190 h28 v26 h-28 z"/>
+        <text class="sch-dim" x="322" y="208">R2 10 k</text>
+        <path class="sch" d="M300 216 V220"/>
+
+        <path class="sch" d="M300 182 H392"/>
+        <circle class="sch-hydro-f" cx="300" cy="182" r="3"/>
+        <path class="sch" d="M392 168 V196 M406 168 V196"/>
+        <text class="sch-dim" x="378" y="158">C1 1 &micro;F</text>
+        <text class="sch-dim" x="366" y="222">blocks DC, keeps the edge</text>
+        <path class="sch" d="M406 182 H470"/>
+        <path class="sch" d="M470 168 h28 v28 h-28 z" transform="rotate(90 484 182)"/>
+        <path class="sch" d="M456 168 h28 v28 h-28 z"/>
+        <text class="sch-dim" x="452" y="158">R3 10 k</text>
+        <path class="sch" d="M484 182 H548"/>
+        <circle class="sch-hydro-f" cx="548" cy="182" r="3"/>
+        <path class="sch" d="M534 196 h28 v24 h-28 z"/>
+        <text class="sch-dim" x="568" y="212">R4 1 k</text>
+        <path class="sch" d="M548 182 V196"/>
+        <path class="sch" d="M548 220 V220"/>
+
+        <path class="sch" d="M548 182 H624"/>
+        <path class="sch" d="M624 168 v28 h34 v-28 z"/>
+        <path class="sch" d="M658 176 h30 M658 190 h30"/>
+        <text class="sch-label key" x="624" y="158">to audio ch 3</text>
+        <text class="sch-dim" x="600" y="238">divider drops ~2 V swing to ~180 mV</text>
+      </svg>
+      </figure>
+      <figcaption>
+        No comparator, no microcontroller. The raw analogue dip goes straight into an audio channel
+        through a DC block and a divider, so it lands on the same converter clock as the acoustic
+        channels. Sampled at 96 kHz, the edge is timed to about 10 &micro;s.
+      </figcaption>
+    </div>
+
+    <div class="callout">
+      <b>Why analogue straight in beats a digital pulse</b>
+      <p>A comparator would give a uniform clean pulse, which is tidier. But the raw dip carries
+      extra information for free: its <em>depth</em> scales with how much of the beam the drop
+      blocked, and its <em>width</em> with how long the drop took to cross. That is an independent
+      estimate of drop size and speed on a channel you were recording anyway.</p>
+      <p>Add the comparator only if the raw signal-to-noise turns out poor. Start simple.</p>
+    </div>
+
+    <p><strong>The aperture is what makes this work.</strong> A bare 5 mm LED throws a wide cone,
+    so a 4 mm drop only dims it slightly and the edge is soft. Slide a short piece of black tube
+    over both the LED and the phototransistor with a 1 to 2 mm hole, and the drop now blocks most
+    of the beam, giving a deep sharp dip. This costs nothing and makes the difference between a
+    usable gate and a marginal one.</p>
+
+    <p><strong>Placement:</strong> a few centimetres below the nozzle, well above the water so
+    splash never reaches it. It sees the drop about 4 ms after detachment, which is a constant
+    offset that cancels in intervals.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="wiring">Wiring it up</h2>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Channel</th><th>Source</th><th>Input type</th><th>Watch out for</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Measurement microphone</td><td>XLR, phantom or plug-in power</td><td>Match the power type to the mic or you get silence, or damage</td></tr>
+          <tr><td>2</td><td>Hydrophone <span class="nr">(phase 2)</span></td><td>XLR or TRS</td><td>Same power-type warning. Check the preamp bandwidth, not the element&rsquo;s</td></tr>
+          <tr><td>3</td><td>Optical gate</td><td>Line in, via the divider above</td><td>Never feed 5 V logic into a line input. Attenuate first</td></tr>
+          <tr><td>4</td><td>Spare</td><td>&mdash;</td><td>A second gate, or a thermistor for logging temperature</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Record all four to one file. That is the whole synchronisation strategy, and it is why
+    <a href="pipeline.html#chain">the signal chain page</a> insists on a four-channel interface
+    rather than a cheaper two-channel one plus a separate data logger.</p>
+
+    <p><strong>Grounding:</strong> the gate circuit and the interface must share a ground, and the
+    pump must not. Run the pump from a separate socket and keep its cable away from the signal
+    leads, or you will record mains hum at the drip rate.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="software">The software</h2>
+
+    <p>There is a working toolkit in <code>analysis/</code>. It uses only the Python standard
+    library, so there is nothing to install: no numpy, no scipy, no build step.</p>
+
+    <p>Verify it before you trust it. This synthesises a recording with known drop times, runs the
+    real detector over it, and checks the intervals come back:</p>
+
+<pre><code>cd analysis
+python3 test_dripkit.py</code></pre>
+
+    <p>Nineteen checks, about a second. Then processing a real run looks like this:</p>
+
+<pre><code>import dripkit as dk
+
+ch, fs = dk.read_wav('run_042.wav')          # 4 channels, 96 kHz
+
+acoustic = dk.detect(ch[0], fs)              # microphone, 4-20 kHz band
+gate     = dk.detect(ch[2], fs, f_lo=200, f_hi=3000, k=5.0)
+
+print(dk.match(acoustic, gate))              # <- the Phase 1 result
+# {'n_gate': 1840, 'matched': 1836, 'missed': 4, 'false_pos': 0,
+#  'detection_rate': 0.998, 'offset': 0.1325, 'jitter_us': 41.2}
+
+T = dk.intervals(acoustic)
+print('regime:', dk.classify(T))
+dk.write_csv('run_042.csv', list(enumerate(T)), ['n', 'T_s'])</code></pre>
+
+    <p>The three numbers <code>match()</code> returns are the deliverable of Phase 1. Detection
+    rate says what fraction of real drops the microphone heard. False positives say whether it
+    invented any. Jitter says how consistently the two channels agree on timing.</p>
+
+    <div class="callout">
+      <b>A bug the tests caught, worth knowing about</b>
+      <p>The first version estimated the channel offset from the <em>median of each channel&rsquo;s
+      event times</em>. That works perfectly when nothing is missing, and fails completely the
+      moment the acoustic channel drops events, because the two medians then refer to different
+      drops. It reported zero matches and 100% missed.</p>
+      <p>Which is to say it broke in exactly the situation the validation exists to measure, and
+      would have looked fine on every clean test. It now estimates the offset from a histogram of
+      pairwise gaps, which is robust to missing events. The test that plants deliberate silent
+      drops is what found it.</p>
+    </div>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="dayone">Day-one checks</h2>
+    <p>In order. Each one gates the next, so do not skip ahead.</p>
+
+    <ol>
+      <li><strong>Frame and tanks, dry.</strong> Bars adjust smoothly, fall height readable to a
+      millimetre.</li>
+      <li><strong>Water loop, no nozzle, one hour.</strong> Pump on, both overflows running. Mark
+      both water lines with tape and come back in an hour. <strong>If either has moved, stop.</strong>
+      Nothing downstream is worth doing until they sit still.</li>
+      <li><strong>Needle valve and nozzle.</strong> Get a stable drip. Measure the achievable range
+      by catching drops in the cylinder.</li>
+      <li><strong>Drop-volume calibration.</strong> Eight or more valve settings, cylinder and
+      stopwatch. This fixes your bifurcation diagram&rsquo;s x-axis.</li>
+      <li><strong>Gate alone.</strong> Record 60 seconds, run <code>dk.detect</code> on it, and
+      compare the count against drops you counted by ear. They must agree exactly.</li>
+      <li><strong>Microphone alone.</strong> Confirm the plink is clearly above the room floor and
+      shows a spectral peak where <a href="lab.html#minnaert">the synthesiser</a> says it should.</li>
+      <li><strong>Both together, several thousand drops.</strong> Run <code>dk.match</code>. This
+      number is the gate condition on the whole project.</li>
+    </ol>
+
+    <p>Step 2 is the one people skip and regret. It is a one-hour test with a roll of tape that
+    validates the single design decision the rest of the rig depends on.</p>
+  </main>
+
+  <aside class="rail">
+    <div class="note">
+      <b>Order of purchase</b>
+      Stages 1 to 4 first. You can validate the entire mechanical design and the gate before the
+      audio interface arrives.
+    </div>
+    <div class="note">
+      <b>The aperture trick</b>
+      Black tube with a 1&ndash;2 mm hole over both LED and detector. Costs nothing, and turns a
+      soft dip into a sharp edge.
+    </div>
+    <div class="note">
+      <b>Pump margin</b>
+      300 L/h against a 30 ml/min drip is 170&times;. The standpipe must always be spilling or the
+      constant head is not constant.
+    </div>
+    <div class="note">
+      <b>No install</b>
+      <code>dripkit.py</code> is standard library only. It runs on a lab machine with a stock
+      Python and nothing else.
+    </div>
+  </aside>
+
+</div>
+
+<footer class="foot">
+  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  notes in <code>vault/</code> &middot; code in <code>analysis/</code>
+</footer>
+
+</body>
+</html>

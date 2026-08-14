@@ -1,0 +1,76 @@
+name: Publish site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Analysis toolkit self-check
+        run: python3 analysis/test_dripkit.py
+
+      - name: Site structure, links and offline guarantee
+        run: python3 tools/validate_site.py
+
+      - name: Simulator still matches the published bifurcation point
+        run: |
+          python3 - <<'PY'
+          import sys, pathlib
+          sys.path.insert(0, 'analysis')
+          import dripkit as dk
+
+          # D'Innocenzo & Renna 1996 report the first period doubling at R ~ 0.61.
+          edge = None
+          prev = dk.classify(dk.simulate(0.55, 60)[0])
+          for i in range(1, 31):
+              R = 0.55 + i*0.005
+              p = dk.classify(dk.simulate(R, 60)[0])
+              if prev == 1 and p == 2:
+                  edge = R
+                  break
+              prev = p
+          print(f'first period doubling at R = {edge}')
+          assert edge is not None and abs(edge - 0.610) < 0.006, 'bifurcation point moved'
+
+          # The browser simulator must stay in step with the Python one.
+          js = pathlib.Path('site/lab.html').read_text()
+          for token in ['k:475', 'g:980', 'b:1', 'xc:0.19', 'alpha:0.25']:
+              assert token in js.replace(' ', ''), f'lab.html physics changed: {token}'
+          print('lab.html parameters match dripkit')
+          PY
+
+  deploy:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4

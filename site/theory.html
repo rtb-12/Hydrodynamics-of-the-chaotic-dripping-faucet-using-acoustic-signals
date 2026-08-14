@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theory</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <path id="plink-path" d="M0 20 H120 L120.0 20.0 121.2 17.1 122.4 14.6 123.6 12.6 124.8 11.1 126.0 10.3 127.2 10.2 128.4 10.7 129.6 11.7 130.8 13.2 132.0 14.9 133.2 16.9 134.4 19.0 135.6 21.0 136.8 22.8 138.0 24.3 139.2 25.4 140.4 26.2 141.6 26.5 142.8 26.4 144.0 25.9 145.2 25.0 146.4 23.9 147.6 22.7 148.8 21.3 150.0 20.0 151.2 18.7 152.4 17.6 153.6 16.8 154.8 16.1 156.0 15.8 157.2 15.7 158.4 15.9 159.6 16.4 160.8 17.0 162.0 17.8 163.2 18.7 164.4 19.6 165.6 20.4 166.8 21.2 168.0 21.9 169.2 22.4 170.4 22.7 171.6 22.8 172.8 22.8 174.0 22.5 175.2 22.2 176.4 21.7 177.6 21.2 178.8 20.6 180.0 20.0 181.2 19.5 182.4 19.0 183.6 18.6 184.8 18.3 186.0 18.2 187.2 18.1 188.4 18.2 189.6 18.4 190.8 18.7 192.0 19.0 193.2 19.4 194.4 19.8 195.6 20.2 196.8 20.5 198.0 20.8 199.2 21.0 200.4 21.2 201.6 21.2 202.8 21.2 204.0 21.1 205.2 21.0 206.4 20.7 207.6 20.5 208.8 20.3 210.0 20.0 211.2 19.8 212.4 19.6 213.6 19.4 214.8 19.3 216.0 19.2 217.2 19.2 218.4 19.2 219.6 19.3 220.8 19.4 222.0 19.6 223.2 19.7 224.4 19.9 225.6 20.1 226.8 20.2 228.0 20.4 229.2 20.4 230.4 20.5 231.6 20.5 232.8 20.5 234.0 20.5 235.2 20.4 236.4 20.3 237.6 20.2 238.8 20.1 240.0 20.0 241.2 19.9 242.4 19.8 243.6 19.7 244.8 19.7 246.0 19.7 247.2 19.7 248.4 19.7 249.6 19.7 250.8 19.8 252.0 19.8 253.2 19.9 254.4 20.0 255.6 20.0 256.8 20.1 258.0 20.2 259.2 20.2 260.4 20.2 261.6 20.2 262.8 20.2 264.0 20.2 265.2 20.2 266.4 20.1 267.6 20.1 268.8 20.0 270.0 20.0 271.2 20.0 272.4 19.9 273.6 19.9 274.8 19.9 276.0 19.9 277.2 19.8 278.4 19.9 279.6 19.9 280.8 19.9 282.0 19.9 283.2 20.0 284.4 20.0 285.6 20.0 286.8 20.0 288.0 20.1 289.2 20.1 290.4 20.1 291.6 20.1 292.8 20.1 294.0 20.1 295.2 20.1 296.4 20.1 297.6 20.0 298.8 20.0 300.0 20.0"/>
+</defs></svg>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+</header>
+
+<div class="shell">
+
+  <nav class="sidenav">
+    <h2>Sections</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="explainers.html">Explainers</a></li>
+      <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="build.html">Build guide</a></li>
+      <li><a href="pipeline.html">Data pipeline</a></li>
+      <li><a href="setups.html">Experimental setups</a></li>
+      <li><a href="rig.html">Proposed rig</a></li>
+      <li><a href="theory.html" aria-current="page">Theory</a></li>
+      <li><a href="papers.html">Papers</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
+    </ul>
+    <h2>On this page</h2>
+    <ul>
+      <li><a href="#observable">The observable</a></li>
+      <li><a href="#groups">Dimensionless groups</a></li>
+      <li><a href="#springs">Mass-spring models</a></li>
+      <li><a href="#slender">Slender-jet theory</a></li>
+      <li><a href="#normal">Normal forms</a></li>
+      <li><a href="#acoustics">Acoustic model</a></li>
+      <li><a href="#tools">Analysis tooling</a></li>
+      <li><a href="#chain">The full chain</a></li>
+    </ul>
+    <div class="tally">
+      <b>4</b> model families<br>
+      <b>0</b> connect sound<br>
+      &nbsp;&nbsp;to dynamics
+    </div>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Underlying concepts</p>
+    <h1>Theory</h1>
+    <p class="lede">Four separate model families describe this system, built by people who were
+    not talking to each other. Three describe why a faucet drips chaotically. One describes why a
+    drop makes a noise. Reading them side by side is how you find where they should join.</p>
+
+    <h2 id="observable">The observable</h2>
+    <p>Every chaos paper in the collection reduces the faucet to a single number sequence: the
+    time between consecutive drops.</p>
+
+    <div class="eq">
+      <span class="tag">Inter-drop interval</span>
+      <b>T<sub>n</sub></b> = t<sub>n</sub> &minus; t<sub>n&minus;1</sub>
+      <dl>
+        <dt>t<sub>n</sub></dt><dd>absolute time of the n-th drop event, in seconds</dd>
+        <dt>T<sub>n</sub></dt><dd>the n-th interval. This is the entire dynamical payload</dd>
+      </dl>
+    </div>
+
+    <p>This is why acoustics can substitute for optics at all. Whether the arrival time comes from
+    a broken laser beam or from the onset of a plink, the downstream analysis is identical.</p>
+
+    <p>Ambravaneswaran et al. push back on the whole approach, and the criticism applies to a
+    microphone exactly as it applies to a drop counter. Their words: such studies
+    <em>&ldquo;neglect entirely the physics of drop formation and view the system as a black box
+    that generates a stream of numbers.&rdquo;</em> The interval sequence is only an approximate
+    Poincar&eacute; section of the true state space. Their answer was to measure the drop
+    <em>shape</em> instead, specifically the limiting length L<sub>d</sub> at breakup. That is a
+    fair warning to carry: sound, like a laser gate, gives events rather than shapes.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="groups">Dimensionless groups, and whether chaos exists at all</h2>
+    <p>Ambravaneswaran non-dimensionalise lengths by the capillary radius R and times by the
+    inertio-capillary time, which leaves three groups.</p>
+
+    <div class="eq">
+      <span class="tag">Capillary time, Ohnesorge, Bond, Weber</span>
+      <b>&tau;<sub>c</sub></b> = &radic;(&rho;R&sup3; / &sigma;)<br>
+      <b>Oh</b> = &mu; / &radic;(&rho;R&sigma;)<br>
+      <b>G</b> = &rho;gR&sup2; / &sigma;<br>
+      <b>We</b> = &rho;U<sub>f</sub>&sup2;R / &sigma;&nbsp;&nbsp;&nbsp;with&nbsp;&nbsp;Q = &pi;R&sup2;U<sub>f</sub>
+      <dl>
+        <dt>&rho;, &sigma;, &mu;</dt><dd>density, surface tension, dynamic viscosity of the liquid</dd>
+        <dt>R</dt><dd>capillary radius, the length scale</dd>
+        <dt>U<sub>f</sub></dt><dd>mean liquid velocity in the capillary</dd>
+        <dt>Q</dt><dd>volumetric flow rate, the laboratory knob</dd>
+        <dt>Oh</dt><dd>viscous forces against inertia and capillarity. Fixed by the fluid and the nozzle</dd>
+        <dt>G</dt><dd>gravity against capillarity, the Bond number</dd>
+        <dt>We</dt><dd>inertia against capillarity. <strong>This is the bifurcation parameter</strong></dd>
+      </dl>
+    </div>
+
+    <div class="callout">
+      <b>Check this before buying a nozzle</b>
+      <p>Ambravaneswaran found <strong>no chaotic regime at all</strong> for their system S at
+      Oh = 0.1. Chaos appeared only when they dropped to Oh = 0.01. They also report that at
+      Oh of order 1 the faucet goes straight from period-1 to a jet with no cascade at all.</p>
+      <p>So viscosity and capillary radius, not just flow rate, decide whether there is anything
+      to listen to. This is a design constraint on the rig, not a footnote.</p>
+    </div>
+
+    <p>Worked for water at 20&nbsp;&deg;C, taking &rho; = 998&nbsp;kg/m&sup3;,
+    &sigma; = 0.0728&nbsp;N/m, &mu; = 1.00&times;10<sup>&minus;3</sup>&nbsp;Pa&middot;s:</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Capillary radius R</th><th>Oh</th><th>G</th><th>Reading</th></tr></thead>
+        <tbody>
+          <tr><td>0.5 mm</td><td>0.0053</td><td>0.034</td><td>Well below the Oh = 0.01 chaotic case. Very low Bond, so a small pendant drop</td></tr>
+          <tr><td>1.0 mm</td><td>0.0037</td><td>0.135</td><td>Comfortably in the low-Oh range</td></tr>
+          <tr><td>1.5 mm</td><td>0.0030</td><td>0.303</td><td>Close to Ambravaneswaran&rsquo;s own experimental capillary at R = 0.15 cm</td></tr>
+          <tr><td>2.0 mm</td><td>0.0026</td><td>0.538</td><td>G matches their system S at 0.5, so the published bifurcation structure is the closest reference</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><a href="lab.html#groups">Run these numbers for your own nozzle in the lab.</a></p>
+
+    <p>The encouraging result is that plain water sits at Oh of a few thousandths across every
+    plausible nozzle, which is on the chaotic side of the Oh = 0.01 case rather than the
+    chaos-free Oh = 0.1 case. A capillary near R = 2 mm additionally puts G near 0.5, which is
+    exactly the system whose bifurcation diagram Ambravaneswaran mapped zone by zone. These are
+    estimates from tabulated fluid properties, not measurements, and they assume R is the inner
+    radius.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="springs">Family 1: mass on a spring</h2>
+    <p>The oldest and simplest picture, from Shaw through Martien to D&rsquo;Innocenzo and Renna.
+    A growing drop is a point mass on a damped spring, where the spring stands in for surface
+    tension and the damping for viscous friction at the nozzle.</p>
+
+    <div class="eq">
+      <span class="tag">D&rsquo;Innocenzo &amp; Renna, Eqs. 1&ndash;2</span>
+      d(<b>M</b>v)/dt = Mg &minus; kx &minus; bv&nbsp;&nbsp;&nbsp;&nbsp;dM/dt = R<br><br>
+      expanding the product rule:<br>
+      M dv/dt = Mg &minus; kx &minus; (<b>R + b</b>)v
+      <dl>
+        <dt>M</dt><dd>instantaneous mass of the hanging drop, g</dd>
+        <dt>x, v</dt><dd>downward position and speed of its centre of mass</dd>
+        <dt>k</dt><dd>spring constant standing in for surface tension, dynes/cm. About 475 for water</dd>
+        <dt>b</dt><dd>damping, g/s, absorbing viscosity and nozzle geometry</dd>
+        <dt>R</dt><dd>flow rate, ml/s. The control parameter</dd>
+      </dl>
+    </div>
+
+    <p>Note what the product rule does: the inflow itself acts as extra damping, so the effective
+    friction is (R + b) and not b. The control parameter enters the dynamics, not just the mass
+    bookkeeping.</p>
+
+    <p>The smooth equation above is not where the chaos lives. It lives in the threshold rule
+    applied when x reaches a critical distance x<sub>c</sub>.</p>
+
+    <div class="eq">
+      <span class="tag">Breakoff, the actual nonlinearity</span>
+      (i)&nbsp;&nbsp;<b>&Delta;M</b> = &alpha; M<sub>c</sub> v<sub>c</sub>&nbsp;&nbsp;&nbsp;&nbsp;(momentum-proportional)<br>
+      (ii)&nbsp;<b>&Delta;M</b> = &alpha; v<sub>c</sub>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(speed-proportional, Martien)<br><br>
+      residue restarts at&nbsp;&nbsp;x<sub>0</sub> = x<sub>c</sub> &minus; r&middot;&Delta;M/M<sub>c</sub>,&nbsp;&nbsp;r = (3&Delta;M / 4&pi;&rho;)<sup>1/3</sup>
+      <dl>
+        <dt>M<sub>c</sub>, v<sub>c</sub></dt><dd>mass and speed at the instant of threshold</dd>
+        <dt>&alpha;</dt><dd>fitted breakoff coefficient</dd>
+        <dt>x<sub>c</sub></dt><dd>critical displacement triggering breakoff. A second control parameter</dd>
+      </dl>
+    </div>
+
+    <p><a href="lab.html#faucet">This exact model runs live in the lab</a>, at these parameters, with the flow rate on a slider.</p>
+
+    <p>D&rsquo;Innocenzo and Renna&rsquo;s central claim is that this rule, not the differential
+    equation, produces the transition to chaos, and that the two candidate laws give genuinely
+    different routes: period doubling from R &asymp; 0.61 ml/s for law (i), versus a biperiodic
+    route past R &asymp; 0.825 ml/s for law (ii). They prefer (i) because (ii) makes drip
+    intervals <em>decrease</em> as x<sub>c</sub> grows, which is physically wrong.</p>
+
+    <div class="callout">
+      <b>The result that sets your run length</b>
+      <p>The same paper found chaotic transients lasting <span class="num">250</span>,
+      <span class="num">800</span> and <span class="num">2200</span> drops before collapsing to a
+      periodic rhythm. Their own 50-point-per-flow-rate bifurcation diagrams could not see them.
+      Any record shorter than a few thousand drops can misclassify a regime outright.</p>
+    </div>
+
+    <p>Ambravaneswaran are blunt about this whole family: <em>&ldquo;Common to these models is the
+    ad hoc manner in which drop breakup is mimicked by the removal of a specified amount of mass
+    from the existing mass when the spring extension exceeds a threshold.&rdquo;</em> The models
+    reproduce the phenomenology with knobs that have no derivation from fluid mechanics.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="slender">Family 2: slender-jet hydrodynamics</h2>
+    <p>Ambravaneswaran, Phillips and Basaran replace the spring with an actual one-dimensional
+    reduction of the axisymmetric Navier-Stokes equations, solved by finite elements through
+    hundreds of consecutive drops.</p>
+
+    <div class="eq">
+      <span class="tag">Slender-jet equations, dimensionless</span>
+      &part;v<sub>z</sub>/&part;t = &minus;v<sub>z</sub> &part;v<sub>z</sub>/&part;z &minus; &part;(2H)/&part;z + 3<b>Oh</b> (1/h&sup2;) &part;/&part;z(h&sup2; &part;v<sub>z</sub>/&part;z) + <b>G</b><br><br>
+      &part;h/&part;t = &minus;v<sub>z</sub> &part;h/&part;z &minus; &frac12; h &part;v<sub>z</sub>/&part;z
+      <dl>
+        <dt>h(z,t)</dt><dd>neck radius at distance z below the capillary exit</dd>
+        <dt>v<sub>z</sub>(z,t)</dt><dd>axial velocity of the liquid</dd>
+        <dt>2H</dt><dd>twice the mean curvature. Its gradient is the Laplace-pressure driving force</dd>
+        <dt>3 Oh</dt><dd>viscous extensional term. The 3 is the Trouton ratio for a Newtonian filament</dd>
+        <dt>G</dt><dd>gravity as a constant body force in these units</dd>
+      </dl>
+    </div>
+
+    <p>Pinch-off is declared when the minimum neck radius falls below 10<sup>&minus;3</sup>; the
+    drop is discarded, the mesh rebuilt, and integration continues. That discard-and-remesh loop
+    is what makes long time series possible.</p>
+
+    <p>Two results from this family matter for the experiment. First, <strong>hysteresis</strong>,
+    reported here for the first time in a dripping faucet: in one zone the same Weber number gives
+    period-1 on an increasing sweep and period-2 on a decreasing one, and only one of the two can
+    be observed at a time. Second, the observation that <strong>chaos is not guaranteed</strong>:
+    their reference system at Oh = 0.1 period-doubles, halves back, jumps, and returns to
+    period-1 before jetting at We &gtrsim; 0.26, with no chaotic regime anywhere.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="normal">Family 3: two normal forms</h2>
+    <p>Coullet, Mahadevan and Riera ask a different question. Not how to simulate the faucet
+    accurately, but what the <em>minimum</em> dynamical content is that produces the observed
+    chaos. Their answer is that only two modes matter.</p>
+
+    <p>Linearising the full Lagrangian lubrication model about its static pendant-drop solutions
+    shows a clean spectral gap: an oscillatory damped mode, and a mode that reaches the origin
+    exactly at the critical volume V<sub>c</sub>. Everything else damps out roughly ten times
+    faster. A proper orthogonal decomposition of the simulated drop shapes agrees, and time-delay
+    embedding needs only three dimensions.</p>
+
+    <div class="eq">
+      <span class="tag">Reduced model: saddle-node plus damped oscillator</span>
+      &part;<sub>tt</sub>X + &eta;(V) &part;<sub>t</sub>X = <b>a(V) + b(V) X&sup2;</b><br>
+      &part;<sub>t</sub>V = q<br><br>
+      with&nbsp;&nbsp;a(V) = (V&sup2; &minus; V<sub>c</sub>&sup2;)/V,&nbsp;&nbsp;b(V) = &alpha;/V&sup3;
+      <dl>
+        <dt>X</dt><dd>projection of the drop shape onto a spatial mode. Not simply the centre of gravity</dd>
+        <dt>V, V<sub>c</sub></dt><dd>drop volume and the critical volume where the static solution is lost</dd>
+        <dt>q</dt><dd>imposed flow rate</dd>
+        <dt>a + bX&sup2;</dt><dd>exactly the normal form of a saddle-node bifurcation</dd>
+      </dl>
+    </div>
+
+    <p>The physical picture is a particle in a cubic potential whose local minimum, the stable
+    pendant drop, annihilates with the saddle as the drop fills. Pinch-off is a global reinjection
+    that resets the system. That combination has a name.</p>
+
+    <div class="eq">
+      <span class="tag">The mechanism, and the group that controls it</span>
+      dripping = <b>saddle-node</b> (Andronov) + <b>Shilnikov homoclinic</b> reinjection<br><br>
+      &tau;<sub>f</sub> ~ R / v<sub>0</sub>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(filling time)<br>
+      f ~ &radic;(&Gamma; / &rho;V)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(recoil frequency of the residual drop)<br>
+      1/&tau;<sub>d</sub> ~ &radic;(f&eta; / V<sup>1/3</sup>)&nbsp;(damping rate of that recoil)<br><br>
+      the decisive ratio: <b>&tau;<sub>f</sub> / &tau;<sub>d</sub></b>
+      <dl>
+        <dt>&tau;<sub>f</sub></dt><dd>time to refill the pendant drop to V<sub>c</sub></dd>
+        <dt>&tau;<sub>d</sub></dt><dd>time for the post-pinch-off ringing to die away</dd>
+      </dl>
+    </div>
+
+    <p>This ratio is the clearest mechanistic statement of why a faucet goes chaotic. If the
+    residual drop has stopped ringing before it refills to V<sub>c</sub>, every drop starts from
+    the same state and dripping is periodic. If it is still ringing, then whether it reaches
+    V<sub>c</sub> early or late depends on the phase of that oscillation, so alternately a larger
+    or smaller drop detaches, whose own ringing is damped sooner or later, and the memory
+    propagates. Period doubling is that feedback closing on itself.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="acoustics">Family 4: where the sound comes from</h2>
+    <p>Entirely separate literature, entirely separate people. Minnaert derived the natural
+    frequency of a submerged gas bubble in 1933, and Phillips, Agarwal and Jordan confirmed in
+    2018 that this is what a dripping tap actually is.</p>
+
+    <div class="eq">
+      <span class="tag">Minnaert frequency</span>
+      <b>f</b> = (1 / 2&pi;a) &middot; &radic;(3&gamma;P<sub>0</sub> / &rho;)
+      <dl>
+        <dt>a</dt><dd>bubble radius, m. The only thing that really varies</dd>
+        <dt>&gamma;</dt><dd>ratio of specific heats of the trapped gas</dd>
+        <dt>P<sub>0</sub></dt><dd>static pressure at the bubble surface, Pa</dd>
+        <dt>&rho;</dt><dd>density of the surrounding liquid</dd>
+      </dl>
+    </div>
+
+    <p><a href="lab.html#minnaert">Hear it in the lab:</a> move the bubble radius and listen to the pitch move. Since f &prop; 1/a, a smaller bubble rings higher. Phillips measured 8.66 kHz for a bubble
+    of stabilised diameter 0.71 mm. Vazquez inverted the same relation to size bubbles from sound,
+    reading 1500 to 4975 &micro;m from a spectral peak that moved <em>down</em> as flow rate rose.
+    The relation runs in both directions, which is what makes acoustic sizing possible at all.</p>
+
+    <p>What actually radiates is not the bubble's presence but its volume acceleration.</p>
+
+    <div class="eq">
+      <span class="tag">Radiated pressure, and the interface problem</span>
+      p &prop; d&sup2;V/dt&sup2;<br><br>
+      |p&prime;<sub>a</sub>| / |p&prime;<sub>w</sub>| = &frac12; (&rho;<sub>a</sub>/&rho;<sub>w</sub>) (r<sub>0</sub>/d)&sup2; (R/z<sub>0</sub>)
+      <dl>
+        <dt>V</dt><dd>volume enclosed by the pulsating bubble</dd>
+        <dt>p&prime;<sub>a</sub>, p&prime;<sub>w</sub></dt><dd>airborne and underwater pressure perturbations</dd>
+        <dt>r<sub>0</sub></dt><dd>radius of the cavity floor, acting as a piston</dd>
+        <dt>d</dt><dd>depth of the bubble below the cavity floor</dd>
+        <dt>z<sub>0</sub>, R</dt><dd>microphone and hydrophone distances from the source</dd>
+      </dl>
+    </div>
+
+    <p>The second equation is Phillips&rsquo; contribution and it settles an old argument. Simple
+    transmission through the water surface predicts about 70 dB of attenuation. They measured
+    about 40 dB. Their model, in which the bubble drives the cavity floor as a piston, predicts
+    44 dB. The (r<sub>0</sub>/d)&sup2; factor is the amplification that makes a plink audible
+    across a room.</p>
+
+    <p>Two facts from this family constrain the experiment directly. The sound begins exactly at
+    bubble pinch-off, not at impact, which is what makes it a usable clock. And blocking
+    entrainment, whether with a 0.71 mm rod or with a drop of surfactant, gives a
+    <strong>completely silent impact</strong>, which is what makes silent drops a real risk.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="tools">Analysis tooling</h2>
+
+    <div class="eq">
+      <span class="tag">Return map and the Feigenbaum constants</span>
+      plot ( T<sub>n</sub> , T<sub>n+1</sub> )&nbsp;&nbsp;&nbsp;period-1 &rarr; one point on the diagonal<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;period-2 &rarr; two clusters<br><br>
+      <b>&delta;</b> = lim (F<sub>m&minus;1</sub> &minus; F<sub>m&minus;2</sub>) / (F<sub>m</sub> &minus; F<sub>m&minus;1</sub>) = 4.669...<br>
+      <b>&alpha;</b> = lim &Delta;T<sub>m</sub> / &Delta;T<sub>m+1</sub> = 2.502...
+      <dl>
+        <dt>F<sub>m</sub></dt><dd>flow rate at the m-th period doubling. Horizontal spacing</dd>
+        <dt>&Delta;T<sub>m</sub></dt><dd>branch separation in a period-m regime. Vertical spacing</dd>
+      </dl>
+    </div>
+
+    <p>Sekatchev makes a point about these that is easy to miss and expensive to get wrong.
+    Because &delta; is built from <em>horizontal</em> distances, it needs the true volumetric flow
+    rate in ml/min, not drops per minute, and drop volume depends non-linearly on flow rate. So
+    the axis needs a calibration:</p>
+
+    <div class="eq">
+      <span class="tag">Drop-volume calibration</span>
+      <b>V<sub>d</sub></b>(T) = A&thinsp;T<sup>B</sup> + C<br><br>
+      then&nbsp;&nbsp;F [ml/min] = F<sub>d</sub> [drops/min] &times; V<sub>d</sub>(T)
+      <dl>
+        <dt>V<sub>d</sub></dt><dd>volume per drop, ml. Sekatchev measured 0.032 to 0.047 ml</dd>
+        <dt>A, B, C</dt><dd>fitted per nozzle. His values: &minus;28&times;10<sup>&minus;7</sup>, &minus;2.8, 467&times;10<sup>&minus;4</sup></dd>
+      </dl>
+    </div>
+
+    <p>&alpha; survives a drops-per-minute axis because it only involves vertical distances. &delta;
+    does not. Neither constant has ever been extracted from a real faucet, because nobody has
+    obtained a clean enough period-2 to period-4 transition.</p>
+
+    <div class="eq">
+      <span class="tag">Attractor reconstruction</span>
+      v<sub>k</sub> = ( x<sub>k</sub>, x<sub>k&minus;&tau;</sub>, ..., x<sub>k&minus;(d&minus;1)&tau;</sub> )<br><br>
+      C(r) ~ r<sup><b>D<sub>2</sub></b></sup>&nbsp;&nbsp;&nbsp;&nbsp;so D<sub>2</sub> = slope of ln C(r) against ln r
+      <dl>
+        <dt>&tau;</dt><dd>time delay, in samples</dd>
+        <dt>d</dt><dd>embedding dimension. Coullet found 3 sufficient for this system</dd>
+        <dt>D<sub>2</sub></dt><dd>correlation dimension. Vazquez measured 3.4 to 5.5 on acoustic data</dd>
+      </dl>
+    </div>
+
+    <p>Vazquez reports a practical failure worth knowing in advance: the standard average-mutual-
+    information prescription for &tau; gave values at which the correlation dimension never
+    saturated, and the delays that did work had to be found by sweeping. Their acoustic embedding
+    also failed to converge in exactly the transitional regime, which is the interesting one.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="chain">The chain this project is betting on</h2>
+    <p>Put the four families end to end and there is a causal chain from the tap handle to the
+    waveform. Each link is established in the literature. No paper traverses more than two of
+    them.</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Link</th><th>Mechanism</th><th>Established by</th></tr></thead>
+        <tbody>
+          <tr><td>Flow rate &rarr; regime</td><td>We is the bifurcation parameter; period doubling, hysteresis, chaos</td><td>Ambravaneswaran; Coullet; D&rsquo;Innocenzo</td></tr>
+          <tr><td>Regime &rarr; interval sequence</td><td>T<sub>n</sub> is the low-dimensional observable, embedding dimension 3</td><td>Coullet; Sekatchev</td></tr>
+          <tr><td>Flow rate &rarr; drop size</td><td>Ejected volume fraction V<sub>e</sub>/V falls roughly linearly with flow rate</td><td>Coullet, Fig. 10</td></tr>
+          <tr><td>Drop size &rarr; bubble size</td><td>Entrainment geometry: cavity radius and depth scale with the drop</td><td>Phillips</td></tr>
+          <tr><td>Bubble size &rarr; pitch</td><td>Minnaert, f &prop; 1/a</td><td>Minnaert 1933; Phillips; Vazquez</td></tr>
+          <tr><td>Pinch-off &rarr; onset time</td><td>Sound starts exactly at bubble pinch-off</td><td>Phillips, frame 8 at 30,000 fps</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Read the last two rows together. If drop size co-varies with the control parameter, and
+    bubble size follows drop size, and pitch follows bubble size, then <strong>each plink carries
+    two independent numbers</strong>: when it happened, and what note it was. The timing gives the
+    interval sequence that the whole chaos literature is built on. The pitch would be a second
+    observable that no optical gate can provide at all.</p>
+
+    <p>That is the interesting hypothesis, and it is genuinely untested. Vazquez supplies the
+    caution: in his bubbling flow the acoustic channel and the mechanical channel went chaotic in
+    <em>different regimes</em>, because they report different state variables on timescales two
+    decades apart. Pitch and timing may not agree, and if they disagree that is a result rather
+    than a failure.</p>
+  </main>
+
+  <aside class="rail">
+    <div class="note">
+      <b>Notation</b>
+      Equations are set in the mono face rather than rendered by a maths library, so the page
+      stays a single file with no dependencies.
+    </div>
+    <div class="note">
+      <b>Symbol clash</b>
+      &alpha; is the Feigenbaum constant in Sekatchev, the breakoff coefficient in
+      D&rsquo;Innocenzo, and a fitting parameter in Coullet. Context decides.
+    </div>
+    <div class="note">
+      <b>Never measured</b>
+      No paper in this collection computes a Lyapunov exponent, including the ones claiming chaos.
+      Worth knowing before citing one.
+    </div>
+    <div class="note">
+      <b>Capillary length</b>
+      Coullet scale lengths by &radic;(&Gamma;/g&rho;), so their Bond number is one by
+      construction and never named. Do not compare their numbers to Weber-scaled ones directly.
+    </div>
+  </aside>
+
+</div>
+
+<footer class="foot">
+  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  notes in <code>vault/</code>
+</footer>
+
+</body>
+</html>

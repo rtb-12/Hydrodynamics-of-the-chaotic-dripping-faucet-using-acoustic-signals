@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposed rig</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <path id="plink-path" d="M0 20 H120 L120.0 20.0 121.2 17.1 122.4 14.6 123.6 12.6 124.8 11.1 126.0 10.3 127.2 10.2 128.4 10.7 129.6 11.7 130.8 13.2 132.0 14.9 133.2 16.9 134.4 19.0 135.6 21.0 136.8 22.8 138.0 24.3 139.2 25.4 140.4 26.2 141.6 26.5 142.8 26.4 144.0 25.9 145.2 25.0 146.4 23.9 147.6 22.7 148.8 21.3 150.0 20.0 151.2 18.7 152.4 17.6 153.6 16.8 154.8 16.1 156.0 15.8 157.2 15.7 158.4 15.9 159.6 16.4 160.8 17.0 162.0 17.8 163.2 18.7 164.4 19.6 165.6 20.4 166.8 21.2 168.0 21.9 169.2 22.4 170.4 22.7 171.6 22.8 172.8 22.8 174.0 22.5 175.2 22.2 176.4 21.7 177.6 21.2 178.8 20.6 180.0 20.0 181.2 19.5 182.4 19.0 183.6 18.6 184.8 18.3 186.0 18.2 187.2 18.1 188.4 18.2 189.6 18.4 190.8 18.7 192.0 19.0 193.2 19.4 194.4 19.8 195.6 20.2 196.8 20.5 198.0 20.8 199.2 21.0 200.4 21.2 201.6 21.2 202.8 21.2 204.0 21.1 205.2 21.0 206.4 20.7 207.6 20.5 208.8 20.3 210.0 20.0 211.2 19.8 212.4 19.6 213.6 19.4 214.8 19.3 216.0 19.2 217.2 19.2 218.4 19.2 219.6 19.3 220.8 19.4 222.0 19.6 223.2 19.7 224.4 19.9 225.6 20.1 226.8 20.2 228.0 20.4 229.2 20.4 230.4 20.5 231.6 20.5 232.8 20.5 234.0 20.5 235.2 20.4 236.4 20.3 237.6 20.2 238.8 20.1 240.0 20.0 241.2 19.9 242.4 19.8 243.6 19.7 244.8 19.7 246.0 19.7 247.2 19.7 248.4 19.7 249.6 19.7 250.8 19.8 252.0 19.8 253.2 19.9 254.4 20.0 255.6 20.0 256.8 20.1 258.0 20.2 259.2 20.2 260.4 20.2 261.6 20.2 262.8 20.2 264.0 20.2 265.2 20.2 266.4 20.1 267.6 20.1 268.8 20.0 270.0 20.0 271.2 20.0 272.4 19.9 273.6 19.9 274.8 19.9 276.0 19.9 277.2 19.8 278.4 19.9 279.6 19.9 280.8 19.9 282.0 19.9 283.2 20.0 284.4 20.0 285.6 20.0 286.8 20.0 288.0 20.1 289.2 20.1 290.4 20.1 291.6 20.1 292.8 20.1 294.0 20.1 295.2 20.1 296.4 20.1 297.6 20.0 298.8 20.0 300.0 20.0"/>
+  <marker id="ar" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0 0 L8 4 L0 8 z"/>
+  </marker>
+</defs></svg>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+</header>
+
+<div class="shell">
+
+  <nav class="sidenav">
+    <h2>Sections</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="explainers.html">Explainers</a></li>
+      <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="build.html">Build guide</a></li>
+      <li><a href="pipeline.html">Data pipeline</a></li>
+      <li><a href="setups.html">Experimental setups</a></li>
+      <li><a href="rig.html" aria-current="page">Proposed rig</a></li>
+      <li><a href="theory.html">Theory</a></li>
+      <li><a href="papers.html">Papers</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
+    </ul>
+    <h2>On this page</h2>
+    <ul>
+      <li><a href="#schematic">Schematic</a></li>
+      <li><a href="#why">Why the overflows</a></li>
+      <li><a href="#bom">Bill of materials</a></li>
+      <li><a href="#hydrophone">Hydrophone</a></li>
+      <li><a href="#build">Build order</a></li>
+      <li><a href="#protocol">Protocol</a></li>
+      <li><a href="#risks">What could go wrong</a></li>
+    </ul>
+    <div class="tally">
+      status <b>design</b><br>
+      phase 1 <b>~&#8377;40k</b><br>
+      built <b>no</b>
+    </div>
+  </nav>
+
+  <main>
+    <p class="eyebrow">This project</p>
+    <h1>The proposed rig</h1>
+    <p class="lede">Two 12 by 12 inch tanks of 6 inch depth on a stand with adjustable bars, with
+    two changes that the literature does not have. Both tanks hold a constant level by overflow,
+    so neither the flow rate nor the fall height drifts during a run.</p>
+
+    <h2 id="schematic">Schematic</h2>
+
+    <div class="rig bleed proposed">
+      <div class="rig-head">
+        <h3>Constant-head acoustic dripping rig</h3>
+        <span class="tagline">phase 1 + phase 2 shown together</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 500" role="img" aria-label="Schematic of the proposed rig. A pump in a floor sump feeds a header tank whose water level is pinned by an overflow standpipe. A needle valve below the header sets the drip rate through a nozzle. Drops fall an adjustable distance past an optical gate into an impact tank, which is also held at constant level by its own overflow. A hydrophone sits in the impact tank and a microphone above it. Both overflows return to the sump through a submerged outlet, and all sensors feed an audio interface and a gate counter.">
+
+        <!-- adjustable stand rails -->
+        <path class="sch-thin" d="M120 36 V440 M430 36 V440"/>
+        <path class="sch-thin" d="M113 250 h14 M113 276 h14 M113 302 h14 M423 250 h14 M423 276 h14 M423 302 h14"/>
+        <text class="sch-dim" x="52" y="150">adjustable</text>
+        <text class="sch-dim" x="52" y="162">stand</text>
+
+        <!-- header tank -->
+        <path class="sch" d="M160 44 v100 h230 v-100"/>
+        <rect class="sch-water" x="160" y="70" width="230" height="74"/>
+        <path class="sch-thin" d="M160 70 h230"/>
+        <text class="sch-dim" x="160" y="36">header tank &middot; 12 &times; 12 &times; 6 in &middot; 14 L</text>
+
+        <!-- overflow weir standpipe -->
+        <path class="sch-hydro" d="M356 70 V144 M346 70 h20"/>
+        <text class="sch-label key" x="400" y="90">overflow weir</text>
+        <text class="sch-dim" x="400" y="102">head cannot fall</text>
+
+        <!-- needle valve and nozzle -->
+        <path class="sch-thin" d="M250 144 V174"/>
+        <path class="sch" d="M238 174 l24 16 v-16 l-24 16 z"/>
+        <text class="sch-label" x="120" y="186">needle valve</text>
+        <path class="sch-thin" d="M250 190 V208"/>
+        <path class="sch" d="M242 208 h16 l-4 12 h-8 z"/>
+        <text class="sch-label" x="266" y="218">nozzle</text>
+
+        <!-- drops -->
+        <circle class="sch-drop" cx="250" cy="244" r="4"/>
+        <circle class="sch-drop" cx="250" cy="276" r="4.5"/>
+
+        <!-- optical gate -->
+        <path class="sch-fill" d="M172 250 h24 v20 h-24 z"/>
+        <path class="sch-fill" d="M306 250 h24 v20 h-24 z"/>
+        <path class="sch-dash" d="M196 260 H306"/>
+        <text class="sch-dim" x="140" y="244">optical gate &middot; phase 1 cross-check</text>
+
+        <!-- fall dimension -->
+        <path class="sch-dash" d="M212 220 V322" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="164" y="296">fall h</text>
+
+        <!-- impact tank -->
+        <path class="sch" d="M150 296 v112 h260 v-112"/>
+        <rect class="sch-water" x="150" y="322" width="260" height="86"/>
+        <path class="sch-thin" d="M150 322 h260"/>
+        <text class="sch-dim" x="150" y="424">impact tank &middot; level pinned by overflow</text>
+
+        <!-- impact tank overflow -->
+        <path class="sch-hydro" d="M410 322 H470"/>
+        <text class="sch-label key" x="414" y="316">overflow</text>
+
+        <!-- weir return joining the riser -->
+        <path class="sch-thin" d="M356 144 V168 H470"/>
+        <path class="sch-thin" d="M470 168 V440 H520" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="486" y="180">returns</text>
+        <text class="sch-dim" x="486" y="192">to sump</text>
+        <text class="sch-label key" x="524" y="434">submerged outlet</text>
+        <text class="sch-dim" x="524" y="446">no splash, no bubble</text>
+
+        <!-- hydrophone -->
+        <path class="sch-hydro" d="M350 364 V288"/>
+        <circle class="sch-hydro-f" cx="350" cy="364" r="7"/>
+        <text class="sch-label key" x="248" y="382">hydrophone &middot; phase 2</text>
+
+        <!-- microphone -->
+        <rect class="sch-aero" x="452" y="246" width="14" height="26" rx="7"/>
+        <text class="sch-label" x="472" y="256" style="fill:var(--aero)">microphone</text>
+        <text class="sch-dim" x="472" y="268">phase 1</text>
+        <path class="sch-dash" d="M452 268 L 404 296"/>
+
+        <!-- signal runs -->
+        <path class="sch-dash" d="M350 288 H442 V60 H560"/>
+        <path class="sch-dash" d="M459 246 V60"/>
+        <circle class="sch-hydro-f" cx="459" cy="60" r="2.5"/>
+        <path class="sch-dash" d="M330 260 H500 V102 H560"/>
+
+        <!-- electronics -->
+        <rect class="sch-fill" x="560" y="44" width="180" height="30" rx="2"/>
+        <text class="sch-label" x="570" y="63">AUDIO INTERFACE</text>
+        <text class="sch-dim" x="560" y="88">96 kHz &middot; 2 channel</text>
+        <rect class="sch-fill" x="560" y="96" width="180" height="30" rx="2"/>
+        <text class="sch-label" x="570" y="115">GATE COUNTER</text>
+
+        <!-- sump and pump -->
+        <path class="sch" d="M500 400 v60 h220 v-60"/>
+        <rect class="sch-water" x="500" y="418" width="220" height="42"/>
+        <path class="sch-thin" d="M500 418 h220"/>
+        <text class="sch-dim" x="500" y="394">sump &middot; acoustically isolated from the impact tank</text>
+        <circle class="sch-fill" cx="586" cy="438" r="15"/>
+        <path class="sch" d="M580 431 l12 7 l-12 7 z"/>
+        <text class="sch-label" x="606" y="442">pump</text>
+
+        <!-- feed line, routed along the floor and up the far side -->
+        <path class="sch-thin" d="M586 453 V482 H30 V24 H180 V70" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="200" y="20">feed</text>
+      </svg>
+      </figure>
+      <figcaption>
+        Phase 1 uses the microphone and the optical gate only. The hydrophone and any camera are
+        Phase 2 additions to the same frame. Blue marks the underwater channel and the two
+        constant-level devices; orange marks the airborne channel.
+      </figcaption>
+    </div>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="why">Why the overflows</h2>
+
+    <h3>The header tank</h3>
+    <p>A 12 by 12 by 6 inch tank holds about 14 litres. Drained through a tap it obeys
+    Torricelli&rsquo;s law, so the outflow scales with <span class="num">&radic;h</span> and the
+    drip rate falls continuously through every run.</p>
+    <p>That matters here more than in almost any other experiment, because <strong>flow rate is
+    the bifurcation parameter</strong>. A faucet period-doubles as flow increases. If the flow
+    drifts while you record, you are not sampling one point in the bifurcation diagram, you are
+    smearing across it, and the return map turns to mush. This is why Roseberry&rsquo;s runs were
+    not repeatable and why Sekatchev had to detrend every 200-drop block.</p>
+    <p>An overflow standpipe at a fixed height fixes it without electronics. A small pump lifts
+    more water than the nozzle passes, and the excess spills back down the standpipe. The level
+    sits at the weir lip regardless of how the pump behaves, so head is set by
+    <em>geometry</em> rather than by control.</p>
+
+    <h3>The impact tank</h3>
+    <p>This is the half that is easy to miss. Without its own overflow the lower tank fills as
+    drops accumulate, and the water surface climbs toward the nozzle.</p>
+    <p>Work the numbers. A 12 by 12 inch footprint is <span class="num">929 cm&sup2;</span>. At a
+    drip rate of order <span class="num">30 ml/min</span> the tank gains
+    <span class="num">1800 cm&sup3;</span> per hour, so the level rises
+    <span class="num">1.9 cm</span> every hour. Against the <span class="num">86 mm</span> fall
+    height Phillips used, that is a 20-odd percent drift in fall distance, and therefore in impact
+    velocity, over a single hour.</p>
+    <p><a href="lab.html#drift">Move these numbers yourself in the lab.</a> Impact velocity is what decides whether a bubble is entrained at all. Left alone, the rig
+    slowly walks itself out of the acoustically audible window mid-run, and the microphone starts
+    missing drops for a reason that has nothing to do with the dynamics being studied. A second
+    overflow at a fixed level holds both the fall height and the tank acoustics constant
+    indefinitely.</p>
+
+    <h3>Why the loop returns to a separate sump</h3>
+    <p>The pump loop must not discharge into the impact tank. A returning stream splashes, and
+    splashing entrains air, which is precisely the sound the hydrophone is there to measure.
+    Routing both overflows into a separate floor sump keeps the pump acoustically outside the
+    experiment. The return outlet sits below the sump water line for the same reason.</p>
+
+    <div class="callout">
+      <b>The bonus: one rig, two experiments</b>
+      <p>Switch the pump off and the header stops being a constant-head device. It becomes a
+      draining tank, and the rig turns into Sekatchev&rsquo;s passive sweep: a slow monotonic
+      descent through the whole bifurcation diagram in a single long run. Pump on for stationary
+      runs at a fixed operating point, pump off for the sweep. The same hardware does both, so
+      you are not choosing between the two philosophies in the literature.</p>
+    </div>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="bom">Bill of materials</h2>
+    <p>Phase 1 is everything needed to produce a bifurcation diagram from sound. Phase 2 adds the
+    per-impact acoustic characterisation. Prices are order-of-magnitude estimates, not quotes.</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Item</th><th>Spec</th><th>Why this spec</th><th>Phase</th><th>Est.</th></tr></thead>
+        <tbody>
+          <tr><td>Acrylic tanks &times; 2</td><td>12 &times; 12 &times; 6 in, 6&ndash;8 mm wall</td><td>Transparent for side-on camera access later. Far larger than the drop, per Phillips&rsquo; dimensional argument</td><td>1</td><td>&#8377;4&ndash;7 k</td></tr>
+          <tr><td>Frame and adjustable bars</td><td>Slotted angle or 20&times;20 extrusion</td><td>Fall height is a control variable, so it must be settable and readable</td><td>1</td><td>&#8377;3&ndash;6 k</td></tr>
+          <tr><td>Overflow standpipes &times; 2</td><td>Bulkhead fitting + standpipe</td><td>The two constant-level devices. Everything else depends on these</td><td>1</td><td>&#8377;1&ndash;2 k</td></tr>
+          <tr><td>Sump</td><td>25 L food-grade tub</td><td>Buffers the loop and isolates pump noise</td><td>1</td><td>&#8377;500</td></tr>
+          <tr><td>Submersible pump</td><td>Aquarium pump, 300&ndash;600 L/h, adjustable</td><td>Must exceed the drip rate by a wide margin so the weir always spills</td><td>1</td><td>&#8377;800&ndash;2 k</td></tr>
+          <tr><td>Fine-metering needle valve</td><td>Swagelok / Nupro style</td><td>Roseberry&rsquo;s choice. Sets flow rate. Do not economise here</td><td>1</td><td>&#8377;3&ndash;8 k</td></tr>
+          <tr><td>Nozzles, interchangeable</td><td>Blunt dispensing tips, 0.6&ndash;2.0 mm ID</td><td>Sets drop diameter. Must land in the 1&ndash;5 mm entrainment window</td><td>1</td><td>&#8377;500&ndash;1.5 k</td></tr>
+          <tr><td>Measurement microphone</td><td>96 kHz capable, flat to 20 kHz</td><td>Must resolve the 8.66 kHz bubble ring with margin</td><td>1</td><td>&#8377;8&ndash;20 k</td></tr>
+          <tr><td>Audio interface</td><td>2-channel, 96 kHz, 24 bit</td><td>Sample rate is the timing resolution. 96 kHz gives ~10 &micro;s</td><td>1</td><td>&#8377;10&ndash;20 k</td></tr>
+          <tr><td>Optical gate</td><td>IR LED + phototransistor, comparator, microcontroller</td><td>The independent drop count that proves the acoustic clock misses nothing</td><td>1</td><td>&#8377;800&ndash;2 k</td></tr>
+          <tr><td>Graduated cylinder + stopwatch</td><td>10 or 25 ml</td><td>Drop-volume calibration. Sekatchev&rsquo;s V<sub>d</sub>(T) curve. Non-negotiable</td><td>1</td><td>&#8377;300</td></tr>
+          <tr><td>Thermometer</td><td>&plusmn;0.2 &deg;C</td><td>Sekatchev blamed unexplained jumps partly on temperature. Log it</td><td>1</td><td>&#8377;500</td></tr>
+          <tr><td>Hydrophone</td><td>See <a href="#hydrophone">the spec below</a></td><td>Underwater channel, roughly 40 dB above airborne</td><td>2</td><td>&#8377;20&ndash;60 k</td></tr>
+          <tr><td>MDF or foam lining</td><td>~11 mm, per Phillips</td><td>Suppresses reverberation that otherwise makes the packet grow before decaying</td><td>2</td><td>&#8377;1&ndash;2 k</td></tr>
+          <tr><td>High-speed camera</td><td>1,000 fps or better</td><td>Institutional access. Validates drop diameter and pinch-off against the audio</td><td>2</td><td>facility</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Phase 1 totals roughly <span class="num">&#8377;35&ndash;70 k</span> depending on the
+    microphone and interface. Vazquez&rsquo;s result on a Sound Blaster card is the reason to
+    believe the bottom of that range is workable.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="hydrophone">Choosing the hydrophone</h2>
+    <p>Almost every number needed to specify this is already in the papers. Working it through
+    gives an answer that is cheaper than expected in one respect and stricter than expected in
+    another.</p>
+
+    <h3>What sets the bandwidth</h3>
+    <p>The bubble rings at its Minnaert frequency, which depends only on its radius, and bubble
+    radius follows drop size. Across the 1 to 5 mm entrainment window:</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Drop diameter</th><th>Entrained bubble</th><th>Minnaert frequency</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>5.0 mm</td><td>0.887 mm</td><td>7.4 kHz</td><td>upper edge of the entrainment window</td></tr>
+          <tr><td>4.0 mm</td><td>0.710 mm</td><td>9.3 kHz</td><td>Phillips measured <strong>8.66 kHz</strong> for this bubble</td></tr>
+          <tr><td>3.0 mm</td><td>0.532 mm</td><td>12.3 kHz</td><td>Phillips&rsquo; five tests spanned 7.90&ndash;12.23 kHz</td></tr>
+          <tr><td>2.0 mm</td><td>0.355 mm</td><td>18.5 kHz</td><td>past the top of most audio hardware</td></tr>
+          <tr><td>1.0 mm</td><td>0.177 mm</td><td>37.0 kHz</td><td>lower edge of the entrainment window</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Two caveats on that table. The bubble-to-drop ratio is extrapolated from Phillips&rsquo;
+    single measured pair, and Phillips themselves found Minnaert <em>overpredicts</em> for small
+    bubbles: their tests 4 and 5 recorded 11.72 and 12.23 kHz where Minnaert said 15.11 and 16.97.
+    They could not explain it. So treat the 37 kHz figure as an upper bound with real
+    uncertainty.</p>
+
+    <p>Above that sits Chashechkin&rsquo;s territory. He recorded discrete spectral components at
+    <strong>31.4 to 94.2 kHz</strong> from the decaying part of the impact signal, using a
+    hydrophone specified 0.002 to 100 kHz. Those are not the bubble ring; they are the cavity
+    resonances that vanish above 4.6 m/s impact velocity. If Phase 2 is to reach them, the
+    bandwidth requirement roughly triples.</p>
+
+    <div class="callout">
+      <b>Bandwidth is the binding constraint, and it is the one cheap hydrophones fail</b>
+      <p>Most inexpensive hydrophones are built for bioacoustics and underwater recording, so their
+      integrated preamps are deliberately rolled off around 20 kHz. That covers a 3 mm drop and
+      nothing smaller. Check the <em>preamp</em> bandwidth, not just the element&rsquo;s.</p>
+    </div>
+
+    <h3>What sets the sensitivity, and why it barely matters</h3>
+    <p>Phillips recorded underwater peaks of about <span class="num">40 Pa</span>. In hydrophone
+    units that is <span class="num">152 dB re 1 &micro;Pa</span>, which is a loud signal.
+    Chashechkin&rsquo;s range of 2.8 to 34.4 Pa agrees. What that means for a purchase:</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Sensitivity</th><th>Output from a 40 Pa plink</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>&minus;150 dB re 1V/&micro;Pa</td><td>1.26 V</td><td>Hot. Chashechkin&rsquo;s 30 mV/Pa unit is here. Watch for clipping</td></tr>
+          <tr><td>&minus;165 dB re 1V/&micro;Pa</td><td>224 mV</td><td><strong>Ideal.</strong> Line level, straight into an interface</td></tr>
+          <tr><td>&minus;180 dB re 1V/&micro;Pa</td><td>40 mV</td><td>Fine. Mic-level, use the interface&rsquo;s preamp</td></tr>
+          <tr><td>&minus;211 dB re 1V/&micro;Pa</td><td>1.1 mV</td><td>Research grade, and the <em>wrong</em> tool. Needs a dedicated charge amp</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>This is the money-saving conclusion. Calibrated research hydrophones like the Reson TC4013
+    or Br&uuml;el &amp; Kj&aelig;r 8103 class are built for faint distant signals, so they sit near
+    &minus;211 dB and need matching charge amplifiers that cost more than the hydrophone. Your
+    source is centimetres away and loud. A mid-sensitivity unit with an integrated preamp is both
+    cheaper and easier to use.</p>
+
+    <h3>Element size and placement</h3>
+    <p>For an omnidirectional response the element must be small compared with the wavelength.
+    Sound travels at about 1500 m/s in water, so at 40 kHz the wavelength is 37.5 mm and the
+    element should be under about 12 mm. At 100 kHz the wavelength is 15 mm and the element needs
+    to be under about 5 mm.</p>
+    <p>Placement follows Vazquez, who put his hydrophone at <strong>5 cm</strong> from the source
+    and says why: close enough for signal, far enough not to perturb the bubble formation. He
+    explicitly criticises a 1 cm placement in an earlier paper for possibly influencing the
+    physics. In a 12 inch tank, 5 cm from the impact point is comfortable.</p>
+
+    <h3>The reverberation calculation that decides whether you must line the tank</h3>
+    <p>With the hydrophone 5 cm from the impact in a 12 inch tank, the direct path is 5 cm and the
+    first side-wall reflection travels about 31 cm. The extra 26 cm at 1500 m/s means the echo
+    arrives <span class="num">0.175 ms</span> after the direct sound. Phillips&rsquo; wave packet
+    lasts about 2 ms, so the first reflection lands roughly <strong>9% of the way into it</strong>
+    and everything after that is contaminated.</p>
+    <p>This splits cleanly by what you are measuring. <strong>Onset timing is immune</strong>,
+    because the direct sound always arrives first and that is the only part the clock needs. Any
+    measurement of decay rate, damping, or spectral shape is not, which is exactly why Phillips
+    lined their tank with 11 mm MDF and found the bare tank made the packet grow before it
+    decayed. Line the tank for Phase 2; do not bother for Phase 1.</p>
+
+    <h3>The specification</h3>
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Parameter</th><th>Phase 1 minimum</th><th>Phase 2 target</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Frequency response</td><td>flat 1&ndash;20 kHz</td><td><strong>flat 1&ndash;100 kHz</strong></td><td>8.66 kHz bubble ring; 37 kHz small-drop edge; 94 kHz cavity resonances</td></tr>
+          <tr><td>Sensitivity</td><td colspan="2">&minus;165 to &minus;180 dB re 1V/&micro;Pa</td><td>40 Pa source. Anything in this band clears the noise floor easily</td></tr>
+          <tr><td>Preamp</td><td colspan="2"><strong>integrated, required</strong></td><td>A bare piezo is a high-impedance capacitive source; cable capacitance destroys the high end</td></tr>
+          <tr><td>Element diameter</td><td>&le; 12 mm</td><td>&le; 5 mm</td><td>ka &lt; 1 for omnidirectional response at the top frequency</td></tr>
+          <tr><td>Max level</td><td colspan="2">&ge; 160 dB re 1 &micro;Pa</td><td>Headroom over the 152 dB peak</td></tr>
+          <tr><td>Sample rate</td><td>96 kHz</td><td>192 kHz+</td><td>Nyquist over 37 kHz, then over 94 kHz. 96 kHz also gives 10.4 &micro;s timing</td></tr>
+          <tr><td>Calibration</td><td>not needed</td><td>useful</td><td>Timing needs onsets, not Pascals. Only calibrate to compare absolute levels with Phillips</td></tr>
+          <tr><td>Cable</td><td colspan="2">moulded, 3&ndash;5 m, strain relieved</td><td>Must decouple from the frame so pump vibration does not travel down it</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Traps</h3>
+    <ul>
+      <li><strong>Preamp roll-off.</strong> The element may be specified to 100 kHz while the
+      built-in preamp is not. This is the single most common mismatch for this application.</li>
+      <li><strong>Power type.</strong> Integrated preamps want either plug-in power, a few volts on
+      a 3.5 mm jack, or 48 V phantom on XLR. Feeding phantom to a plug-in-power unit can destroy
+      it. Match the hydrophone to the interface before ordering either.</li>
+      <li><strong>Buying research grade.</strong> A &minus;211 dB calibrated hydrophone is worse
+      here than a &minus;170 dB one, because it needs a charge amplifier you would also have to
+      buy. Sensitivity is not the axis to optimise.</li>
+      <li><strong>Sample rate you cannot use.</strong> A 100 kHz hydrophone into a 48 kHz interface
+      throws away everything above 24 kHz. The interface must be bought to match.</li>
+      <li><strong>Anti-alias filtering.</strong> Chashechkin&rsquo;s own spectra run to 130 kHz,
+      past his stated 100 kHz sensor limit, with no comment on roll-off. Know where your chain
+      stops responding before trusting a spectral tail.</li>
+    </ul>
+
+    <h3>What this comes to</h3>
+    <p>For Phase 1, an integrated-preamp hydrophone in the &minus;165 to &minus;180 dB range with
+    honest response to 20 kHz, into a 96 kHz interface. The Aquarian H2a family is the usual
+    low-cost choice at roughly <span class="num">&#8377;20&ndash;35 k</span>; verify the specific
+    variant&rsquo;s preamp bandwidth against the table above rather than trusting the headline
+    element figure.</p>
+    <p>For Phase 2, the requirement genuinely changes: flat to 100 kHz, element under 5 mm, and a
+    192 kHz or faster interface. That is a different and more expensive class of instrument, and it
+    is worth deferring until Phase 1 has shown the acoustic clock works.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="build">Build order</h2>
+    <p>Ordered so that each step is testable before the next one depends on it.</p>
+    <ol>
+      <li><strong>Frame and tanks, dry.</strong> Confirm the bars adjust smoothly and the fall
+      height is readable to a millimetre.</li>
+      <li><strong>Plumbing and both overflows, water only, no nozzle.</strong> Run the pump for an
+      hour. Both levels must sit dead still at their weir lips. This is the whole design in one
+      test: if the levels move, nothing downstream is worth doing.</li>
+      <li><strong>Needle valve and nozzle.</strong> Confirm a stable drip and measure the range of
+      achievable rates by catching drops in the graduated cylinder.</li>
+      <li><strong>Drop-volume calibration.</strong> Build V<sub>d</sub>(T) across at least eight
+      valve settings, following Sekatchev&rsquo;s method, so drops per minute can be converted to
+      millilitres per minute.</li>
+      <li><strong>Optical gate.</strong> Verify against a stopwatch and a hand count.</li>
+      <li><strong>Microphone and recording.</strong> Confirm the plink is audible above the room
+      floor, and that its spectrum shows a clear peak.</li>
+      <li><strong>Cross-validation run.</strong> Mic and gate simultaneously, several thousand
+      drops. Count agreement is the gate condition on the entire project.</li>
+    </ol>
+
+    <h2 id="protocol">Protocol</h2>
+
+    <h3>Phase 1: is the acoustic clock trustworthy?</h3>
+    <p>Record the microphone and the optical gate at the same time and compare drop counts. The
+    acceptance criterion is not "close enough". Phillips showed that drops outside roughly 1 to 5
+    mm, or outside the right impact-velocity window, entrain no bubble and are
+    <em>acoustically silent</em>. One missed drop merges two intervals into one and injects a
+    false point into the return map, which is worse than timing jitter because it adds structure
+    that is not there rather than blurring structure that is.</p>
+    <p>So the first result of this project is a map of where in the operating range the acoustic
+    clock is complete. That is a publishable result on its own and it is a prerequisite for
+    everything after it.</p>
+
+    <h3>Phase 1: the bifurcation diagram</h3>
+    <p>With the clock validated, work at fixed operating points. At each valve setting record for
+    long enough, and record the direction you approached the setting from. Two constraints from
+    the literature set the run length and the protocol:</p>
+    <ul>
+      <li><strong>Run length.</strong> D&rsquo;Innocenzo found chaotic transients lasting 250, 800
+      and 2200 drops before collapsing to a periodic rhythm. A 230-drop record like
+      Roseberry&rsquo;s can therefore classify a regime completely wrongly. Plan for several
+      thousand drops per operating point.</li>
+      <li><strong>Ramp direction.</strong> Ambravaneswaran reports hysteresis, and Coullet
+      reproduces it: at the same nominal flow rate the faucet drips period-1 on an increasing ramp
+      and period-2 on a decreasing one. Record ramp direction with every run or the data will not
+      reconcile.</li>
+    </ul>
+    <p>Then switch the pump off for a passive sweep and compare the two against each other. Nobody
+    in the literature has done both on one rig.</p>
+
+    <h3>Phase 2: what the sound itself carries</h3>
+    <p>Add the hydrophone and, if a camera is available, video. Here the target is whether the
+    waveform carries more than the arrival time. Coullet gives a specific reason to hope so: the
+    ejected volume fraction V<sub>e</sub>/V falls roughly linearly with flow rate, so drop size
+    should co-vary with the control parameter, and drop size sets the entrained bubble radius,
+    which sets the Minnaert frequency. If that chain holds, the <em>pitch</em> of each plink is a
+    second observable alongside its timing.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="risks">What could go wrong</h2>
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Risk</th><th>Where it comes from</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td>Pump vibration reaches the hydrophone</td><td>Structure-borne path through the frame</td><td>Sump stands on foam, not clamped to the stand. Test by recording with the pump on and no dripping</td></tr>
+          <tr><td>Tank reverberation lengthens the decay</td><td>Phillips: the bare tank made the packet grow before decaying</td><td>Line the impact tank. Compare lined and bare, as Phillips did</td></tr>
+          <tr><td>Acoustically silent drops</td><td>Phillips: no entrainment outside 1&ndash;5 mm and the velocity window</td><td>The whole point of the Phase 1 cross-check. Choose nozzle and fall height to sit inside the window</td></tr>
+          <tr><td>Regime misclassified from a short run</td><td>D&rsquo;Innocenzo: 2200-drop transients</td><td>Thousands of drops per point, and plot T<sub>n</sub> against index to see transients</td></tr>
+          <tr><td>Increasing and decreasing ramps disagree</td><td>Ambravaneswaran and Coullet: genuine hysteresis</td><td>Not a bug. Record ramp direction and report both branches</td></tr>
+          <tr><td>Chaos may not exist at all in this fluid</td><td>Ambravaneswaran: no chaos at Oh = 0.1, only at Oh = 0.01</td><td>Check the Ohnesorge number for the chosen nozzle before building. See <a href="theory.html#groups">the theory page</a></td></tr>
+          <tr><td>Room noise swamps the plink</td><td>Airborne signal is only ~0.3 Pa</td><td>Record a background track every session. This is the argument for adding the hydrophone at ~40 Pa</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The last row deserves attention before any money is spent, and the <a href="lab.html#groups">nozzle designer</a> settles it in a few seconds. Ambravaneswaran found
+    <em>no chaotic regime at all</em> for a fluid at Ohnesorge number 0.1, and chaos only at 0.01.
+    Since Oh depends on the capillary radius and the fluid properties, the nozzle choice decides
+    whether there is a cascade to listen to. Compute it first.</p>
+  </main>
+
+  <aside class="rail">
+    <div class="note">
+      <b>Status</b>
+      Design only. Nothing built, nothing purchased. Numbers are estimates.
+    </div>
+    <div class="note">
+      <b>The one test that matters</b>
+      Run the pump for an hour with no nozzle. If both water levels sit still, the design works.
+      If they move, stop and fix it.
+    </div>
+    <div class="note">
+      <b>Timing budget</b>
+      96 kHz gives ~10 &micro;s per sample against Sekatchev&rsquo;s 25 ms optical floor. Even
+      44.1 kHz is ~23 &micro;s.
+    </div>
+    <div class="note">
+      <b>Level drift, worked</b>
+      929 cm&sup2; footprint, 30 ml/min in, so 1800 cm&sup3;/h and a 1.9 cm/h rise. Against an
+      86 mm fall that is not a small correction.
+    </div>
+    <div class="note">
+      <b>Not yet decided</b>
+      Nozzle bore, fall height, and working fluid. All three follow from the Ohnesorge check.
+    </div>
+  </aside>
+
+</div>
+
+<footer class="foot">
+  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  notes in <code>vault/</code>
+</footer>
+
+</body>
+</html>

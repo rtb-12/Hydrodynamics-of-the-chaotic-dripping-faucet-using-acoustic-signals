@@ -1,0 +1,10 @@
+# Working notes and process artifacts. Never committed.
+docs/superpowers/
+
+# Local tooling
+.claude/
+
+# OS and Python
+.DS_Store
+__pycache__/
+*.pyc

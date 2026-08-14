@@ -1,0 +1,711 @@
+/* ==========================================================================
+   Dripping Faucet Acoustics - project wiki
+   Channel colours follow Phillips et al. 2018 Fig. 5: hydrophone blue,
+   microphone orange. Colour therefore encodes the measurement channel and
+   is never used decoratively.
+   ========================================================================== */
+
+:root {
+  --ground:  #e9eef1;
+  --surface: #f5f8fa;
+  --sunk:    #dde6eb;
+  --ink:     #10202a;
+  --ink-2:   #46606e;
+  --ink-3:   #7b93a0;
+  --rule:    #c6d3da;
+  --hydro:   #0b6e8f;
+  --aero:    #b8551d;
+  --water:   rgba(11, 110, 143, 0.13);
+
+  --display: "Futura", "Avenir Next", "Avenir", "Century Gothic", system-ui, sans-serif;
+  --body:    "Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --mono:    "SF Mono", "Menlo", "Consolas", monospace;
+
+  --gap: clamp(1.5rem, 4vw, 3.5rem);
+  --measure: 68ch;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:  #0b141a;
+    --surface: #101d25;
+    --sunk:    #16262f;
+    --ink:     #dce8ed;
+    --ink-2:   #94acb8;
+    --ink-3:   #637c88;
+    --rule:    #26404d;
+    --hydro:   #46b4d8;
+    --aero:    #e2935c;
+    --water:   rgba(70, 180, 216, 0.14);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:  #0b141a;
+  --surface: #101d25;
+  --sunk:    #16262f;
+  --ink:     #dce8ed;
+  --ink-2:   #94acb8;
+  --ink-3:   #637c88;
+  --rule:    #26404d;
+  --hydro:   #46b4d8;
+  --aero:    #e2935c;
+  --water:   rgba(70, 180, 216, 0.14);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- masthead ----------------------------------------------------------- */
+
+.masthead {
+  border-bottom: 1px solid var(--rule);
+  padding: 1.1rem var(--gap);
+  display: flex;
+  align-items: baseline;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.wordmark {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.94rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.wordmark span { color: var(--hydro); }
+
+.masthead-meta {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  margin-left: auto;
+}
+
+/* --- shell -------------------------------------------------------------- */
+
+.shell {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) 210px;
+  gap: var(--gap);
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--gap);
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .sidenav { position: static; }
+}
+
+/* --- side navigation ---------------------------------------------------- */
+
+.sidenav {
+  position: sticky;
+  top: var(--gap);
+  font-family: var(--display);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.sidenav h2 {
+  font-size: 0.64rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  margin: 0 0 0.6rem;
+}
+
+.sidenav ul { list-style: none; margin: 0 0 1.75rem; padding: 0; }
+.sidenav li { margin-bottom: 0.35rem; }
+
+.sidenav a {
+  color: var(--ink-2);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  padding-left: 0.7rem;
+  display: block;
+  transition: color 0.14s, border-color 0.14s;
+}
+
+.sidenav a:hover { color: var(--ink); border-left-color: var(--rule); }
+.sidenav a[aria-current="page"] { color: var(--ink); border-left-color: var(--hydro); }
+
+.tally {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--ink-3);
+  line-height: 1.9;
+  border-top: 1px solid var(--rule);
+  padding-top: 0.85rem;
+}
+
+.tally b { color: var(--ink-2); font-weight: 400; }
+
+/* --- main --------------------------------------------------------------- */
+
+main { min-width: 0; }
+main > * { max-width: var(--measure); }
+main > .bleed { max-width: none; }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hydro);
+  margin: 0 0 0.9rem;
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 4.2vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  margin: 0 0 1.1rem;
+}
+
+h2 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.32rem;
+  letter-spacing: 0.005em;
+  margin: 0 0 0.75rem;
+}
+
+h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0 0 0.5rem;
+}
+
+.lede { font-size: 1.12rem; color: var(--ink-2); }
+
+p { margin: 0 0 1.15rem; }
+
+a { color: var(--hydro); text-underline-offset: 0.18em; }
+
+strong { font-weight: 600; }
+
+.num, code {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  font-variant-numeric: tabular-nums;
+}
+
+code {
+  background: var(--sunk);
+  padding: 0.1em 0.36em;
+  border-radius: 2px;
+}
+
+.hydro-t { color: var(--hydro); }
+.aero-t  { color: var(--aero); }
+
+/* --- the plink divider -------------------------------------------------
+   Section breaks are drawn as a quiet baseline that rings once. The motif
+   is the same damped sinusoid as the hero, at reduced amplitude.
+   ----------------------------------------------------------------------- */
+
+.plink {
+  display: block;
+  width: 300px;
+  max-width: 100%;
+  height: 40px;
+  margin: 3rem 0 2.5rem;
+  overflow: visible;
+  color: var(--rule);
+}
+
+.plink use { stroke: currentColor; fill: none; stroke-width: 1.25; }
+
+/* --- hero figure -------------------------------------------------------- */
+
+.trace-card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1.5rem 1.5rem 1.1rem;
+  margin: 2rem 0;
+}
+
+.trace-card svg { display: block; width: 100%; height: auto; }
+
+.wave { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.wave-hydro { stroke: var(--hydro); }
+.wave-aero  { stroke: var(--aero); opacity: 0.85; }
+.axis { stroke: var(--rule); stroke-width: 1; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .wave { stroke-dasharray: 1; stroke-dashoffset: 1; animation: trace 1.9s cubic-bezier(0.2, 0.7, 0.25, 1) forwards; }
+  .wave-aero { animation-delay: 0.06s; }
+}
+
+@keyframes trace { to { stroke-dashoffset: 0; } }
+
+.legend {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-2);
+  margin-top: 0.9rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--rule);
+}
+
+.legend span::before {
+  content: "";
+  display: inline-block;
+  width: 1.4em;
+  height: 2px;
+  vertical-align: 0.25em;
+  margin-right: 0.5em;
+}
+
+.legend .k-hydro::before { background: var(--hydro); }
+.legend .k-aero::before  { background: var(--aero); }
+
+/* --- margin rail -------------------------------------------------------- */
+
+.rail {
+  position: sticky;
+  top: var(--gap);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  line-height: 1.75;
+  color: var(--ink-3);
+}
+
+.rail .note {
+  border-top: 1px solid var(--rule);
+  padding-top: 0.7rem;
+  margin-bottom: 1.6rem;
+}
+
+.rail b {
+  display: block;
+  color: var(--ink-2);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  margin-bottom: 0.35rem;
+}
+
+@media (max-width: 1080px) {
+  .rail {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1.25rem;
+  }
+  .rail .note { margin-bottom: 0; }
+}
+
+/* --- rig schematics ----------------------------------------------------- */
+
+.rig {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--surface);
+  margin: 0 0 1.75rem;
+  overflow: hidden;
+}
+
+.rig-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--sunk);
+}
+
+.rig-head h3 { margin: 0; text-transform: none; letter-spacing: 0.01em; font-size: 1rem; color: var(--ink); }
+
+.rig-head .tagline {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  color: var(--ink-3);
+  margin-left: auto;
+  letter-spacing: 0.05em;
+}
+
+.rig figure { margin: 0; padding: 1.1rem; }
+.rig svg { display: block; width: 100%; height: auto; }
+
+.rig figcaption {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  line-height: 1.7;
+  color: var(--ink-2);
+  padding: 0 1.1rem 1.1rem;
+}
+
+.rig.proposed { border-color: var(--hydro); border-width: 2px; }
+
+/* shared schematic glyph styling */
+.sch { stroke: var(--ink); fill: none; stroke-width: 1.4; stroke-linejoin: round; }
+.sch-thin { stroke: var(--ink-2); fill: none; stroke-width: 1; }
+.sch-water { fill: var(--water); stroke: none; }
+.sch-fill { fill: var(--surface); stroke: var(--ink); stroke-width: 1.4; }
+.sch-hydro { stroke: var(--hydro); fill: none; stroke-width: 1.8; }
+.sch-hydro-f { fill: var(--hydro); stroke: none; }
+.sch-aero { stroke: var(--aero); fill: none; stroke-width: 1.8; }
+.sch-aero-f { fill: var(--aero); stroke: none; }
+.sch-dash { stroke: var(--ink-3); fill: none; stroke-width: 1; stroke-dasharray: 4 3; }
+.sch-drop { fill: var(--hydro); }
+
+/* Arrowheads cannot inherit the referencing path's stroke reliably across
+   browsers, so pin them to a token rather than relying on context-stroke. */
+#ar path { fill: var(--ink-3); }
+
+.sch-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  fill: var(--ink-2);
+  letter-spacing: 0.04em;
+}
+
+.sch-label.key { fill: var(--hydro); }
+.sch-dim { font-family: var(--mono); font-size: 9px; fill: var(--ink-3); }
+
+/* --- spec table --------------------------------------------------------- */
+
+.tablewrap { overflow-x: auto; margin: 0 0 1.75rem; border: 1px solid var(--rule); border-radius: 3px; }
+
+table { border-collapse: collapse; width: 100%; font-size: 0.8rem; background: var(--surface); }
+
+th, td {
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+th {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  background: var(--sunk);
+  white-space: nowrap;
+}
+
+td { font-family: var(--mono); font-size: 0.72rem; line-height: 1.65; }
+td:first-child { font-family: var(--body); font-size: 0.82rem; }
+tbody tr:last-child td { border-bottom: none; }
+
+.nr { color: var(--ink-3); font-style: italic; }
+
+/* --- equations ----------------------------------------------------------
+   Set in the mono face rather than a maths renderer: the site has no build
+   step and no external dependencies, and these read fine as linear notation.
+   ------------------------------------------------------------------------ */
+
+.eq {
+  font-family: var(--mono);
+  font-size: 0.84rem;
+  line-height: 1.9;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--hydro);
+  border-radius: 0 3px 3px 0;
+  padding: 0.9rem 1.15rem;
+  margin: 0 0 1.3rem;
+  overflow-x: auto;
+}
+
+.eq b { color: var(--hydro); font-weight: 400; }
+
+.eq .tag {
+  display: block;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 0.45rem;
+}
+
+.eq dl {
+  margin: 0.7rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.74rem;
+  line-height: 1.7;
+  color: var(--ink-2);
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.1rem 0.9rem;
+}
+
+.eq dt { color: var(--ink); }
+.eq dd { margin: 0; }
+
+/* --- callout ------------------------------------------------------------ */
+
+.callout {
+  border-left: 3px solid var(--aero);
+  background: var(--surface);
+  padding: 1rem 1.2rem;
+  margin: 0 0 1.75rem;
+  font-size: 0.94rem;
+}
+
+.callout p:last-child { margin-bottom: 0; }
+.callout b { font-family: var(--display); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--aero); display: block; margin-bottom: 0.4rem; }
+
+/* --- interactive lab ----------------------------------------------------
+   Controls borrow the schematic vocabulary: mono labels, hairline rules,
+   hydro blue for anything the reader can move.
+   ------------------------------------------------------------------------ */
+
+.panel {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--surface);
+  margin: 0 0 2rem;
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--sunk);
+}
+
+.panel-head h3 {
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.panel-head .tagline {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  color: var(--ink-3);
+  margin-left: auto;
+  letter-spacing: 0.05em;
+}
+
+.panel-body { padding: 1.1rem; }
+
+.stage {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .stage { grid-template-columns: minmax(0, 1fr); }
+}
+
+.plot {
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--ground);
+  position: relative;
+  min-height: 200px;
+}
+
+.plot canvas { display: block; width: 100%; height: 100%; border-radius: 2px; }
+
+.plot .cap {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.9rem 1.4rem;
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+
+.ctl { display: block; }
+
+.ctl > span {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-2);
+  margin-bottom: 0.3rem;
+}
+
+.ctl > span b { color: var(--hydro); font-weight: 400; font-variant-numeric: tabular-nums; }
+
+.ctl input[type="range"] { width: 100%; accent-color: var(--hydro); margin: 0; }
+
+.ctl input[type="number"], .ctl select {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  padding: 0.35rem 0.5rem;
+  color: var(--ink);
+  background: var(--ground);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.btnrow { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; margin-top: 1rem; }
+
+button {
+  font-family: var(--display);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  padding: 0.48rem 0.95rem;
+  color: var(--ink);
+  background: var(--ground);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.14s, color 0.14s;
+}
+
+button:hover { border-color: var(--hydro); color: var(--hydro); }
+button[aria-pressed="true"] { border-color: var(--hydro); color: var(--hydro); background: var(--sunk); }
+button:focus-visible { outline: 2px solid var(--hydro); outline-offset: 2px; }
+
+.readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem 1rem;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--mono);
+}
+
+.readout div span {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 0.2rem;
+}
+
+.readout div b {
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.readout div b.hi { color: var(--hydro); }
+.readout div b.warn { color: var(--aero); }
+
+.verdict {
+  font-family: var(--body);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  border-left: 3px solid var(--hydro);
+  background: var(--sunk);
+  border-radius: 0 2px 2px 0;
+}
+
+.verdict.warn { border-left-color: var(--aero); }
+
+.progress {
+  height: 3px;
+  background: var(--sunk);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 0.9rem;
+}
+
+.progress i { display: block; height: 100%; width: 0; background: var(--hydro); transition: width 0.1s linear; }
+
+.hint {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  color: var(--ink-3);
+  margin-top: 0.7rem;
+  line-height: 1.6;
+}
+
+/* --- long-form document (spec page) ------------------------------------- */
+
+.doc h2 { margin-top: 2.5rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--rule); }
+.doc h3 { margin-top: 1.75rem; }
+.doc ul, .doc ol { margin: 0 0 1.15rem; padding-left: 1.3rem; }
+.doc li { margin-bottom: 0.35rem; }
+.doc pre {
+  background: var(--sunk);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  line-height: 1.65;
+}
+.doc pre code { background: none; padding: 0; font-size: inherit; }
+
+/* --- footer ------------------------------------------------------------- */
+
+.foot {
+  border-top: 1px solid var(--rule);
+  margin-top: 4rem;
+  padding: 1.5rem var(--gap) 3rem;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--ink-3);
+  max-width: none;
+}
+
+/* --- focus -------------------------------------------------------------- */
+
+a:focus-visible, .sidenav a:focus-visible {
+  outline: 2px solid var(--hydro);
+  outline-offset: 3px;
+  border-radius: 1px;
+}

@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concepts</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <path id="plink-path" d="M0 20 H120 L120.0 20.0 121.2 17.1 122.4 14.6 123.6 12.6 124.8 11.1 126.0 10.3 127.2 10.2 128.4 10.7 129.6 11.7 130.8 13.2 132.0 14.9 133.2 16.9 134.4 19.0 135.6 21.0 136.8 22.8 138.0 24.3 139.2 25.4 140.4 26.2 141.6 26.5 142.8 26.4 144.0 25.9 145.2 25.0 146.4 23.9 147.6 22.7 148.8 21.3 150.0 20.0 151.2 18.7 152.4 17.6 153.6 16.8 154.8 16.1 156.0 15.8 157.2 15.7 158.4 15.9 159.6 16.4 160.8 17.0 162.0 17.8 163.2 18.7 164.4 19.6 165.6 20.4 166.8 21.2 168.0 21.9 169.2 22.4 170.4 22.7 171.6 22.8 172.8 22.8 174.0 22.5 175.2 22.2 176.4 21.7 177.6 21.2 178.8 20.6 180.0 20.0 181.2 19.5 182.4 19.0 183.6 18.6 184.8 18.3 186.0 18.2 187.2 18.1 188.4 18.2 189.6 18.4 190.8 18.7 192.0 19.0 193.2 19.4 194.4 19.8 195.6 20.2 196.8 20.5 198.0 20.8 199.2 21.0 200.4 21.2 201.6 21.2 202.8 21.2 204.0 21.1 205.2 21.0 206.4 20.7 207.6 20.5 208.8 20.3 210.0 20.0 211.2 19.8 212.4 19.6 213.6 19.4 214.8 19.3 216.0 19.2 217.2 19.2 218.4 19.2 219.6 19.3 220.8 19.4 222.0 19.6 223.2 19.7 224.4 19.9 225.6 20.1 226.8 20.2 228.0 20.4 229.2 20.4 230.4 20.5 231.6 20.5 232.8 20.5 234.0 20.5 235.2 20.4 236.4 20.3 237.6 20.2 238.8 20.1 240.0 20.0 241.2 19.9 242.4 19.8 243.6 19.7 244.8 19.7 246.0 19.7 247.2 19.7 248.4 19.7 249.6 19.7 250.8 19.8 252.0 19.8 253.2 19.9 254.4 20.0 255.6 20.0 256.8 20.1 258.0 20.2 259.2 20.2 260.4 20.2 261.6 20.2 262.8 20.2 264.0 20.2 265.2 20.2 266.4 20.1 267.6 20.1 268.8 20.0 270.0 20.0 271.2 20.0 272.4 19.9 273.6 19.9 274.8 19.9 276.0 19.9 277.2 19.8 278.4 19.9 279.6 19.9 280.8 19.9 282.0 19.9 283.2 20.0 284.4 20.0 285.6 20.0 286.8 20.0 288.0 20.1 289.2 20.1 290.4 20.1 291.6 20.1 292.8 20.1 294.0 20.1 295.2 20.1 296.4 20.1 297.6 20.0 298.8 20.0 300.0 20.0"/>
+</defs></svg>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+</header>
+
+<div class="shell">
+
+  <nav class="sidenav">
+    <h2>Sections</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="explainers.html">Explainers</a></li>
+      <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="build.html">Build guide</a></li>
+      <li><a href="pipeline.html">Data pipeline</a></li>
+      <li><a href="setups.html">Experimental setups</a></li>
+      <li><a href="rig.html">Proposed rig</a></li>
+      <li><a href="theory.html">Theory</a></li>
+      <li><a href="papers.html">Papers</a></li>
+      <li><a href="concepts.html" aria-current="page">Concepts</a></li>
+    </ul>
+    <h2>On this page</h2>
+    <ul>
+      <li><a href="#acoustics">Acoustics</a></li>
+      <li><a href="#dynamics">Nonlinear dynamics</a></li>
+      <li><a href="#fluids">Fluid mechanics</a></li>
+      <li><a href="#method">Method</a></li>
+    </ul>
+    <div class="tally">
+      <b>22</b> entries<br>
+      grouped by<br>
+      <b>4</b> domains
+    </div>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Reference</p>
+    <h1>Concepts</h1>
+    <p class="lede">The vocabulary the papers assume you already have. Each entry says what the
+    thing is, why it matters here, and which paper to go to for the real treatment. The
+    mathematics lives on <a href="theory.html">the theory page</a>.</p>
+
+    <h2 id="acoustics">Acoustics</h2>
+
+    <h3>Minnaert frequency</h3>
+    <p>A bubble in water is an oscillator. The gas inside is the spring and the water around it is
+    the mass, so a bubble disturbed from equilibrium rings at a natural frequency set almost
+    entirely by its radius. Minnaert derived it in 1933 and it is the single most important
+    formula in this project.</p>
+    <p>Because frequency goes as one over radius, a small bubble rings high and a large one rings
+    low. That is what makes acoustic sizing possible: measure the pitch, recover the bubble.
+    Vazquez did exactly this, reading bubble diameters of 1500 to 4975 &micro;m off a spectral
+    peak. Phillips found 8.66 kHz for a bubble of 0.71 mm.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Minnaert 1933; Phillips 2018 Table 1; Vazquez 2008 Eq. 1</p>
+
+    <h3>Bubble entrainment</h3>
+    <p>When a drop hits water it digs a cavity. The cavity recoils, closes over, and pinches off a
+    small pocket of air below the surface. That pocket is the entrained bubble, and it is the
+    thing that makes the noise. Not the splash, not the crown, not the jet.</p>
+    <p>Phillips proved it with two null experiments. Insert a 0.71 mm rod so the cavity cannot
+    close over the air, and the impact is silent. Add a little washing-up liquid so surface
+    tension drops and entrainment fails, and the impact is silent again. Both times, plenty of
+    visible splashing and no sound at all.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Phillips 2018 Figs. 3 and 7</p>
+
+    <h3>The entrainment window</h3>
+    <p>Entrainment is not universal. It happens reliably only for drops of roughly 1 to 5 mm, and
+    within that, only for a band of impact velocities that depends on the drop size. Outside the
+    window the drop lands silently.</p>
+    <p>For this project that is the central engineering risk, not a curiosity. An optical gate
+    sees every drop; a microphone sees only the ones that ring. A missed drop merges two intervals
+    into one and puts a point in the return map that does not correspond to any real dynamics.
+    Everything about the <a href="rig.html#protocol">Phase 1 protocol</a> follows from this.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Pumphrey et al.; Oguz &amp; Prosperetti; quoted in Phillips 2018 p.2</p>
+
+    <h3>Silent bubbles</h3>
+    <p>The converse also holds, and it is less well known. Chashechkin reports that after an
+    impact <em>&ldquo;quite a few silent bubbles remain in the fluid&rdquo;</em>. A bubble being
+    present does not mean it radiated. What radiates is volume <em>acceleration</em>, which is
+    supplied by the violence of pinch-off, so a bubble that forms gently makes no sound.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Chashechkin 2024 p.93</p>
+
+    <h3>Reverberation</h3>
+    <p>A tank has walls, and walls send the sound back. Phillips found that in a bare tank the
+    recorded underwater packet <em>grows</em> in amplitude before decaying, because reflections
+    keep arriving. Lining the inner walls with 11 mm MDF removed the growth and left a clean
+    monotonic decay.</p>
+    <p>This matters for any attempt to measure damping or decay time from the waveform: an
+    unlined tank gives you the room, not the bubble. It did not affect the airborne signal, which
+    is part of how Phillips proved the two sounds have different paths.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Phillips 2018 Fig. 8</p>
+
+    <h3>Emission-time correction</h3>
+    <p>Sound takes time to travel. A microphone 30 cm away hears the event about 0.9 ms after it
+    happens; a hydrophone 5 cm away in water hears it about 0.03 ms after. If you are comparing
+    two channels, or aligning audio to video frames, you must subtract each sensor&rsquo;s own
+    propagation delay first. Phillips does this and still finds a residual 0.12 ms offset, which
+    they attribute to error in measuring the distances.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Phillips 2018 p.3</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="dynamics">Nonlinear dynamics</h2>
+
+    <h3>Period doubling</h3>
+    <p>At low flow a faucet drips evenly: every interval the same. Turn it up and at some point the
+    rhythm splits into long-short-long-short. Turn it up further and it splits again into a
+    four-beat cycle, then eight, and the splittings come faster and faster until the pattern never
+    repeats. That is the period-doubling route to chaos.</p>
+    <p>Coullet gives the mechanism. After a drop detaches, the residue left hanging <em>rings</em>.
+    If that ringing has died away before the drop refills to its critical volume, every cycle
+    starts identically and dripping is periodic. If it has not, then whether the drop reaches the
+    critical volume early or late depends on the phase of the ringing, so alternately a bigger or
+    smaller drop leaves, and the memory carries forward.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Coullet 2005 p.9; D&rsquo;Innocenzo 1996 Fig. 2</p>
+
+    <h3>Return map</h3>
+    <p>Plot each interval against the next one: T<sub>n</sub> on the horizontal axis,
+    T<sub>n+1</sub> on the vertical. Periodic dripping collapses to a small number of points.
+    Period-1 is a single point on the diagonal. Period-2 is two points straddling it. Chaos
+    spreads into a structured cloud, and the shape of that cloud is a projection of the
+    attractor.</p>
+    <p>It is the standard diagnostic in every chaos paper here, and it is what you can build from
+    nothing but arrival times, which is why acoustic sensing is viable at all.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Roseberry 2008 Figs. 6&ndash;13; Sekatchev 2023 Fig. 2</p>
+
+    <h3>Bifurcation diagram</h3>
+    <p>Sweep the control parameter along the horizontal axis and, at each value, plot every
+    interval the system visits. Periodic regimes appear as a few clean lines; each period doubling
+    splits them; chaos fills bands. It is the map of the whole parameter space in one image.</p>
+    <p>Sekatchev built one experimentally over 22 to 36 ml/min and found something awkward: the
+    real faucet does not climb the ladder monotonically. It returns from period-2 to period-1,
+    revisits regimes, and only becomes chaotic past 34 ml/min. That contradicts the numerical
+    predictions it was tested against.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Sekatchev 2023 Fig. 4; Ambravaneswaran 2000 Fig. 2</p>
+
+    <h3>Hysteresis and coexisting attractors</h3>
+    <p>At certain flow rates the faucet has more than one stable rhythm available, and which one
+    it settles into depends on where it came from. Ambravaneswaran found a zone where the same
+    Weber number gives period-1 if you arrive by increasing flow and period-2 if you arrive by
+    decreasing it. You can observe one or the other, never both.</p>
+    <p>Practically this means <strong>ramp direction is part of the data</strong>. A run taken
+    while opening the valve will not match one taken while closing it, and a protocol that does
+    not record which is which produces data that cannot be reconciled.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Ambravaneswaran 2000 Fig. 4; Coullet 2005 Fig. 3</p>
+
+    <h3>Transient chaos</h3>
+    <p>A system can behave chaotically for a long time and then settle onto a periodic attractor.
+    D&rsquo;Innocenzo found transients lasting 250, 800, and in one case 2200 drops before
+    collapsing into a steady two-beat rhythm.</p>
+    <p>This is a direct constraint on how long you must record. Roseberry&rsquo;s runs were about
+    230 drops. A 230-drop record sitting inside a 2200-drop transient will confidently report
+    chaos where the true long-run behaviour is periodic.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; D&rsquo;Innocenzo 1996 Fig. 6</p>
+
+    <h3>Time-delay embedding</h3>
+    <p>Takens&rsquo; theorem says you can rebuild a multi-dimensional attractor from a single
+    measured time series by using delayed copies of it as the extra coordinates. So one stream of
+    drop intervals can, in principle, reconstruct the full state space of the faucet.</p>
+    <p>Coullet found three dimensions sufficient for this system, backed independently by the
+    linear stability spectrum and by a proper orthogonal decomposition. That is a low number, and
+    it is good news: a low-dimensional attractor is one a modest dataset can resolve.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Coullet 2005 Fig. 8; Vazquez 2008 Eq. 5</p>
+
+    <h3>Correlation dimension</h3>
+    <p>A number that measures how densely an attractor fills its space, computed by counting how
+    many pairs of reconstructed points fall within a distance r of each other and reading the
+    scaling exponent. It is generally not an integer, which is what "fractal" means here.</p>
+    <p>Vazquez measured 3.4 to 5.5 on acoustic data and 1.6 to 2.5 on pressure data from the same
+    events, which is the clearest single piece of evidence that the two channels carry different
+    information. He also documents a practical trap: the textbook prescription for choosing the
+    delay gave values at which the dimension never converged.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Vazquez 2008 Figs. 5 and 9</p>
+
+    <h3>Lyapunov exponent</h3>
+    <p>The rate at which two nearby states pull apart. Positive means chaos in the strict sense:
+    sensitive dependence on initial conditions. It is the standard quantitative test that
+    separates genuine chaos from a noisy periodic signal.</p>
+    <p>Worth knowing before citing anyone: <strong>not one of the eight papers here computes
+    one</strong>, including those that use the word chaos throughout. Regimes are classified by
+    eye from the shape of a return map. That is an obvious gap for this project to fill.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; absent from all eight sources</p>
+
+    <h3>Feigenbaum constants</h3>
+    <p>Universal numbers, &delta; = 4.669 and &alpha; = 2.502, that describe how a period-doubling
+    cascade scales. Every system that reaches chaos this way shares them, regardless of what it is
+    made of, which is why measuring them in a faucet is attractive.</p>
+    <p>Sekatchev tried and failed: the experimental bifurcation diagram never gave a clean enough
+    period-2 to period-4 transition to extract &delta;. He makes an important point about the
+    attempt, though. Because &delta; is built from horizontal spacings it needs the true
+    volumetric flow rate, so the drop-volume calibration is not optional. &alpha; uses only
+    vertical spacings and survives a drops-per-minute axis.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Sekatchev 2023 Eqs. 1&ndash;2</p>
+
+    <h3>Saddle-node and Shilnikov</h3>
+    <p>The dynamical-systems name for what a dripping faucet actually is. As the pendant drop
+    fills, its stable equilibrium shape collides with an unstable one and both vanish: a
+    saddle-node bifurcation. There is then nothing holding the drop, so it necks and detaches, and
+    that detachment throws the system back to the start: a global reinjection.</p>
+    <p>Damped oscillation plus global reinjection is the Shilnikov mechanism for chaos. Coullet
+    argues that the whole faucet is these two standard normal forms coupled together, which is why
+    a two-variable model, a three-dimensional map, and a particle sliding inside a rotating
+    cogwheel all reproduce the same bifurcation diagram.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Coullet 2005 &sect;5&ndash;6</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="fluids">Fluid mechanics</h2>
+
+    <h3>Weber, Ohnesorge, Bond</h3>
+    <p>Three ratios that between them decide the entire behaviour of a faucet. Weber compares the
+    inertia of the incoming liquid to surface tension and is the knob you turn. Ohnesorge compares
+    viscosity to inertia and capillarity. Bond compares gravity to surface tension. The last two
+    are fixed once you choose a fluid and a nozzle.</p>
+    <p>The consequence is sharper than it first looks: Ambravaneswaran found <em>no chaos at
+    all</em> at Ohnesorge 0.1, and chaos only at 0.01. Whether there is a cascade to listen to is
+    decided by the nozzle before any water flows. <a href="theory.html#groups">Worked numbers for
+    water are on the theory page.</a></p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Ambravaneswaran 2000</p>
+
+    <h3>Constant head and Torricelli</h3>
+    <p>Water leaving a hole in a tank moves at a speed set by the depth above the hole, so flow
+    rate scales with the square root of the head. As the tank drains, the head falls and so does
+    the flow.</p>
+    <p>Since flow rate is the bifurcation parameter, a draining reservoir means the control
+    parameter drifts through every run. The literature handles this three ways: fight it with a
+    syringe pump, watch it and hope, or embrace it as a slow sweep. This project pins it
+    geometrically with an <a href="rig.html#why">overflow weir</a>.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Sekatchev 2023 Fig. 1; Roseberry 2008 p.4</p>
+
+    <h3>Pinch-off</h3>
+    <p>The moment the neck connecting a drop to the faucet reaches zero radius and the drop
+    detaches. It is a genuine mathematical singularity and a large research field of its own.</p>
+    <p>The useful fact here is that Coullet shows you can mostly ignore it: pinch-off happens on a
+    much shorter timescale than drop formation, so its details do not affect the dripping
+    dynamics. Simulations declare it done when the neck falls below a threshold and restart.
+    Confusingly, <em>bubble</em> pinch-off underwater is the exact moment the sound begins, so the
+    word does double duty in this project.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Coullet 2005 p.9; Ambravaneswaran 2000</p>
+
+    <h3>Satellite drops</h3>
+    <p>At low flow the stretched neck can pinch a second time near its top, leaving a small
+    satellite drop trailing the main one. Two impacts, two potential plinks, one drip event.</p>
+    <p>Ambravaneswaran sidestep this by working only above a critical Weber number where there is
+    not enough time for the second pinch-off before the next drop forms. For acoustic work
+    satellites are a real hazard, since they can add spurious events to the interval sequence.
+    Worth watching for at low flow rates.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Ambravaneswaran 2000 p.5333</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="method">Method</h2>
+
+    <h3>Drop-volume calibration</h3>
+    <p>Counting drops per minute is not the same as measuring millilitres per minute, because drop
+    volume itself depends on flow rate. Sekatchev measured the relationship across eight valve
+    settings by timing drops while filling a graduated cylinder, and fitted a power law. His drop
+    volumes ranged from 0.032 to 0.047 ml.</p>
+    <p>Without this curve a bifurcation diagram has the wrong horizontal axis and cannot be
+    compared to any simulation. It is a cheap afternoon of work that the rest of the project
+    depends on.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Sekatchev 2023 Fig. 3</p>
+
+    <h3>Detector dead time</h3>
+    <p>Every event detector has a shortest interval it can resolve. Sekatchev&rsquo;s
+    phototransistor could not separate drops closer than 25 ms, and he reports that this caused
+    systematically missed drops, producing visible banding artefacts. Roseberry sampled at 500 Hz,
+    giving 2 ms, against intervals as short as 20 ms.</p>
+    <p>A microphone at 44.1 kHz resolves 23 &micro;s, and at 96 kHz about 10 &micro;s. This is the
+    quantitative case for the whole project, and it is why the acoustic clock is worth
+    building.</p>
+    <p class="num" style="color:var(--ink-3)">&rarr; Sekatchev 2023 p.3; Roseberry 2008 p.2</p>
+  </main>
+
+  <aside class="rail">
+    <div class="note">
+      <b>Two meanings of pinch-off</b>
+      Drop pinch-off at the nozzle sets the interval. Bubble pinch-off underwater sets the sound
+      onset. Different events, same word.
+    </div>
+    <div class="note">
+      <b>Two meanings of spectrum</b>
+      D&rsquo;Innocenzo&rsquo;s &ldquo;drip spectra&rdquo; are bifurcation diagrams, not frequency
+      spectra. Easy to misread.
+    </div>
+    <div class="note">
+      <b>The one gap worth exploiting</b>
+      No Lyapunov exponent anywhere in the collection, including in papers claiming chaos.
+    </div>
+    <div class="note">
+      <b>Full notes</b>
+      Longer treatments live in <code>vault/concepts/</code>, linked from each paper note.
+    </div>
+  </aside>
+
+</div>
+
+<footer class="foot">
+  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  notes in <code>vault/</code>
+</footer>
+
+</body>
+</html>

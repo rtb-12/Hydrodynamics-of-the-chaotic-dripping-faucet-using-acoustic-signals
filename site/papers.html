@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Papers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+</header>
+
+<div class="shell">
+
+  <nav class="sidenav">
+    <h2>Sections</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="explainers.html">Explainers</a></li>
+      <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="build.html">Build guide</a></li>
+      <li><a href="pipeline.html">Data pipeline</a></li>
+      <li><a href="setups.html">Experimental setups</a></li>
+      <li><a href="rig.html">Proposed rig</a></li>
+      <li><a href="theory.html">Theory</a></li>
+      <li><a href="papers.html" aria-current="page">Papers</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
+    </ul>
+    <div class="tally">
+      <b>8</b> papers<br>
+      <b>3</b> with acoustics<br>
+      <b>0</b> with both
+    </div>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Reference</p>
+    <h1>Papers</h1>
+    <p class="lede">Eight distinct works, from nine PDFs. Sorted by what they contribute rather
+    than by date, because the split between the two literatures is the point.</p>
+
+    <h2>Acoustics of drop impact</h2>
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Paper</th><th>Type</th><th>What it gives this project</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Phillips, Agarwal &amp; Jordan 2018<br><small>Sci. Rep. 8:9515 &middot; 10.1038/s41598-018-27813-0</small></td>
+            <td>Experiment</td>
+            <td>The forward model. Plink = entrained bubble at its Minnaert frequency. Silencing tests with a 0.71 mm rod and with surfactant. Airborne and underwater signals share frequency and envelope</td>
+          </tr>
+          <tr>
+            <td>Chashechkin 2024<br><small>Tech. Phys. 69(1) 85&ndash;94 &middot; 10.1134/S106378422470035X</small></td>
+            <td>Experiment</td>
+            <td>Two emission modes. Intrusive at 0.63&ndash;1.40 m/s, impact and splash at 1.9&ndash;4.8 m/s with resonance packets at 31&ndash;94 kHz. Cavity shape sets the spectrum</td>
+          </tr>
+          <tr>
+            <td>Vazquez, Manasseh, S&aacute;nchez &amp; Metcalfe 2008<br><small>Chem. Eng. Sci. 63:5860&ndash;5869 &middot; 10.1016/j.ces.2008.08.032</small></td>
+            <td>Experiment</td>
+            <td>The only paper applying chaos tooling to acoustic data. Submerged nozzle, not a faucet. Proves a 44.1 kHz consumer sound card is enough</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Chaos of the dripping faucet</h2>
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Paper</th><th>Type</th><th>What it gives this project</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Sekatchev 2023<br><small>arXiv:2307.05484 &middot; UBC</small></td>
+            <td>Experiment</td>
+            <td>The passive head-decay sweep, and the cautionary number: a 25 ms detector floor lost drops across 1.17 million events. Real faucets revisit lower-branch regimes rather than climbing a clean cascade</td>
+          </tr>
+          <tr>
+            <td>Roseberry 2008<br><small>College of Wooster</small></td>
+            <td>Experiment</td>
+            <td>The most reproducible small-scale build. Bottle plus Nupro metering valve, laser and photodiode into an NI USB-6009</td>
+          </tr>
+          <tr>
+            <td>Ambravaneswaran, Phillips &amp; Basaran 2000<br><small>Phys. Rev. Lett. 85(25) 5332&ndash;5335</small></td>
+            <td>Theory + validation</td>
+            <td>Slender-jet finite elements against a syringe pump. Reports hysteresis, so ramp direction matters. Also critiques drop-counter experiments in terms that apply to a microphone</td>
+          </tr>
+          <tr>
+            <td>Coullet, Mahadevan &amp; Riera 2004/2005<br><small>arXiv:physics/0408096 &middot; JFM 526:1&ndash;17 &middot; 10.1017/S0022112004002307</small></td>
+            <td>Theory</td>
+            <td>Reduction to two modes: a saddle-node plus a damped oscillatory mode. Embedding dimension 3 suffices, which sets the target for attractor reconstruction from interval data</td>
+          </tr>
+          <tr>
+            <td>D&rsquo;Innocenzo &amp; Renna 1996<br><small>Int. J. Theor. Phys. 35(5) 941&ndash;973</small></td>
+            <td>Theory</td>
+            <td>Variable-mass oscillator models in full, with chaotic transients lasting up to 2200 drops. Sets how long a run must be before the attractor is trustworthy</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <b>The whole point in one row</b>
+      <p>No paper appears in both tables. Full notes for each live in
+      <code>vault/papers/</code>, following the WHY / HOW / WHAT structure.</p>
+    </div>
+  </main>
+
+  <aside class="rail">
+    <div class="note">
+      <b>Nine files, eight papers</b>
+      <code>0408096v1.pdf</code> is the arXiv preprint of the JFM paper. One note covers both.
+    </div>
+    <div class="note">
+      <b>Not reported</b>
+      Where a paper is silent on a specification, the notes say so rather than inferring a value.
+    </div>
+  </aside>
+
+</div>
+
+<footer class="foot">
+  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  notes in <code>vault/</code>
+</footer>
+
+</body>
+</html>

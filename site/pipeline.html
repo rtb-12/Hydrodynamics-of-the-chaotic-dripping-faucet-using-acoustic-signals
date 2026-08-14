@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data pipeline</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <path id="plink-path" d="M0 20 H120 L120.0 20.0 121.2 17.1 122.4 14.6 123.6 12.6 124.8 11.1 126.0 10.3 127.2 10.2 128.4 10.7 129.6 11.7 130.8 13.2 132.0 14.9 133.2 16.9 134.4 19.0 135.6 21.0 136.8 22.8 138.0 24.3 139.2 25.4 140.4 26.2 141.6 26.5 142.8 26.4 144.0 25.9 145.2 25.0 146.4 23.9 147.6 22.7 148.8 21.3 150.0 20.0 151.2 18.7 152.4 17.6 153.6 16.8 154.8 16.1 156.0 15.8 157.2 15.7 158.4 15.9 159.6 16.4 160.8 17.0 162.0 17.8 163.2 18.7 164.4 19.6 165.6 20.4 166.8 21.2 168.0 21.9 169.2 22.4 170.4 22.7 171.6 22.8 172.8 22.8 174.0 22.5 175.2 22.2 176.4 21.7 177.6 21.2 178.8 20.6 180.0 20.0 181.2 19.5 182.4 19.0 183.6 18.6 184.8 18.3 186.0 18.2 187.2 18.1 188.4 18.2 189.6 18.4 190.8 18.7 192.0 19.0 193.2 19.4 194.4 19.8 195.6 20.2 196.8 20.5 198.0 20.8 199.2 21.0 200.4 21.2 201.6 21.2 202.8 21.2 204.0 21.1 205.2 21.0 206.4 20.7 207.6 20.5 208.8 20.3 210.0 20.0 211.2 19.8 212.4 19.6 213.6 19.4 214.8 19.3 216.0 19.2 217.2 19.2 218.4 19.2 219.6 19.3 220.8 19.4 222.0 19.6 223.2 19.7 224.4 19.9 225.6 20.1 226.8 20.2 228.0 20.4 229.2 20.4 230.4 20.5 231.6 20.5 232.8 20.5 234.0 20.5 235.2 20.4 236.4 20.3 237.6 20.2 238.8 20.1 240.0 20.0 241.2 19.9 242.4 19.8 243.6 19.7 244.8 19.7 246.0 19.7 247.2 19.7 248.4 19.7 249.6 19.7 250.8 19.8 252.0 19.8 253.2 19.9 254.4 20.0 255.6 20.0 256.8 20.1 258.0 20.2 259.2 20.2 260.4 20.2 261.6 20.2 262.8 20.2 264.0 20.2 265.2 20.2 266.4 20.1 267.6 20.1 268.8 20.0 270.0 20.0 271.2 20.0 272.4 19.9 273.6 19.9 274.8 19.9 276.0 19.9 277.2 19.8 278.4 19.9 279.6 19.9 280.8 19.9 282.0 19.9 283.2 20.0 284.4 20.0 285.6 20.0 286.8 20.0 288.0 20.1 289.2 20.1 290.4 20.1 291.6 20.1 292.8 20.1 294.0 20.1 295.2 20.1 296.4 20.1 297.6 20.0 298.8 20.0 300.0 20.0"/>
+  <marker id="ar" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0 0 L8 4 L0 8 z"/>
+  </marker>
+</defs></svg>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+</header>
+
+<div class="shell">
+
+  <nav class="sidenav">
+    <h2>Sections</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="explainers.html">Explainers</a></li>
+      <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="build.html">Build guide</a></li>
+      <li><a href="pipeline.html" aria-current="page">Data pipeline</a></li>
+      <li><a href="setups.html">Experimental setups</a></li>
+      <li><a href="rig.html">Proposed rig</a></li>
+      <li><a href="theory.html">Theory</a></li>
+      <li><a href="papers.html">Papers</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
+    </ul>
+    <h2>On this page</h2>
+    <ul>
+      <li><a href="#channels">The three channels</a></li>
+      <li><a href="#timeline">One drop&rsquo;s life</a></li>
+      <li><a href="#chain">Signal chain</a></li>
+      <li><a href="#recording">What to store</a></li>
+      <li><a href="#stages">Six analysis stages</a></li>
+      <li><a href="#novel">The new result</a></li>
+    </ul>
+    <div class="tally">
+      <b>4</b> channels<br>
+      <b>1</b> clock<br>
+      <b>96</b> kHz
+    </div>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Instrumentation</p>
+    <h1>Data collection and analysis</h1>
+    <p class="lede">Use all three sensors. They are not redundant, they play different roles, and
+    the whole design hinges on one decision: put every one of them on the same clock.</p>
+
+    <h2 id="channels">The three channels, and what each is for</h2>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Channel</th><th>Measures</th><th>Its unique job</th><th>Its weakness</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Optical gate</strong></td>
+            <td>drop breaks a light beam</td>
+            <td><strong>Ground truth.</strong> It sees every drop including the silent ones. Nothing else can validate the acoustic clock</td>
+            <td>Tells you nothing <em>about</em> the drop. Needs physical beam access, so it can never be deployed outside a lab</td>
+          </tr>
+          <tr>
+            <td><strong>Surface microphone</strong></td>
+            <td>airborne pressure, ~0.3 Pa</td>
+            <td><strong>The deployable channel.</strong> Exactly what a real leak detector or rain gauge would use</td>
+            <td>About 40 dB weaker than underwater, and competing with room noise</td>
+          </tr>
+          <tr>
+            <td><strong>Hydrophone</strong></td>
+            <td>underwater pressure, ~40 Pa</td>
+            <td><strong>The reference channel.</strong> Best signal-to-noise, cleanest spectrum for reading bubble size</td>
+            <td>Sits in the tank, so it must be far enough out not to perturb the impact. Vazquez used 5 cm</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <b>The framing that makes this coherent</b>
+      <p>The optical gate is your <em>calibration instrument</em>, not your measurement. Its entire
+      job is to prove the acoustic clock misses nothing. Once proven, the science runs on sound,
+      because sound carries information the gate never can, and because sound is what you could
+      actually point at a real dripping tap.</p>
+    </div>
+
+    <p>Why keep both acoustic channels rather than picking one? Because Phillips showed they carry
+    the same frequency and the same envelope, with a cross-correlation peak of 0.777. Recording
+    both lets you measure the roughly 40 dB interface attenuation yourself and check it against
+    their result, which is a free validation of your whole acoustic chain. Then the hydrophone
+    gives you the physics at the best signal-to-noise, and the microphone proves it still works in
+    the configuration a real application would have to use.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="timeline">One drop&rsquo;s life across the sensors</h2>
+
+    <p>The channels do not see the same instant, and knowing the offsets is what lets you match
+    them up.</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Time</th><th>Event</th><th>Which channel sees it</th></tr></thead>
+        <tbody>
+          <tr><td><span class="num">0 ms</span></td><td>Drop detaches from the nozzle</td><td class="nr">none directly, yet this is the event the chaos is about</td></tr>
+          <tr><td><span class="num">~4 ms</span></td><td>Drop crosses the gate beam a few cm down</td><td><strong>optical</strong>, sharp edge</td></tr>
+          <tr><td><span class="num">132 ms</span></td><td>Drop hits the water, from 86 mm</td><td>a weak initial contact pulse on both acoustic channels</td></tr>
+          <tr><td><span class="num">+ a few ms</span></td><td>Crater forms, recoils, closes</td><td class="nr">silent</td></tr>
+          <tr><td><span class="num">&rarr;</span></td><td><strong>Bubble pinches off</strong></td><td><strong>mic + hydrophone</strong>, the strong wave packet</td></tr>
+          <tr><td><span class="num">+ ~2 ms</span></td><td>Ring decays away</td><td>both, then silence</td></tr>
+          <tr><td><span class="num">+ tens of ms</span></td><td>Jet rises, droplets fly, ripples spread</td><td class="nr">silent, all of it</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The gate and the acoustics are therefore separated by one fall time, about
+    <span class="num">132 ms</span> at 86 mm. That is a constant offset, not a distortion, so
+    intervals survive it intact.</p>
+
+    <p>Worth checking rather than assuming: does a bigger drop fall faster and smear that offset?
+    At 86 mm you only reach about 14% of terminal velocity, so drag costs roughly 0.5% of impact
+    speed and the size dependence of fall time is under 0.1 ms. Phillips&rsquo; full
+    terminal-velocity treatment gives 1.29 m/s where naive free fall gives 1.299. The offset holds.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="chain">The signal chain</h2>
+
+    <div class="rig bleed proposed">
+      <div class="rig-head">
+        <h3>Everything on one clock</h3>
+        <span class="tagline">4 channels &middot; 96 kHz &middot; 24 bit</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 330" role="img" aria-label="Signal chain diagram. A microphone, a hydrophone and an optical gate each pass through their own conditioning stage into a single four-channel audio interface, which feeds a laptop running live onset detection that writes event times and short waveform snippets to disk.">
+        <text class="sch-dim" x="20" y="20">SENSORS</text>
+        <text class="sch-dim" x="222" y="20">CONDITIONING</text>
+        <text class="sch-dim" x="430" y="20">ONE CONVERTER</text>
+        <text class="sch-dim" x="614" y="20">STORAGE</text>
+
+        <!-- mic -->
+        <rect class="sch-aero" x="26" y="46" width="16" height="30" rx="8"/>
+        <text class="sch-label" x="52" y="60" style="fill:var(--aero)">microphone</text>
+        <text class="sch-dim" x="52" y="72">0.3 Pa, in air</text>
+        <path class="sch-dash" d="M150 60 H222" marker-end="url(#ar)"/>
+        <rect class="sch-fill" x="222" y="44" width="128" height="32" rx="2"/>
+        <text class="sch-label" x="232" y="64">MIC PREAMP</text>
+
+        <!-- hydrophone -->
+        <circle class="sch-hydro-f" cx="34" cy="140" r="9"/>
+        <path class="sch-hydro" d="M34 131 V116"/>
+        <text class="sch-label key" x="52" y="136">hydrophone</text>
+        <text class="sch-dim" x="52" y="148">40 Pa, in water, 5 cm out</text>
+        <path class="sch-dash" d="M150 140 H222" marker-end="url(#ar)"/>
+        <rect class="sch-fill" x="222" y="124" width="128" height="32" rx="2"/>
+        <text class="sch-label" x="232" y="144">INTEGRATED PREAMP</text>
+
+        <!-- optical gate -->
+        <path class="sch-fill" d="M22 208 h22 v20 h-22 z"/>
+        <path class="sch-fill" d="M96 208 h22 v20 h-22 z"/>
+        <path class="sch-dash" d="M44 218 H96"/>
+        <circle class="sch-drop" cx="70" cy="204" r="4"/>
+        <text class="sch-label" x="52" y="248">optical gate</text>
+        <text class="sch-dim" x="52" y="260">sees every drop</text>
+        <path class="sch-dash" d="M150 218 H222" marker-end="url(#ar)"/>
+        <rect class="sch-fill" x="222" y="202" width="128" height="32" rx="2"/>
+        <text class="sch-label" x="232" y="222">COMPARATOR</text>
+        <text class="sch-dim" x="222" y="248">short pulse, attenuated</text>
+        <text class="sch-dim" x="222" y="260">to line level</text>
+
+        <!-- interface -->
+        <path class="sch-dash" d="M350 60 H420 V140" marker-end="url(#ar)"/>
+        <path class="sch-dash" d="M350 140 H420" marker-end="url(#ar)"/>
+        <path class="sch-dash" d="M350 218 H420 V150" marker-end="url(#ar)"/>
+        <rect class="sch-fill" x="424" y="86" width="140" height="108" rx="3"/>
+        <text class="sch-label" x="436" y="112">4-CHANNEL</text>
+        <text class="sch-label" x="436" y="128">AUDIO</text>
+        <text class="sch-label" x="436" y="144">INTERFACE</text>
+        <text class="sch-dim" x="436" y="166">96 kHz &middot; 24 bit</text>
+        <text class="sch-label key" x="436" y="184">ONE ADC CLOCK</text>
+
+        <!-- laptop -->
+        <path class="sch-dash" d="M564 140 H614" marker-end="url(#ar)"/>
+        <path class="sch-fill" d="M614 96 h116 v72 h-116 z"/>
+        <text class="sch-label" x="624" y="122">LIVE ONSET</text>
+        <text class="sch-label" x="624" y="138">DETECTION</text>
+        <path class="sch-thin" d="M672 168 V196" marker-end="url(#ar)"/>
+        <path class="sch-fill" d="M614 196 h116 v52 h-116 z"/>
+        <text class="sch-label" x="624" y="216">EVENT TIMES</text>
+        <text class="sch-label" x="624" y="232">+ 5 ms SNIPPETS</text>
+
+        <!-- the point -->
+        <path class="sch-hydro" d="M424 214 H564"/>
+        <text class="sch-label key" x="380" y="290">Because all four channels share one converter, there is</text>
+        <text class="sch-label key" x="380" y="304">no clock drift and no timestamp alignment to write.</text>
+        <path class="sch-hydro" d="M494 214 V276"/>
+      </svg>
+      </figure>
+      <figcaption>
+        A light gate&rsquo;s output is just a voltage, so it belongs on an audio channel rather
+        than a separate data acquisition box. That one choice removes the entire class of
+        synchronisation problems from the project.
+      </figcaption>
+    </div>
+
+    <div class="callout">
+      <b>The highest-leverage decision in the build, and it is free</b>
+      <p>Do not put the optical gate on its own DAQ. Feed the photodetector, through a comparator
+      and an attenuator, into the fourth channel of the same interface as the microphone and
+      hydrophone.</p>
+      <p>Now every event on every channel is on one timeline to the sample. No drift over a
+      six-hour run, no alignment code, no sync protocol. Chashechkin did the equivalent with a
+      four-channel 10 MHz interface, and it is why his frames and pressure traces share a time
+      base.</p>
+    </div>
+
+    <p>Two practical notes. Audio inputs are AC-coupled, so a steady voltage level will not pass,
+    but an <em>edge</em> will: make the gate circuit emit a short pulse per drop rather than a
+    level, and it records cleanly. And check the levels, since a 5 V logic pulse will clip a line
+    input that expects about 1 V, so attenuate.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="recording">What to actually store</h2>
+
+    <p>Raw four-channel audio at 96 kHz and 24 bit is <span class="num">1.15 MB/s</span>, which is
+    <span class="num">4.1 GB per hour</span>. For a short validation run that is fine. For anything
+    like Sekatchev&rsquo;s 2.5 days it is hopeless.</p>
+
+    <p>So detect events live and keep only what carries information: the event time, plus a short
+    waveform snippet around each drop.</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Strategy</th><th>Per drop</th><th>1 hour, ~5 drops/s</th><th>1.17 million drops</th></tr></thead>
+        <tbody>
+          <tr><td>Raw continuous</td><td>&mdash;</td><td>4.1 GB</td><td class="nr">~250 GB, impractical</td></tr>
+          <tr><td><strong>Event times + 5 ms snippets</strong></td><td>5.8 kB</td><td><strong>105 MB</strong></td><td><strong>6.7 GB</strong></td></tr>
+          <tr><td>Event times only</td><td>~30 B</td><td>0.5 MB</td><td>35 MB</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Keep the snippets. Five milliseconds at 96 kHz is 480 samples, comfortably more than the
+    2 ms the wave packet lasts, and it is what lets you go back later and extract the spectral peak
+    per drop without re-running the experiment. Storing only event times throws away the entire
+    acoustic half of the project.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="stages">Six analysis stages</h2>
+
+    <div class="rig bleed">
+      <div class="rig-head">
+        <h3>From waveform to bifurcation diagram</h3>
+        <span class="tagline">each stage feeds the next</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 200" role="img" aria-label="Analysis pipeline flow. Raw four-channel recording leads to onset detection, then cross-validation against the optical gate, then interval extraction, then flow-rate calibration, then nonlinear dynamics analysis, and finally per-drop spectral analysis.">
+        <g class="sch-label">
+        <rect class="sch-fill" x="14" y="52" width="104" height="52" rx="2"/>
+        <text x="24" y="74">1 ONSETS</text><text class="sch-dim" x="24" y="90">bandpass, envelope,</text><text class="sch-dim" x="24" y="100">threshold</text>
+        <path class="sch-thin" d="M118 78 H140" marker-end="url(#ar)"/>
+        <rect class="sch-fill" x="142" y="52" width="104" height="52" rx="2"/>
+        <text x="152" y="74">2 VALIDATE</text><text class="sch-dim" x="152" y="90">match against</text><text class="sch-dim" x="152" y="100">the gate</text>
+        <path class="sch-thin" d="M246 78 H268" marker-end="url(#ar)"/>
+        <rect class="sch-fill" x="270" y="52" width="104" height="52" rx="2"/>
+        <text x="280" y="74">3 INTERVALS</text><text class="sch-dim" x="280" y="90">T_n = t_n - t_(n-1)</text>
+        <path class="sch-thin" d="M374 78 H396" marker-end="url(#ar)"/>
+        <rect class="sch-fill" x="398" y="52" width="104" height="52" rx="2"/>
+        <text x="408" y="74">4 CALIBRATE</text><text class="sch-dim" x="408" y="90">drops/min to</text><text class="sch-dim" x="408" y="100">ml/min</text>
+        <path class="sch-thin" d="M502 78 H524" marker-end="url(#ar)"/>
+        <rect class="sch-fill" x="526" y="52" width="104" height="52" rx="2"/>
+        <text x="536" y="74">5 DYNAMICS</text><text class="sch-dim" x="536" y="90">maps, diagrams,</text><text class="sch-dim" x="536" y="100">exponents</text>
+        <path class="sch-thin" d="M578 104 V136" marker-end="url(#ar)"/>
+        <rect class="sch-fill" x="470" y="138" width="216" height="46" rx="2" style="stroke:var(--hydro);stroke-width:2"/>
+        <text class="sch-label key" x="482" y="158">6 PER-DROP SPECTRA</text>
+        <text class="sch-dim" x="482" y="174">the part nobody has done</text>
+        <path class="sch-thin" d="M322 104 V160 H470" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="330" y="176">snippets</text>
+        </g>
+      </svg>
+      </figure>
+    </div>
+
+    <h3>1. Onsets</h3>
+    <p>Bandpass the acoustic channels around the expected bubble band, say 5 to 20 kHz, which kills
+    room rumble and pump hum without touching the signal. Take the envelope, threshold it, and
+    apply a minimum-interval debounce. Roseberry did not debounce and got a spurious spike of
+    zero-length intervals she had to explain away as an artefact; do not repeat that.</p>
+    <p>The gate channel is easier: detect the edge.</p>
+
+    <h3>2. Validation. This is the whole of Phase 1</h3>
+    <p>Match each acoustic event to a gate event within a window, allowing for the constant fall
+    delay. Then report three numbers: <strong>detection rate</strong> (what fraction of real drops
+    the microphone heard), <strong>false positive rate</strong>, and <strong>timing scatter</strong>
+    between the two channels.</p>
+    <p>This is not a preliminary check to skim past. Phillips showed drops outside roughly 1 to
+    5 mm, or outside the right velocity window, entrain no bubble and land silently. A missed drop
+    merges two intervals into one and injects a point into the return map that corresponds to
+    nothing. That does not blur your result, it fabricates structure. <strong>Mapping where in the
+    operating range the acoustic clock is complete is a publishable result on its own.</strong></p>
+
+    <h3>3. Intervals</h3>
+    <p>T<sub>n</sub> = t<sub>n</sub> &minus; t<sub>n&minus;1</sub>. Everything downstream is this
+    one list of numbers.</p>
+
+    <h3>4. Calibrate the control parameter</h3>
+    <p>Catch drops in a graduated cylinder at eight or more valve settings and fit drop volume
+    against period, following Sekatchev. Without this your bifurcation diagram has drops per minute
+    on the horizontal axis instead of millilitres per minute, and drop volume depends
+    non-linearly on flow rate, so the axis is distorted and cannot be compared to anybody&rsquo;s
+    simulation. It costs an afternoon.</p>
+
+    <h3>5. Dynamics</h3>
+    <p>Now the standard toolkit, in increasing order of ambition. Time series of T<sub>n</sub>
+    against index, which is where you spot transients and drift. Return map. Histogram.
+    Bifurcation diagram, both from stationary operating points and from a passive sweep. Delay
+    embedding and correlation dimension. And then the <strong>Lyapunov exponent</strong>, which not
+    one of the eight papers computes, including the ones that use the word chaos throughout.</p>
+    <p>Two constraints from the literature govern how you run this. D&rsquo;Innocenzo found chaotic
+    transients lasting up to 2200 drops, so plan thousands of drops per operating point.
+    Ambravaneswaran found hysteresis, so record which direction you approached each flow rate from
+    or the data will not reconcile.</p>
+
+    <h3>6. Per-drop spectra. The new part</h3>
+    <p>Take each stored snippet, find its spectral peak, and invert Minnaert to get the bubble
+    radius. Now you have a second sequence running alongside T<sub>n</sub>: a sequence of
+    <em>pitches</em>.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="novel">The question nobody has asked</h2>
+
+    <p>You will have two sequences from the same drops: when each one landed, and what note it
+    made. So:</p>
+
+    <div class="callout">
+      <b>Does the pitch sequence period-double at the same flow rates the timing sequence does?</b>
+      <p>If yes, you have a second independent observable for the same attractor, and an acoustic
+      sensor becomes strictly more informative than every optical drop counter in the literature.</p>
+      <p>If no, that is Vazquez&rsquo;s warning coming true, and it is just as interesting.</p>
+    </div>
+
+    <p>The reason to expect yes: Coullet showed the ejected volume fraction falls roughly linearly
+    with flow rate, so drop size co-varies with the control parameter, and drop size sets the
+    bubble, and the bubble sets the pitch. Every link in that chain is established. Nobody has
+    traversed the whole thing.</p>
+
+    <p>The reason to expect no: Vazquez recorded acoustic and pressure signals from the same
+    bubbling flow and found they went chaotic in <em>different regimes</em>, because they report
+    different state variables on timescales two decades apart. His acoustic channel measured bubble
+    size while his pressure channel measured production rate, and the two did not agree.</p>
+
+    <p>Either answer is a result. That is the mark of a well-posed question, and it is where this
+    project stops being a replication and starts being research.</p>
+  </main>
+
+  <aside class="rail">
+    <div class="note">
+      <b>One clock</b>
+      Four channels, one converter, no synchronisation code. This is the decision to get right on
+      day one.
+    </div>
+    <div class="note">
+      <b>Keep the snippets</b>
+      5 ms per drop at 96 kHz is 5.8 kB. Even a million-drop run fits in under 7 GB, and without
+      them the acoustic half of the project is unrecoverable.
+    </div>
+    <div class="note">
+      <b>Debounce</b>
+      Roseberry&rsquo;s histograms carry a spurious line at T = 0 from double triggering, which
+      she calls an artefact of the procedure. A minimum-interval filter prevents it.
+    </div>
+    <div class="note">
+      <b>Record ramp direction</b>
+      Hysteresis is real here. A run taken while opening the valve will not match one taken while
+      closing it at the same nominal rate.
+    </div>
+  </aside>
+
+</div>
+
+<footer class="foot">
+  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  notes in <code>vault/</code>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive lab</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <path id="plink-path" d="M0 20 H120 L120.0 20.0 121.2 17.1 122.4 14.6 123.6 12.6 124.8 11.1 126.0 10.3 127.2 10.2 128.4 10.7 129.6 11.7 130.8 13.2 132.0 14.9 133.2 16.9 134.4 19.0 135.6 21.0 136.8 22.8 138.0 24.3 139.2 25.4 140.4 26.2 141.6 26.5 142.8 26.4 144.0 25.9 145.2 25.0 146.4 23.9 147.6 22.7 148.8 21.3 150.0 20.0 151.2 18.7 152.4 17.6 153.6 16.8 154.8 16.1 156.0 15.8 157.2 15.7 158.4 15.9 159.6 16.4 160.8 17.0 162.0 17.8 163.2 18.7 164.4 19.6 165.6 20.4 166.8 21.2 168.0 21.9 169.2 22.4 170.4 22.7 171.6 22.8 172.8 22.8 174.0 22.5 175.2 22.2 176.4 21.7 177.6 21.2 178.8 20.6 180.0 20.0 181.2 19.5 182.4 19.0 183.6 18.6 184.8 18.3 186.0 18.2 187.2 18.1 188.4 18.2 189.6 18.4 190.8 18.7 192.0 19.0 193.2 19.4 194.4 19.8 195.6 20.2 196.8 20.5 198.0 20.8 199.2 21.0 200.4 21.2 201.6 21.2 202.8 21.2 204.0 21.1 205.2 21.0 206.4 20.7 207.6 20.5 208.8 20.3 210.0 20.0 211.2 19.8 212.4 19.6 213.6 19.4 214.8 19.3 216.0 19.2 217.2 19.2 218.4 19.2 219.6 19.3 220.8 19.4 222.0 19.6 223.2 19.7 224.4 19.9 225.6 20.1 226.8 20.2 228.0 20.4 229.2 20.4 230.4 20.5 231.6 20.5 232.8 20.5 234.0 20.5 235.2 20.4 236.4 20.3 237.6 20.2 238.8 20.1 240.0 20.0 241.2 19.9 242.4 19.8 243.6 19.7 244.8 19.7 246.0 19.7 247.2 19.7 248.4 19.7 249.6 19.7 250.8 19.8 252.0 19.8 253.2 19.9 254.4 20.0 255.6 20.0 256.8 20.1 258.0 20.2 259.2 20.2 260.4 20.2 261.6 20.2 262.8 20.2 264.0 20.2 265.2 20.2 266.4 20.1 267.6 20.1 268.8 20.0 270.0 20.0 271.2 20.0 272.4 19.9 273.6 19.9 274.8 19.9 276.0 19.9 277.2 19.8 278.4 19.9 279.6 19.9 280.8 19.9 282.0 19.9 283.2 20.0 284.4 20.0 285.6 20.0 286.8 20.0 288.0 20.1 289.2 20.1 290.4 20.1 291.6 20.1 292.8 20.1 294.0 20.1 295.2 20.1 296.4 20.1 297.6 20.0 298.8 20.0 300.0 20.0"/>
+</defs></svg>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+</header>
+
+<div class="shell">
+
+  <nav class="sidenav">
+    <h2>Sections</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="explainers.html">Explainers</a></li>
+      <li><a href="lab.html" aria-current="page">Interactive lab</a></li>
+      <li><a href="build.html">Build guide</a></li>
+      <li><a href="pipeline.html">Data pipeline</a></li>
+      <li><a href="setups.html">Experimental setups</a></li>
+      <li><a href="rig.html">Proposed rig</a></li>
+      <li><a href="theory.html">Theory</a></li>
+      <li><a href="papers.html">Papers</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
+    </ul>
+    <h2>On this page</h2>
+    <ul>
+      <li><a href="#faucet">Faucet simulator</a></li>
+      <li><a href="#bifurcation">Bifurcation diagram</a></li>
+      <li><a href="#minnaert">Plink synthesiser</a></li>
+      <li><a href="#groups">Nozzle designer</a></li>
+      <li><a href="#drift">Level-drift check</a></li>
+    </ul>
+    <div class="tally">
+      model <b>D&rsquo;Innocenzo</b><br>
+      verified <b>yes</b><br>
+      libraries <b>none</b>
+    </div>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Interactive</p>
+    <h1>The lab</h1>
+    <p class="lede">Five instruments. The first two run the actual mass-spring faucet model from
+    D&rsquo;Innocenzo and Renna 1996, integrated live in your browser. The third lets you hear
+    what a bubble of a given size sounds like. The last two are design calculators for
+    <a href="rig.html">the rig</a>.</p>
+
+    <div class="callout">
+      <b>Turn the sound on</b>
+      <p>The simulator synthesises a plink for every drop, at the Minnaert frequency of the bubble
+      that drop would entrain. Push the flow rate up and you can hear the rhythm split, and split
+      again, and come apart. That is the whole thesis of this project, audible.</p>
+    </div>
+
+    <!-- ============================ FAUCET ============================ -->
+    <h2 id="faucet">Faucet simulator</h2>
+
+    <div class="panel bleed">
+      <div class="panel-head">
+        <h3>Live integration of the variable-mass oscillator</h3>
+        <span class="tagline">RK4 &middot; dt = 10&#8315;&#8308; s</span>
+      </div>
+      <div class="panel-body">
+        <div class="stage">
+          <div class="plot" style="min-height:300px"><span class="cap">faucet</span><canvas id="cvDrip"></canvas></div>
+          <div class="plot" style="min-height:300px"><span class="cap">T<sub>n</sub> vs n</span><canvas id="cvSeries"></canvas></div>
+          <div class="plot" style="min-height:300px"><span class="cap">T<sub>n</sub> vs T<sub>n+1</sub></span><canvas id="cvMap"></canvas></div>
+        </div>
+
+        <div class="controls">
+          <label class="ctl">
+            <span>Flow rate R <b id="vR">0.55 ml/s</b></span>
+            <input id="inR" type="range" min="0.40" max="1.35" step="0.005" value="0.55">
+          </label>
+          <label class="ctl">
+            <span>Playback speed <b id="vSpeed">0.20&times;</b></span>
+            <input id="inSpeed" type="range" min="0.05" max="1" step="0.05" value="0.2">
+          </label>
+          <label class="ctl">
+            <span>Ring decay &tau; <b id="vTau">6.0 ms</b></span>
+            <input id="inTau" type="range" min="1" max="20" step="0.5" value="6">
+          </label>
+          <label class="ctl">
+            <span>Volume <b id="vVol">25%</b></span>
+            <input id="inVol" type="range" min="0" max="100" step="1" value="25">
+          </label>
+        </div>
+
+        <div class="btnrow">
+          <button id="btnRun" aria-pressed="true">Pause</button>
+          <button id="btnSound" aria-pressed="false">Sound off</button>
+          <button id="btnReset">Reset</button>
+          <button data-jump="0.55">Period 1</button>
+          <button data-jump="0.70">Period 2</button>
+          <button data-jump="0.82">Period 4</button>
+          <button data-jump="1.05">Chaos</button>
+        </div>
+
+        <div class="readout">
+          <div><span>Regime</span><b id="oRegime" class="hi">&mdash;</b></div>
+          <div><span>Mean T</span><b id="oMeanT">&mdash;</b></div>
+          <div><span>Drops</span><b id="oCount">0</b></div>
+          <div><span>Drop &oslash;</span><b id="oDropD">&mdash;</b></div>
+          <div><span>Bubble &oslash;</span><b id="oBubD">&mdash;</b></div>
+          <div><span>Plink pitch</span><b id="oFreq">&mdash;</b></div>
+        </div>
+
+        <p class="hint">Regime is read from the last 48 intervals by looking for the smallest
+        period p with |T<sub>n</sub> &minus; T<sub>n+p</sub>| below 0.2 ms throughout. Changing R
+        clears the history, because a different flow rate is a different attractor.</p>
+      </div>
+    </div>
+
+    <p>The model is Eq. 7 of D&rsquo;Innocenzo and Renna with their breakoff law (i), at their
+    Table I parameters: k = 475 dyn/cm, b = 1 g/s, x<sub>c</sub> = 0.19 cm,
+    &alpha; = 0.25 cm<sup>&minus;1</sup>s. Nothing is tuned for appearance. The drop detaches when
+    the centre of mass falls past x<sub>c</sub>, sheds a mass proportional to its momentum, and the
+    residue keeps oscillating, which is exactly the memory that makes the system chaotic.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <!-- ========================= BIFURCATION ========================= -->
+    <h2 id="bifurcation">Bifurcation diagram</h2>
+
+    <div class="panel bleed">
+      <div class="panel-head">
+        <h3>Every interval the faucet visits, against flow rate</h3>
+        <span class="tagline">computed in your browser</span>
+      </div>
+      <div class="panel-body">
+        <div class="plot" style="min-height:340px"><span class="cap">T<sub>n</sub> [s] vs R [ml/s]</span><canvas id="cvBif"></canvas></div>
+        <div class="progress"><i id="bifBar"></i></div>
+        <div class="btnrow">
+          <button id="btnBif">Compute</button>
+          <span class="hint" id="bifMsg" style="margin-top:0">340 flow rates &times; 200 drops each. Takes a few seconds.</span>
+        </div>
+        <p class="hint">Click anywhere on the diagram to send the simulator above to that flow
+        rate. The vertical marker shows where it currently sits.</p>
+      </div>
+    </div>
+
+    <p>This is the figure the whole field is built around, generated from the same integrator
+    running above. Compare it with Sekatchev&rsquo;s measured version: his real faucet did
+    <em>not</em> climb the ladder cleanly, returning from period-2 to period-1 and only becoming
+    chaotic past 34 ml/min. Model and reality disagree, and that disagreement is a large part of
+    what makes this worth measuring properly.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <!-- ========================== MINNAERT =========================== -->
+    <h2 id="minnaert">Plink synthesiser</h2>
+
+    <div class="panel bleed">
+      <div class="panel-head">
+        <h3>Minnaert frequency, and what it sounds like</h3>
+        <span class="tagline">f = (1/2&pi;a) &radic;(3&gamma;P&#8320;/&rho;)</span>
+      </div>
+      <div class="panel-body">
+        <div class="plot" style="min-height:180px"><span class="cap">pressure vs time</span><canvas id="cvWave"></canvas></div>
+        <div class="controls">
+          <label class="ctl">
+            <span>Bubble radius a <b id="vA">0.355 mm</b></span>
+            <input id="inA" type="range" min="0.08" max="2.5" step="0.005" value="0.355">
+          </label>
+          <label class="ctl">
+            <span>Decay &tau; <b id="vTau2">6.0 ms</b></span>
+            <input id="inTau2" type="range" min="0.5" max="25" step="0.5" value="6">
+          </label>
+        </div>
+        <div class="btnrow">
+          <button id="btnPlay">Play</button>
+          <button data-abtn="0.355">Phillips&rsquo; bubble</button>
+          <button data-abtn="0.75">Vazquez, low flow</button>
+          <button data-abtn="1.25">Vazquez, high flow</button>
+        </div>
+        <div class="readout">
+          <div><span>Frequency</span><b id="oF" class="hi">&mdash;</b></div>
+          <div><span>Period</span><b id="oPer">&mdash;</b></div>
+          <div><span>Cycles in &tau;</span><b id="oCyc">&mdash;</b></div>
+          <div><span>Musical note</span><b id="oNote">&mdash;</b></div>
+        </div>
+        <div class="verdict" id="minnVerdict"></div>
+      </div>
+    </div>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <!-- =========================== GROUPS ============================ -->
+    <h2 id="groups">Nozzle designer</h2>
+    <p>Ambravaneswaran found <strong>no chaos at all</strong> at Ohnesorge 0.1, and chaos only at
+    0.01. Since Oh is fixed by the fluid and the nozzle before any water flows, this calculator
+    decides whether the rig will have anything to listen to.</p>
+
+    <div class="panel bleed">
+      <div class="panel-head">
+        <h3>Ohnesorge, Bond and Weber for your nozzle</h3>
+        <span class="tagline">check before buying</span>
+      </div>
+      <div class="panel-body">
+        <div class="controls">
+          <label class="ctl">
+            <span>Fluid</span>
+            <select id="inFluid">
+              <option value="water" selected>Water, 20 &deg;C</option>
+              <option value="gly70">70% glycerin / water</option>
+              <option value="ethanol">Ethanol</option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+          <label class="ctl">
+            <span>Capillary radius R <b id="vRad">2.00 mm</b></span>
+            <input id="inRad" type="range" min="0.2" max="4" step="0.05" value="2">
+          </label>
+          <label class="ctl">
+            <span>Flow rate Q <b id="vQ">56 ml/min</b></span>
+            <input id="inQ" type="range" min="1" max="300" step="1" value="56">
+          </label>
+        </div>
+        <div class="controls" id="customRow" hidden>
+          <label class="ctl"><span>&rho; [kg/m&sup3;]</span><input id="inRho" type="number" value="998.2" step="0.1"></label>
+          <label class="ctl"><span>&sigma; [N/m]</span><input id="inSig" type="number" value="0.0728" step="0.0001"></label>
+          <label class="ctl"><span>&mu; [Pa&middot;s]</span><input id="inMu" type="number" value="0.001002" step="0.000001"></label>
+        </div>
+        <div class="readout">
+          <div><span>Ohnesorge</span><b id="oOh" class="hi">&mdash;</b></div>
+          <div><span>Bond G</span><b id="oG">&mdash;</b></div>
+          <div><span>Weber</span><b id="oWe">&mdash;</b></div>
+          <div><span>U in capillary</span><b id="oU">&mdash;</b></div>
+          <div><span>Capillary time</span><b id="oTc">&mdash;</b></div>
+          <div><span>Q for We = 0.15</span><b id="oQtarget">&mdash;</b></div>
+        </div>
+        <div class="verdict" id="ohVerdict"></div>
+      </div>
+    </div>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <!-- =========================== DRIFT ============================= -->
+    <h2 id="drift">Level-drift check</h2>
+    <p>The argument for putting an overflow on the <em>lower</em> tank, in numbers you can move.
+    Without one the impact tank fills, the water surface climbs toward the nozzle, and the impact
+    velocity falls during the run.</p>
+
+    <div class="panel bleed">
+      <div class="panel-head">
+        <h3>What happens to fall height over a run</h3>
+        <span class="tagline">free fall, U = &radic;(2gh)</span>
+      </div>
+      <div class="panel-body">
+        <div class="controls">
+          <label class="ctl">
+            <span>Tank side <b id="vSide">12 in</b></span>
+            <input id="inSide" type="range" min="4" max="24" step="1" value="12">
+          </label>
+          <label class="ctl">
+            <span>Flow rate <b id="vQ2">30 ml/min</b></span>
+            <input id="inQ2" type="range" min="5" max="200" step="1" value="30">
+          </label>
+          <label class="ctl">
+            <span>Initial fall height <b id="vH">86 mm</b></span>
+            <input id="inH" type="range" min="20" max="300" step="1" value="86">
+          </label>
+          <label class="ctl">
+            <span>Run duration <b id="vHrs">2.0 h</b></span>
+            <input id="inHrs" type="range" min="0.5" max="12" step="0.5" value="2">
+          </label>
+        </div>
+        <div class="readout">
+          <div><span>Level rise</span><b id="oRise" class="warn">&mdash;</b></div>
+          <div><span>Fall height after</span><b id="oHend">&mdash;</b></div>
+          <div><span>U at start</span><b id="oU0">&mdash;</b></div>
+          <div><span>U at end</span><b id="oU1">&mdash;</b></div>
+          <div><span>Velocity drift</span><b id="oDrift" class="warn">&mdash;</b></div>
+          <div><span>Time to 5% drift</span><b id="oT5">&mdash;</b></div>
+        </div>
+        <div class="verdict" id="driftVerdict"></div>
+      </div>
+    </div>
+
+    <p class="hint">Free fall ignores air drag, which is negligible at these heights: at 86 mm it
+    gives 1.299 m/s against the 1.29 m/s Phillips report using the full terminal-velocity
+    correction.</p>
+  </main>
+
+  <aside class="rail">
+    <div class="note">
+      <b>Verified against the paper</b>
+      This integrator gives period-1 to period-2 between R = 0.605 and 0.610. D&rsquo;Innocenzo
+      report 0.61. Intervals span 0.026 to 0.076 s against their 0.025 to 0.078 s.
+    </div>
+    <div class="note">
+      <b>Playback speed</b>
+      Real intervals here are 25 to 80 ms, so unslowed the faucet buzzes rather than drips.
+      0.2&times; puts it at a recognisable rate.
+    </div>
+    <div class="note">
+      <b>Pitch mapping is illustrative</b>
+      Drop volume gives drop diameter; bubble diameter is taken as 0.1775 of it, extrapolated
+      from Phillips&rsquo; single measured pair of 4.0 mm and 0.71 mm. One data point is not a
+      law.
+    </div>
+    <div class="note">
+      <b>No libraries</b>
+      Canvas and Web Audio only. The page is one file and works offline.
+    </div>
+  </aside>
+
+</div>
+
+<footer class="foot">
+  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  notes in <code>vault/</code>
+</footer>
+
+<script>
+"use strict";
+
+/* ---------------------------------------------------------------- helpers */
+
+const $ = id => document.getElementById(id);
+
+function pal() {
+  const cs = getComputedStyle(document.documentElement);
+  const g = n => cs.getPropertyValue(n).trim();
+  return { ink:g('--ink'), ink2:g('--ink-2'), ink3:g('--ink-3'), rule:g('--rule'),
+           hydro:g('--hydro'), aero:g('--aero'), ground:g('--ground'), surface:g('--surface') };
+}
+let C = pal();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { C = pal(); drawBifCached(); });
+
+function fit(cv) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = cv.getBoundingClientRect();
+  const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+  if (cv.width !== w*dpr || cv.height !== h*dpr) { cv.width = w*dpr; cv.height = h*dpr; }
+  const g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  return { g, w, h };
+}
+
+/* ------------------------------------------------- faucet physics (cgs) */
+/* D'Innocenzo & Renna 1996, Eq. 7 with breakoff law (i), Table I values.  */
+
+const P = { k:475, g:980, b:1, xc:0.19, alpha:0.25, rho:1, m0:0.01, v0:0.1 };
+const DT = 1e-4;
+
+function newState(R) { return { x:0, v:P.v0, M:P.m0, t:0, last:0, R:R }; }
+
+function stepFaucet(s) {
+  const R = s.R, dt = DT;
+  const ax = (x, v, M) => P.g - P.k*x/M - (R + P.b)*v/M;
+  const k1x = s.v,                     k1v = ax(s.x, s.v, s.M);
+  const k2x = s.v + .5*dt*k1v,         k2v = ax(s.x + .5*dt*k1x, s.v + .5*dt*k1v, s.M + .5*dt*R);
+  const k3x = s.v + .5*dt*k2v,         k3v = ax(s.x + .5*dt*k2x, s.v + .5*dt*k2v, s.M + .5*dt*R);
+  const k4x = s.v + dt*k3v,            k4v = ax(s.x + dt*k3x, s.v + dt*k3v, s.M + dt*R);
+  const xn = s.x + dt/6*(k1x + 2*k2x + 2*k3x + k4x);
+  const vn = s.v + dt/6*(k1v + 2*k2v + 2*k3v + k4v);
+  const Mn = s.M + dt*R;
+  s.t += dt;
+  if (xn >= P.xc) {
+    const f  = (xn !== s.x) ? (P.xc - s.x)/(xn - s.x) : 0;
+    const tc = s.t - dt + f*dt;
+    const vc = s.v + f*(vn - s.v), Mc = s.M + f*(Mn - s.M);
+    let dM = P.alpha*Mc*vc;
+    dM = Math.max(1e-9, Math.min(dM, Mc - 1e-4));            // residue must stay positive
+    const r = Math.cbrt(3*dM/(4*Math.PI*P.rho));
+    s.x = P.xc - r*dM/Mc; s.v = vc; s.M = Mc - dM; s.t = tc;
+    const T = tc - s.last; s.last = tc;
+    return { T, dM };
+  }
+  s.x = xn; s.v = vn; s.M = Mn;
+  return null;
+}
+
+/* -------------------------------------------------------------- acoustics */
+
+const MINN = 3.2866;                       // (1/2pi)*sqrt(3*gamma*P0/rho), air in water at 1 atm
+const minnaert = aMetres => MINN/aMetres;
+
+/* Drop mass -> entrained bubble -> pitch. The 0.1775 ratio is extrapolated
+   from Phillips' single pair (4.0 mm drop, 0.71 mm bubble), so treat the
+   absolute pitch as illustrative and the trend as the real content. */
+function dropAcoustics(dM) {
+  const dDrop = Math.cbrt(6*dM/Math.PI);   // cm
+  const dBub  = 0.1775*dDrop;              // cm
+  const a     = dBub/200;                  // m, radius
+  return { f: minnaert(a), dDropMm: dDrop*10, dBubMm: dBub*10 };
+}
+
+let actx = null, soundOn = false;
+function audioCtx() {
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function plink(freq, tauSec, amp) {
+  if (!soundOn || amp <= 0 || !isFinite(freq)) return;
+  const c = audioCtx(), t0 = c.currentTime;
+  const osc = c.createOscillator(), gn = c.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(Math.min(freq, 18000), t0);
+  gn.gain.setValueAtTime(1e-4, t0);
+  gn.gain.exponentialRampToValueAtTime(Math.max(amp, 2e-4), t0 + 0.0008);
+  gn.gain.exponentialRampToValueAtTime(1e-4, t0 + tauSec*5 + 0.002);
+  osc.connect(gn); gn.connect(c.destination);
+  osc.start(t0); osc.stop(t0 + tauSec*5 + 0.03);
+}
+
+function noteName(f) {
+  if (!isFinite(f) || f <= 0) return '—';
+  const n = Math.round(12*Math.log2(f/440)) + 69;
+  const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  return names[((n % 12) + 12) % 12] + (Math.floor(n/12) - 1);
+}
+
+/* ================================================= 1. faucet simulator == */
+
+const sim = {
+  st: newState(0.55), Ts: [], pairs: [], falling: [], ripples: [],
+  count: 0, running: true, speed: 0.2, tau: 0.006, vol: 0.25, lastDrop: null
+};
+
+function simReset(keepR) {
+  const R = keepR ? sim.st.R : 0.55;
+  sim.st = newState(R); sim.Ts = []; sim.pairs = [];
+  sim.falling = []; sim.ripples = []; sim.count = 0; sim.lastDrop = null;
+}
+
+function classify(T) {
+  if (T.length < 48) return null;
+  const w = T.slice(-48), tol = 2e-4;
+  for (let p = 1; p <= 8; p++) {
+    let ok = true;
+    for (let i = 0; i + p < w.length; i++) if (Math.abs(w[i] - w[i+p]) > tol) { ok = false; break; }
+    if (ok) return p;
+  }
+  return 0;
+}
+
+function advance(dtWall) {
+  const dtPhys = Math.min(dtWall, 0.05)*sim.speed;
+  let n = Math.min(Math.round(dtPhys/DT), 4000);
+  while (n-- > 0) {
+    const ev = stepFaucet(sim.st);
+    if (ev) {
+      sim.count++;
+      sim.Ts.push(ev.T); if (sim.Ts.length > 400) sim.Ts.shift();
+      const L = sim.Ts.length;
+      if (L > 1) { sim.pairs.push([sim.Ts[L-2], sim.Ts[L-1]]); if (sim.pairs.length > 500) sim.pairs.shift(); }
+      const ac = dropAcoustics(ev.dM);
+      sim.lastDrop = { T: ev.T, ...ac };
+      sim.falling.push({ y: 0, vy: 0.35, r: Math.cbrt(3*ev.dM/(4*Math.PI))*110, f: ac.f });
+    }
+  }
+}
+
+function drawDrip(dt) {
+  const cv = $('cvDrip'); if (!cv) return;
+  const { g, w, h } = fit(cv);
+  const cx = w/2, nozY = 34, scale = 110, waterY = h - 46;
+
+  g.strokeStyle = C.rule; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(cx - 17, 8); g.lineTo(cx - 17, nozY); g.lineTo(cx + 17, nozY); g.lineTo(cx + 17, 8); g.stroke();
+
+  g.fillStyle = C.hydro; g.globalAlpha = 0.12;
+  g.fillRect(0, waterY, w, h - waterY); g.globalAlpha = 1;
+  g.strokeStyle = C.hydro; g.globalAlpha = 0.5;
+  g.beginPath(); g.moveTo(0, waterY); g.lineTo(w, waterY); g.stroke(); g.globalAlpha = 1;
+
+  const rr = Math.cbrt(3*sim.st.M/(4*Math.PI))*scale;
+  const cy = nozY + sim.st.x*scale + rr*0.55;
+  g.fillStyle = C.hydro; g.globalAlpha = 0.75;
+  g.beginPath();
+  g.moveTo(cx - 9, nozY);
+  g.quadraticCurveTo(cx - rr*0.95, cy - rr*0.55, cx - rr, cy);
+  g.arc(cx, cy, rr, Math.PI, 0, true);
+  g.quadraticCurveTo(cx + rr*0.95, cy - rr*0.55, cx + 9, nozY);
+  g.closePath(); g.fill(); g.globalAlpha = 1;
+
+  g.strokeStyle = C.aero; g.setLineDash([3, 3]); g.lineWidth = 1; g.globalAlpha = 0.7;
+  const ycrit = nozY + P.xc*scale;
+  g.beginPath(); g.moveTo(cx - 46, ycrit); g.lineTo(cx + 46, ycrit); g.stroke();
+  g.setLineDash([]); g.globalAlpha = 1;
+  g.fillStyle = C.aero; g.font = '9px ui-monospace, Menlo, monospace';
+  g.fillText('x_c', cx + 50, ycrit + 3);
+
+  for (let i = sim.falling.length - 1; i >= 0; i--) {
+    const d = sim.falling[i];
+    d.vy += 900*dt; d.y += d.vy*dt*60;
+    const y = nozY + P.xc*scale + d.y;
+    if (y >= waterY) {
+      sim.falling.splice(i, 1);
+      sim.ripples.push({ r: 2, a: 0.8 });
+      plink(d.f, sim.tau, sim.vol);
+      continue;
+    }
+    g.fillStyle = C.hydro; g.globalAlpha = 0.85;
+    g.beginPath(); g.arc(cx, y, Math.max(2, d.r), 0, 6.2832); g.fill(); g.globalAlpha = 1;
+  }
+
+  for (let i = sim.ripples.length - 1; i >= 0; i--) {
+    const rp = sim.ripples[i];
+    rp.r += 90*dt; rp.a -= 1.6*dt;
+    if (rp.a <= 0) { sim.ripples.splice(i, 1); continue; }
+    g.strokeStyle = C.hydro; g.globalAlpha = rp.a; g.lineWidth = 1.2;
+    g.beginPath(); g.ellipse(cx, waterY, rp.r, rp.r*0.28, 0, 0, 6.2832); g.stroke(); g.globalAlpha = 1;
+  }
+}
+
+function drawSeries() {
+  const cv = $('cvSeries'); if (!cv) return;
+  const { g, w, h } = fit(cv);
+  const pad = { l: 40, r: 10, t: 22, b: 24 };
+  const T = sim.Ts.slice(-140);
+  g.strokeStyle = C.rule; g.lineWidth = 1;
+  g.strokeRect(pad.l, pad.t, w - pad.l - pad.r, h - pad.t - pad.b);
+  if (T.length < 2) return;
+  let lo = Math.min(...T), hi = Math.max(...T);
+  const m = Math.max((hi - lo)*0.18, 0.002); lo -= m; hi += m;
+  const X = i => pad.l + (w - pad.l - pad.r)*i/(T.length - 1);
+  const Y = t => pad.t + (h - pad.t - pad.b)*(1 - (t - lo)/(hi - lo));
+  g.fillStyle = C.hydro;
+  for (let i = 0; i < T.length; i++) { g.beginPath(); g.arc(X(i), Y(T[i]), 1.7, 0, 6.2832); g.fill(); }
+  g.fillStyle = C.ink3; g.font = '9px ui-monospace, Menlo, monospace';
+  g.fillText(hi.toFixed(3), 4, pad.t + 4);
+  g.fillText(lo.toFixed(3), 4, h - pad.b);
+  g.fillText('last ' + T.length + ' drops', pad.l, h - 6);
+}
+
+function drawMap() {
+  const cv = $('cvMap'); if (!cv) return;
+  const { g, w, h } = fit(cv);
+  const pad = 30, S = Math.min(w, h) - pad - 12;
+  const ox = pad, oy = h - pad;
+  g.strokeStyle = C.rule; g.lineWidth = 1;
+  g.strokeRect(ox, oy - S, S, S);
+  if (sim.pairs.length < 2) return;
+  let lo = Infinity, hi = -Infinity;
+  for (const p of sim.pairs) { lo = Math.min(lo, p[0], p[1]); hi = Math.max(hi, p[0], p[1]); }
+  const m = Math.max((hi - lo)*0.14, 0.002); lo -= m; hi += m;
+  const X = t => ox + S*(t - lo)/(hi - lo);
+  const Y = t => oy - S*(t - lo)/(hi - lo);
+  g.strokeStyle = C.ink3; g.globalAlpha = 0.5; g.setLineDash([3, 3]);
+  g.beginPath(); g.moveTo(ox, oy); g.lineTo(ox + S, oy - S); g.stroke();
+  g.setLineDash([]); g.globalAlpha = 1;
+  for (let i = 0; i < sim.pairs.length; i++) {
+    const age = i/sim.pairs.length;
+    g.fillStyle = C.hydro; g.globalAlpha = 0.18 + 0.72*age;
+    g.beginPath(); g.arc(X(sim.pairs[i][0]), Y(sim.pairs[i][1]), 2, 0, 6.2832); g.fill();
+  }
+  g.globalAlpha = 1;
+  g.fillStyle = C.ink3; g.font = '9px ui-monospace, Menlo, monospace';
+  g.fillText(lo.toFixed(3), ox - 4, oy + 14);
+  g.fillText(hi.toFixed(3), ox + S - 22, oy + 14);
+}
+
+function updateReadout() {
+  const p = classify(sim.Ts);
+  const el = $('oRegime');
+  el.textContent = p === null ? 'settling' : p === 0 ? 'chaotic' : 'period ' + p;
+  el.className = (p === 0) ? 'warn' : 'hi';
+  const T = sim.Ts.slice(-48);
+  $('oMeanT').textContent = T.length ? (T.reduce((a, b) => a + b, 0)/T.length*1000).toFixed(1) + ' ms' : '—';
+  $('oCount').textContent = sim.count;
+  if (sim.lastDrop) {
+    $('oDropD').textContent = sim.lastDrop.dDropMm.toFixed(2) + ' mm';
+    $('oBubD').textContent  = sim.lastDrop.dBubMm.toFixed(3) + ' mm';
+    $('oFreq').textContent  = (sim.lastDrop.f/1000).toFixed(2) + ' kHz';
+  }
+}
+
+let tPrev = performance.now();
+function loop(now) {
+  const dt = Math.min((now - tPrev)/1000, 0.05); tPrev = now;
+  if (sim.running) advance(dt);
+  drawDrip(dt); drawSeries(); drawMap(); updateReadout();
+  if (bifMark !== null) drawBifCached();
+  requestAnimationFrame(loop);
+}
+
+/* =============================================== 2. bifurcation diagram = */
+
+const BIF = { r0: 0.40, r1: 1.35, cols: 340, transient: 140, keep: 60 };
+let bifData = null, bifMark = null, bifBusy = false;
+
+function computeBif(done) {
+  if (bifBusy) return;
+  bifBusy = true;
+  const data = new Array(BIF.cols);
+  let col = 0;
+  const chunk = () => {
+    const t0 = performance.now();
+    while (col < BIF.cols && performance.now() - t0 < 24) {
+      const R = BIF.r0 + (BIF.r1 - BIF.r0)*col/(BIF.cols - 1);
+      const s = newState(R); const out = [];
+      let n = 0;
+      while (n < BIF.transient + BIF.keep) {
+        const ev = stepFaucet(s);
+        if (ev) { n++; if (n > BIF.transient) out.push(ev.T); }
+      }
+      data[col] = out; col++;
+    }
+    $('bifBar').style.width = (100*col/BIF.cols).toFixed(1) + '%';
+    if (col < BIF.cols) requestAnimationFrame(chunk);
+    else { bifData = data; bifBusy = false; $('bifMsg').textContent = 'Done. Click to set the flow rate.'; done && done(); }
+  };
+  requestAnimationFrame(chunk);
+}
+
+function drawBifCached() {
+  const cv = $('cvBif'); if (!cv) return;
+  const { g, w, h } = fit(cv);
+  const pad = { l: 46, r: 12, t: 16, b: 30 };
+  const iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+  g.strokeStyle = C.rule; g.lineWidth = 1; g.strokeRect(pad.l, pad.t, iw, ih);
+  g.fillStyle = C.ink3; g.font = '9px ui-monospace, Menlo, monospace';
+  if (!bifData) { g.fillText('press Compute', pad.l + 10, pad.t + 20); return; }
+  let lo = Infinity, hi = -Infinity;
+  for (const c of bifData) for (const t of c) { if (t < lo) lo = t; if (t > hi) hi = t; }
+  const m = (hi - lo)*0.05; lo -= m; hi += m;
+  g.fillStyle = C.hydro;
+  for (let i = 0; i < bifData.length; i++) {
+    const x = pad.l + iw*i/(bifData.length - 1);
+    for (const t of bifData[i]) {
+      const y = pad.t + ih*(1 - (t - lo)/(hi - lo));
+      g.globalAlpha = 0.42; g.fillRect(x, y, 1.2, 1.2);
+    }
+  }
+  g.globalAlpha = 1;
+  if (bifMark !== null) {
+    const x = pad.l + iw*(bifMark - BIF.r0)/(BIF.r1 - BIF.r0);
+    g.strokeStyle = C.aero; g.lineWidth = 1.2; g.globalAlpha = 0.85;
+    g.beginPath(); g.moveTo(x, pad.t); g.lineTo(x, pad.t + ih); g.stroke(); g.globalAlpha = 1;
+  }
+  g.fillStyle = C.ink3;
+  g.fillText(hi.toFixed(3) + ' s', 4, pad.t + 8);
+  g.fillText(lo.toFixed(3) + ' s', 4, pad.t + ih);
+  g.fillText(BIF.r0.toFixed(2), pad.l, h - 10);
+  g.fillText(BIF.r1.toFixed(2) + ' ml/s', pad.l + iw - 54, h - 10);
+}
+
+/* ================================================ 3. plink synthesiser == */
+
+function drawWave() {
+  const cv = $('cvWave'); if (!cv) return;
+  const { g, w, h } = fit(cv);
+  const a = parseFloat($('inA').value)/1000;
+  const f = minnaert(a), tau = parseFloat($('inTau2').value)/1000;
+  const span = tau*4, base = h/2;
+  g.strokeStyle = C.rule; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, base); g.lineTo(w, base); g.stroke();
+  g.strokeStyle = C.hydro; g.lineWidth = 1.6; g.beginPath();
+  for (let px = 0; px <= w; px++) {
+    const t = span*px/w;
+    const y = base - (h*0.40)*Math.exp(-t/tau)*Math.sin(2*Math.PI*f*t);
+    px ? g.lineTo(px, y) : g.moveTo(px, y);
+  }
+  g.stroke();
+  g.fillStyle = C.ink3; g.font = '9px ui-monospace, Menlo, monospace';
+  g.fillText('0', 4, h - 6);
+  g.fillText((span*1000).toFixed(1) + ' ms', w - 46, h - 6);
+}
+
+function updateMinnaert() {
+  const a = parseFloat($('inA').value)/1000;
+  const tau = parseFloat($('inTau2').value)/1000;
+  const f = minnaert(a);
+  $('vA').textContent = (a*1000).toFixed(3) + ' mm';
+  $('vTau2').textContent = (tau*1000).toFixed(1) + ' ms';
+  $('oF').textContent = f < 1000 ? f.toFixed(0) + ' Hz' : (f/1000).toFixed(2) + ' kHz';
+  $('oPer').textContent = (1e6/f).toFixed(1) + ' µs';
+  $('oCyc').textContent = (f*tau).toFixed(1);
+  $('oNote').textContent = noteName(f);
+  const v = $('minnVerdict');
+  if (f > 18000) {
+    v.className = 'verdict warn';
+    v.innerHTML = 'Above <b>18 kHz</b>, near or past the edge of adult hearing and of most sound cards&rsquo; useful range. Playback is clamped. Bubbles this small are why Phillips needed a hydrophone and a 400 Hz DFT resolution rather than an ear.';
+  } else if (Math.abs(a*1000 - 0.355) < 0.02) {
+    v.className = 'verdict';
+    v.innerHTML = 'This is Phillips&rsquo; stabilised bubble, 0.71 mm across. Minnaert gives <b>' + (f/1000).toFixed(2) + ' kHz</b>; they recorded <b>8.66 kHz</b>. Their Table 1 reports errors of &minus;4% to &minus;9% for bubbles this size, and much larger ones for smaller bubbles, which they could not explain.';
+  } else {
+    v.className = 'verdict';
+    v.innerHTML = 'Frequency scales as <b>1/a</b>, so halving the bubble doubles the pitch. This is the relation Vazquez inverted to read bubble sizes of 1500 to 4975 &micro;m straight off a spectral peak.';
+  }
+  drawWave();
+}
+
+/* ================================================ 4. nozzle designer ==== */
+
+const FLUIDS = {
+  water:   { rho: 998.2, sig: 0.0728,  mu: 0.001002, label: 'water at 20 &deg;C' },
+  gly70:   { rho: 1181,  sig: 0.0655,  mu: 0.0225,   label: '70% glycerin, approximate tabulated values' },
+  ethanol: { rho: 789,   sig: 0.0223,  mu: 0.00120,  label: 'ethanol at 20 &deg;C' }
+};
+
+function fluidNow() {
+  const key = $('inFluid').value;
+  if (key === 'custom') {
+    return { rho: +$('inRho').value, sig: +$('inSig').value, mu: +$('inMu').value, label: 'your custom fluid' };
+  }
+  return FLUIDS[key];
+}
+
+function updateGroups() {
+  const f = fluidNow();
+  const R = parseFloat($('inRad').value)/1000;             // m
+  const Q = parseFloat($('inQ').value)*1e-6/60;            // m^3/s
+  $('vRad').textContent = (R*1000).toFixed(2) + ' mm';
+  $('vQ').textContent = $('inQ').value + ' ml/min';
+  const A = Math.PI*R*R, U = Q/A;
+  const Oh = f.mu/Math.sqrt(f.rho*R*f.sig);
+  const G  = f.rho*9.81*R*R/f.sig;
+  const We = f.rho*U*U*R/f.sig;
+  const tc = Math.sqrt(f.rho*R*R*R/f.sig);
+  const Utarget = Math.sqrt(0.15*f.sig/(f.rho*R));
+  const Qtarget = Utarget*A*60/1e-6;
+  $('oOh').textContent = Oh.toFixed(4);
+  $('oG').textContent  = G.toFixed(3);
+  $('oWe').textContent = We.toFixed(4);
+  $('oU').textContent  = (U*1000).toFixed(1) + ' mm/s';
+  $('oTc').textContent = (tc*1000).toFixed(1) + ' ms';
+  $('oQtarget').textContent = Qtarget.toFixed(0) + ' ml/min';
+
+  const v = $('ohVerdict');
+  let msg = 'With ' + f.label + ' at R = ' + (R*1000).toFixed(2) + ' mm, ';
+  if (Oh > 0.5) {
+    v.className = 'verdict warn';
+    msg += '<b>Oh = ' + Oh.toFixed(3) + '</b> sits outside the band where the slender-jet model was validated (0.01 to 0.5). Ambravaneswaran report that at Oh of order 1 the faucet goes straight from period-1 to a jet with no cascade at all. Expect nothing to listen to.';
+  } else if (Oh > 0.05) {
+    v.className = 'verdict warn';
+    msg += '<b>Oh = ' + Oh.toFixed(3) + '</b> is in the viscous range. Ambravaneswaran found <em>no chaotic regime at all</em> at Oh = 0.1: period doubling, halving, a jump, then back to period-1 and jetting. A cascade may exist but chaos is not guaranteed.';
+  } else {
+    v.className = 'verdict';
+    msg += '<b>Oh = ' + Oh.toFixed(4) + '</b> is on the low-viscosity side, below the Oh = 0.01 case where Ambravaneswaran did find a strange attractor. This is the promising range.';
+  }
+  if (Math.abs(G - 0.5) < 0.08) {
+    msg += ' Bond number <b>' + G.toFixed(2) + '</b> is close to 0.5, which is their reference &ldquo;system S&rdquo;, so their zone-by-zone bifurcation diagram is the nearest published reference.';
+  }
+  msg += ' Their cascade lives at We between 0.125 and 0.26; you are at <b>We = ' + We.toFixed(3) + '</b>' +
+         (We < 0.125 ? ', below it. Try about ' + Qtarget.toFixed(0) + ' ml/min.' :
+          We > 0.26  ? ', above it, which is jetting territory.' : ', inside it.');
+  v.innerHTML = msg;
+}
+
+/* ================================================== 5. drift check ===== */
+
+function updateDrift() {
+  const side = parseFloat($('inSide').value);            // inches
+  const Q    = parseFloat($('inQ2').value);              // ml/min
+  const h0   = parseFloat($('inH').value);               // mm
+  const hrs  = parseFloat($('inHrs').value);
+  $('vSide').textContent = side + ' in';
+  $('vQ2').textContent = Q + ' ml/min';
+  $('vH').textContent = h0 + ' mm';
+  $('vHrs').textContent = hrs.toFixed(1) + ' h';
+
+  const areaCm2 = Math.pow(side*2.54, 2);
+  const riseCmPerH = Q*60/areaCm2;
+  const riseMm = riseCmPerH*hrs*10;
+  const hEnd = Math.max(0, h0 - riseMm);
+  const U0 = Math.sqrt(2*9.81*h0/1000), U1 = Math.sqrt(2*9.81*hEnd/1000);
+  const drift = h0 > 0 ? (U0 - U1)/U0*100 : 0;
+  // U ~ sqrt(h), so a 5% velocity drop needs h to fall by 1 - 0.95^2 = 9.75%
+  const hoursTo5 = riseCmPerH > 0 ? (h0*0.0975/10)/riseCmPerH : Infinity;
+
+  $('oRise').textContent  = riseMm.toFixed(1) + ' mm';
+  $('oHend').textContent  = hEnd.toFixed(1) + ' mm';
+  $('oU0').textContent    = U0.toFixed(3) + ' m/s';
+  $('oU1').textContent    = U1.toFixed(3) + ' m/s';
+  $('oDrift').textContent = drift.toFixed(1) + '%';
+  $('oT5').textContent    = isFinite(hoursTo5) ? (hoursTo5 < 1 ? (hoursTo5*60).toFixed(0) + ' min' : hoursTo5.toFixed(1) + ' h') : '—';
+
+  const v = $('driftVerdict');
+  if (drift > 10) {
+    v.className = 'verdict warn';
+    v.innerHTML = 'Over ' + hrs.toFixed(1) + ' hours the surface climbs <b>' + riseMm.toFixed(0) + ' mm</b> and impact velocity falls <b>' + drift.toFixed(0) + '%</b>. Bubble entrainment only happens inside a velocity window, so a drift this large can walk the rig out of the audible regime mid-run and the microphone starts missing drops for reasons unrelated to the dynamics. Fit the lower overflow.';
+  } else if (drift > 3) {
+    v.className = 'verdict warn';
+    v.innerHTML = 'A <b>' + drift.toFixed(1) + '%</b> velocity drift over the run. Small, but it is a systematic trend rather than noise, so it will show up as slow curvature in the interval series and be mistaken for dynamics. You reach 5% in about ' + (isFinite(hoursTo5) ? (hoursTo5 < 1 ? (hoursTo5*60).toFixed(0) + ' minutes' : hoursTo5.toFixed(1) + ' hours') : 'never') + '.';
+  } else {
+    v.className = 'verdict';
+    v.innerHTML = 'Velocity drift stays under <b>' + drift.toFixed(1) + '%</b> here, so this combination is tolerable even without the lower overflow. Push the flow rate or the run duration up and watch how quickly that stops being true.';
+  }
+}
+
+/* =========================================================== wiring ===== */
+
+function bindRange(id, out, fmt, after) {
+  const el = $(id);
+  const sync = () => { if (out) $(out).textContent = fmt(parseFloat(el.value)); after && after(); };
+  el.addEventListener('input', sync); sync();
+}
+
+bindRange('inR', 'vR', v => v.toFixed(3) + ' ml/s', () => {
+  sim.st.R = parseFloat($('inR').value); bifMark = sim.st.R;
+  sim.Ts = []; sim.pairs = [];                    // a new flow rate is a new attractor
+});
+bindRange('inSpeed', 'vSpeed', v => v.toFixed(2) + '×', () => sim.speed = parseFloat($('inSpeed').value));
+bindRange('inTau', 'vTau', v => v.toFixed(1) + ' ms', () => sim.tau = parseFloat($('inTau').value)/1000);
+bindRange('inVol', 'vVol', v => v.toFixed(0) + '%', () => sim.vol = parseFloat($('inVol').value)/100*0.5);
+
+$('btnRun').addEventListener('click', e => {
+  sim.running = !sim.running;
+  e.target.textContent = sim.running ? 'Pause' : 'Run';
+  e.target.setAttribute('aria-pressed', String(sim.running));
+});
+$('btnSound').addEventListener('click', e => {
+  soundOn = !soundOn;
+  if (soundOn) audioCtx();
+  e.target.textContent = soundOn ? 'Sound on' : 'Sound off';
+  e.target.setAttribute('aria-pressed', String(soundOn));
+});
+$('btnReset').addEventListener('click', () => simReset(true));
+
+document.querySelectorAll('[data-jump]').forEach(b => b.addEventListener('click', () => {
+  $('inR').value = b.dataset.jump;
+  $('inR').dispatchEvent(new Event('input'));
+  simReset(true);
+}));
+
+$('btnBif').addEventListener('click', () => {
+  $('bifMsg').textContent = 'Integrating…';
+  computeBif(drawBifCached);
+});
+$('cvBif').addEventListener('click', ev => {
+  const r = ev.currentTarget.getBoundingClientRect();
+  const pad = { l: 46, r: 12 };
+  const frac = (ev.clientX - r.left - pad.l)/(r.width - pad.l - pad.r);
+  if (frac < 0 || frac > 1) return;
+  const R = BIF.r0 + (BIF.r1 - BIF.r0)*frac;
+  $('inR').value = R.toFixed(3);
+  $('inR').dispatchEvent(new Event('input'));
+  simReset(true);
+  document.getElementById('faucet').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+['inA', 'inTau2'].forEach(id => $(id).addEventListener('input', updateMinnaert));
+$('btnPlay').addEventListener('click', () => {
+  soundOn = true;
+  $('btnSound').textContent = 'Sound on';
+  $('btnSound').setAttribute('aria-pressed', 'true');
+  audioCtx();
+  plink(minnaert(parseFloat($('inA').value)/1000), parseFloat($('inTau2').value)/1000, 0.22);
+});
+document.querySelectorAll('[data-abtn]').forEach(b => b.addEventListener('click', () => {
+  $('inA').value = b.dataset.abtn; updateMinnaert();
+}));
+
+$('inFluid').addEventListener('change', () => {
+  const custom = $('inFluid').value === 'custom';
+  $('customRow').hidden = !custom;
+  if (!custom) {
+    const f = FLUIDS[$('inFluid').value];
+    $('inRho').value = f.rho; $('inSig').value = f.sig; $('inMu').value = f.mu;
+  }
+  updateGroups();
+});
+['inRad', 'inQ', 'inRho', 'inSig', 'inMu'].forEach(id => $(id).addEventListener('input', updateGroups));
+['inSide', 'inQ2', 'inH', 'inHrs'].forEach(id => $(id).addEventListener('input', updateDrift));
+
+window.addEventListener('resize', () => { drawBifCached(); drawWave(); });
+
+bifMark = 0.55;
+updateMinnaert(); updateGroups(); updateDrift(); drawBifCached();
+requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>

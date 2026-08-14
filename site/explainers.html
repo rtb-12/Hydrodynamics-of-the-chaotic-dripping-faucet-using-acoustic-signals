@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explainers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <path id="plink-path" d="M0 20 H120 L120.0 20.0 121.2 17.1 122.4 14.6 123.6 12.6 124.8 11.1 126.0 10.3 127.2 10.2 128.4 10.7 129.6 11.7 130.8 13.2 132.0 14.9 133.2 16.9 134.4 19.0 135.6 21.0 136.8 22.8 138.0 24.3 139.2 25.4 140.4 26.2 141.6 26.5 142.8 26.4 144.0 25.9 145.2 25.0 146.4 23.9 147.6 22.7 148.8 21.3 150.0 20.0 151.2 18.7 152.4 17.6 153.6 16.8 154.8 16.1 156.0 15.8 157.2 15.7 158.4 15.9 159.6 16.4 160.8 17.0 162.0 17.8 163.2 18.7 164.4 19.6 165.6 20.4 166.8 21.2 168.0 21.9 169.2 22.4 170.4 22.7 171.6 22.8 172.8 22.8 174.0 22.5 175.2 22.2 176.4 21.7 177.6 21.2 178.8 20.6 180.0 20.0 181.2 19.5 182.4 19.0 183.6 18.6 184.8 18.3 186.0 18.2 187.2 18.1 188.4 18.2 189.6 18.4 190.8 18.7 192.0 19.0 193.2 19.4 194.4 19.8 195.6 20.2 196.8 20.5 198.0 20.8 199.2 21.0 200.4 21.2 201.6 21.2 202.8 21.2 204.0 21.1 205.2 21.0 206.4 20.7 207.6 20.5 208.8 20.3 210.0 20.0 211.2 19.8 212.4 19.6 213.6 19.4 214.8 19.3 216.0 19.2 217.2 19.2 218.4 19.2 219.6 19.3 220.8 19.4 222.0 19.6 223.2 19.7 224.4 19.9 225.6 20.1 226.8 20.2 228.0 20.4 229.2 20.4 230.4 20.5 231.6 20.5 232.8 20.5 234.0 20.5 235.2 20.4 236.4 20.3 237.6 20.2 238.8 20.1 240.0 20.0 241.2 19.9 242.4 19.8 243.6 19.7 244.8 19.7 246.0 19.7 247.2 19.7 248.4 19.7 249.6 19.7 250.8 19.8 252.0 19.8 253.2 19.9 254.4 20.0 255.6 20.0 256.8 20.1 258.0 20.2 259.2 20.2 260.4 20.2 261.6 20.2 262.8 20.2 264.0 20.2 265.2 20.2 266.4 20.1 267.6 20.1 268.8 20.0 270.0 20.0 271.2 20.0 272.4 19.9 273.6 19.9 274.8 19.9 276.0 19.9 277.2 19.8 278.4 19.9 279.6 19.9 280.8 19.9 282.0 19.9 283.2 20.0 284.4 20.0 285.6 20.0 286.8 20.0 288.0 20.1 289.2 20.1 290.4 20.1 291.6 20.1 292.8 20.1 294.0 20.1 295.2 20.1 296.4 20.1 297.6 20.0 298.8 20.0 300.0 20.0"/>
+</defs></svg>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+</header>
+
+<div class="shell">
+
+  <nav class="sidenav">
+    <h2>Sections</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="explainers.html" aria-current="page">Explainers</a></li>
+      <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="build.html">Build guide</a></li>
+      <li><a href="pipeline.html">Data pipeline</a></li>
+      <li><a href="setups.html">Experimental setups</a></li>
+      <li><a href="rig.html">Proposed rig</a></li>
+      <li><a href="theory.html">Theory</a></li>
+      <li><a href="papers.html">Papers</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
+    </ul>
+    <h2>On this page</h2>
+    <ul>
+      <li><a href="#plink">1. Where the plink comes from</a></li>
+      <li><a href="#memory">2. Why the rhythm splits</a></li>
+      <li><a href="#universal">3. Why 4.669 matters</a></li>
+    </ul>
+    <div class="tally">
+      <b>3</b> mechanisms<br>
+      all <b>animated</b><br>
+      no <b>libraries</b>
+    </div>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Understanding</p>
+    <h1>Three explainers</h1>
+    <p class="lede">The three ideas this whole project rests on, each one animated rather than
+    described. If you understand these, everything else on this site is detail.</p>
+
+    <!-- ===================== 1. THE PLINK ===================== -->
+    <h2 id="plink">1. Where the plink comes from</h2>
+
+    <p>You would assume the sound of a drop is the splash. It is not, and this was only settled in
+    2018. Watch what actually happens, and notice <strong>when the sound starts</strong>.</p>
+
+    <div class="panel bleed">
+      <div class="panel-head">
+        <h3>One drop impact, slowed about 200 times</h3>
+        <span class="tagline">geometry from Phillips 2018 at 30,000 fps</span>
+      </div>
+      <div class="panel-body">
+        <div class="plot" style="min-height:300px"><span class="cap">cross-section</span><canvas id="cvImpact"></canvas></div>
+        <div class="plot" style="min-height:120px; margin-top:0.7rem"><span class="cap">hydrophone</span><canvas id="cvImpactSnd"></canvas></div>
+        <div class="controls">
+          <label class="ctl">
+            <span>Scrub <b id="vPhase">0%</b></span>
+            <input id="inPhase" type="range" min="0" max="1000" step="1" value="0">
+          </label>
+          <label class="ctl">
+            <span>Speed <b id="vISpeed">1.0&times;</b></span>
+            <input id="inISpeed" type="range" min="0.2" max="2" step="0.1" value="1">
+          </label>
+        </div>
+        <div class="btnrow">
+          <button id="btnImpact" aria-pressed="true">Pause</button>
+          <button id="btnImpactSnd" aria-pressed="false">Sound off</button>
+          <button id="btnImpactReplay">Replay</button>
+        </div>
+        <div class="verdict" id="impactStage"></div>
+      </div>
+    </div>
+
+    <h3>What you just watched</h3>
+    <ol>
+      <li><strong>The drop punches a crater.</strong> Its momentum pushes the water aside and digs
+      a cavity. Phillips measured this at 2.27 mm across for a 4 mm drop.</li>
+      <li><strong>The crater recoils.</strong> Surface tension and pressure push it back closed,
+      and the walls rush inward at the top.</li>
+      <li><strong>The closing walls pinch off a pocket of air.</strong> A bubble roughly 0.7 mm
+      across, trapped about 4.5 mm below the surface. <strong>This is the instant the sound
+      begins.</strong></li>
+      <li><strong>The bubble rings.</strong> The air inside is a spring, the water around it is
+      the mass. Squeeze it and it bounces back, overshoots, bounces again, dying away over about
+      two milliseconds.</li>
+      <li><strong>Everything after that is silent.</strong> The jet, the secondary droplets, the
+      ripples: all visually dramatic and all acoustically nothing.</li>
+    </ol>
+
+    <div class="callout">
+      <b>How they proved it</b>
+      <p>Two null experiments, both beautifully simple. Put a 0.71 mm rod in the way so the crater
+      cannot close over and trap air: <strong>complete silence</strong>, with the same visible
+      splash. Add a drop of washing-up liquid so surface tension cannot form the bubble:
+      <strong>complete silence again</strong>.</p>
+      <p>Same splash, no bubble, no sound. The bubble is the plink.</p>
+    </div>
+
+    <p>Why the pitch depends on size: a bigger bubble has more air to compress, so it is a softer
+    spring, and more water to move, so it is a heavier mass. Both make it slower. That is
+    Minnaert&rsquo;s 1933 result, and it is what makes the sound <em>informative</em> rather than
+    just a signal. <a href="lab.html#minnaert">Hear the pitch move with size in the lab.</a></p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <!-- ===================== 2. MEMORY ===================== -->
+    <h2 id="memory">2. Why the rhythm splits</h2>
+
+    <p>A drop detaches and <strong>does not take all the water with it</strong>. The residue left
+    hanging on the nozzle is wobbling, because it has just been snapped off. The next drop grows
+    on top of that wobble.</p>
+
+    <p>Below, every drop cycle is drawn on top of the previous ones, all starting from the moment
+    of detachment. The line is how far the drop has stretched down; the orange line is the
+    critical stretch at which it lets go.</p>
+
+    <div class="panel bleed">
+      <div class="panel-head">
+        <h3>Successive drop cycles, overlaid</h3>
+        <span class="tagline">real model, not a cartoon</span>
+      </div>
+      <div class="panel-body">
+        <div class="plot" style="min-height:300px"><span class="cap">stretch x vs time since last drop</span><canvas id="cvMem"></canvas></div>
+        <div class="controls">
+          <label class="ctl">
+            <span>Flow rate R <b id="vMR">0.50 ml/s</b></span>
+            <input id="inMR" type="range" min="0.40" max="1.10" step="0.005" value="0.50">
+          </label>
+        </div>
+        <div class="btnrow">
+          <button data-mjump="0.50">Slow: cycles coincide</button>
+          <button data-mjump="0.70">Faster: two families</button>
+          <button data-mjump="0.82">Faster still: four</button>
+          <button data-mjump="1.00">Fast: never repeats</button>
+        </div>
+        <div class="readout">
+          <div><span>Distinct cycles</span><b id="oMemP" class="hi">&mdash;</b></div>
+          <div><span>Interval spread</span><b id="oMemSpread">&mdash;</b></div>
+        </div>
+        <div class="verdict" id="memVerdict"></div>
+      </div>
+    </div>
+
+    <p>At low flow the wobble has died away before the drop is ready to go, so every cycle starts
+    from the same still condition and the traces land exactly on top of one another. Turn the flow
+    up and the drop reaches the critical line <em>while the residue is still moving</em>. Now
+    whether it tips over early or late depends on which way the wobble happened to be going, so
+    consecutive cycles differ, and the difference feeds forward into the next one.</p>
+
+    <p>That is memory, and memory is the whole source of the complexity. The controlling quantity
+    is a ratio: <strong>how long the wobble lasts, against how long the drop takes to
+    refill</strong>. Coullet calls it &tau;<sub>f</sub>/&tau;<sub>d</sub>. Nothing else about the
+    system needs to change for chaos to appear; you just need refilling to outpace forgetting.</p>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <!-- ===================== 3. UNIVERSALITY ===================== -->
+    <h2 id="universal">3. Why the number 4.669 matters</h2>
+
+    <p>Here is a system with no water in it at all. Rabbits. Next year&rsquo;s population depends
+    on this year&rsquo;s, but crowding reduces growth:</p>
+
+    <div class="eq">
+      <span class="tag">The logistic map</span>
+      <b>x</b><sub>n+1</sub> = r &middot; x<sub>n</sub> &middot; (1 &minus; x<sub>n</sub>)
+      <dl>
+        <dt>x<sub>n</sub></dt><dd>population in year n, as a fraction of the maximum</dd>
+        <dt>r</dt><dd>growth rate. The control parameter, playing the role of flow rate</dd>
+      </dl>
+    </div>
+
+    <p>No surface tension. No gravity. No drops. Just multiplication. And yet:</p>
+
+    <div class="panel bleed">
+      <div class="panel-head">
+        <h3>The same cascade, in arithmetic</h3>
+        <span class="tagline">x &rarr; rx(1&minus;x)</span>
+      </div>
+      <div class="panel-body">
+        <div class="plot" style="min-height:340px"><span class="cap">x vs r</span><canvas id="cvLog"></canvas></div>
+        <div class="controls">
+          <label class="ctl">
+            <span>Zoom into r <b id="vLogR">2.400 &ndash; 4.000</b></span>
+            <input id="inLogR" type="range" min="0" max="100" step="1" value="0">
+          </label>
+        </div>
+        <div class="hint">Drag to zoom toward the accumulation point at r = 3.5699. The structure
+        repeats at every scale, which is what self-similarity means here.</div>
+      </div>
+    </div>
+
+    <p>Compare that with <a href="lab.html#bifurcation">the faucet&rsquo;s bifurcation diagram</a>.
+    Same shape, same order, same self-similar structure. One is a fluid held together by surface
+    tension; the other is a single line of arithmetic.</p>
+
+    <h3>The part that should feel strange</h3>
+    <p>Measure how fast the splittings pile up. Take the gap between consecutive splitting points
+    and divide by the next gap:</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Splits to period</th><th>Happens at r =</th><th>Gap</th><th>Ratio to next gap</th></tr></thead>
+        <tbody>
+          <tr><td>2</td><td>3.000000</td><td>&mdash;</td><td>&mdash;</td></tr>
+          <tr><td>4</td><td>3.449490</td><td>0.449490</td><td>&mdash;</td></tr>
+          <tr><td>8</td><td>3.544090</td><td>0.094600</td><td><strong>4.7515</strong></td></tr>
+          <tr><td>16</td><td>3.564407</td><td>0.020317</td><td><strong>4.6562</strong></td></tr>
+          <tr><td>32</td><td>3.568759</td><td>0.004352</td><td><strong>4.6684</strong></td></tr>
+          <tr><td>&infin;</td><td>3.569946</td><td>&rarr; 0</td><td>&rarr; <strong>4.669201&hellip;</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Each splitting arrives 4.669 times sooner than the one before. Feigenbaum found this in
+    1975 on a pocket calculator, and then found the thing that made it famous: <strong>the number
+    does not depend on the equation</strong>. Change the formula, keep the single-humped shape,
+    and you get 4.669 again. Rabbits, a laser, a driven pendulum, a convecting fluid, a heartbeat,
+    a dripping tap.</p>
+
+    <div class="callout">
+      <b>Why that is a big deal</b>
+      <p>4.669 contains no surface tension, no viscosity, no gravity. It is a pure number like
+      &pi;, and it falls out of systems that share no physics at all. What it says is that the
+      <em>route</em> to chaos has a structure independent of what is travelling it. Nature reuses
+      the same machinery.</p>
+      <p>Measuring it in a laser needs a laser lab. In a convecting fluid, a thermal chamber. In a
+      tap, a stopwatch. That is why Robert Shaw abandoned a nearly finished doctorate in 1977 to
+      go and study dripping.</p>
+    </div>
+
+    <p>And the open door: <strong>nobody has extracted 4.669 from a real faucet.</strong> Sekatchev
+    tried with 1.17 million drops and could not, because his cascade was not clean enough to
+    isolate the splittings, partly because his detector could not resolve intervals below 25 ms.
+    That is a measurement problem, and a sharper clock is exactly what this project is
+    building.</p>
+  </main>
+
+  <aside class="rail">
+    <div class="note">
+      <b>Impact geometry</b>
+      Cavity radius 2.27 mm, entrainment depth 4.54 mm, stabilised bubble 0.71 mm, all measured
+      by Phillips against a 0.71 mm sizing rod at 30,000 fps.
+    </div>
+    <div class="note">
+      <b>The silence result</b>
+      Only the bubble radiates. Ripples travel at 0.5 m/s, far below the speed of sound in air,
+      so they cannot make pressure waves at all. Airborne droplets are quadrupole sources and
+      hopelessly inefficient.
+    </div>
+    <div class="note">
+      <b>Cycle overlay</b>
+      Traces come from the same verified integrator as the lab, so what you see is the model, not
+      an illustration of it.
+    </div>
+    <div class="note">
+      <b>Feigenbaum values</b>
+      Logistic-map splitting points are standard published values; the ratios are computed from
+      them on the fly.
+    </div>
+  </aside>
+
+</div>
+
+<footer class="foot">
+  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  notes in <code>vault/</code>
+</footer>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+function pal(){const c=getComputedStyle(document.documentElement),g=n=>c.getPropertyValue(n).trim();
+  return {ink:g('--ink'),ink2:g('--ink-2'),ink3:g('--ink-3'),rule:g('--rule'),
+          hydro:g('--hydro'),aero:g('--aero'),ground:g('--ground'),surface:g('--surface')};}
+let C = pal();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{C=pal();drawLog();});
+function fit(cv){const d=window.devicePixelRatio||1,r=cv.getBoundingClientRect();
+  const w=Math.max(1,Math.round(r.width)),h=Math.max(1,Math.round(r.height));
+  if(cv.width!==w*d||cv.height!==h*d){cv.width=w*d;cv.height=h*d;}
+  const g=cv.getContext('2d');g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,w,h);return{g,w,h};}
+
+/* ---- audio ---- */
+let actx=null, sndOn=false;
+function ac(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+  if(actx.state==='suspended')actx.resume();return actx;}
+function plink(f,tau,amp){ if(!sndOn)return;
+  const c=ac(),t0=c.currentTime,o=c.createOscillator(),g=c.createGain();
+  o.type='sine';o.frequency.setValueAtTime(f,t0);
+  g.gain.setValueAtTime(1e-4,t0);
+  g.gain.exponentialRampToValueAtTime(amp,t0+0.0008);
+  g.gain.exponentialRampToValueAtTime(1e-4,t0+tau*5+0.002);
+  o.connect(g);g.connect(c.destination);o.start(t0);o.stop(t0+tau*5+0.03);}
+
+/* ============ 1. impact animation ============ */
+/* Phase map. Pinch-off, and therefore sound onset, sits at p = 0.50. */
+const PINCH = 0.50;
+const imp = { p: 0, playing: true, speed: 1, fired: false };
+
+const STAGES = [
+  [0.00,'The drop falls. Nothing has happened yet.'],
+  [0.12,'Contact. The drop&rsquo;s momentum starts pushing water aside.'],
+  [0.20,'The crater deepens. Phillips measured 2.27 mm across for a 4 mm drop.'],
+  [0.38,'The crater recoils. Surface tension pulls it back and the walls rush inward at the top.'],
+  [0.50,'<b>Pinch-off. A 0.71 mm bubble is trapped 4.5 mm down, and the sound begins here.</b>'],
+  [0.60,'The bubble rings. Air is the spring, the surrounding water is the mass.'],
+  [0.72,'A jet rises. Visually dramatic, and completely silent.'],
+  [0.88,'The surface settles. The sound finished long ago.']
+];
+
+function surfaceY(x, cx, depth, width, baseY){
+  const d = Math.exp(-Math.pow((x-cx)/width,2));
+  const rim = 0.28*Math.exp(-Math.pow((Math.abs(x-cx)-width*1.45)/(width*0.7),2));
+  return baseY + depth*d - depth*rim;
+}
+
+function drawImpact(){
+  const cv=$('cvImpact'); if(!cv) return;
+  const {g,w,h}=fit(cv);
+  const cx=w/2, baseY=h*0.42, p=imp.p;
+
+  // water body, following the deformed surface
+  let depth=0, width=Math.max(26,w*0.05), jet=0, bubR=0, bubY=0, showBub=false;
+  if(p<0.12){ depth=0; }
+  else if(p<0.38){ const q=(p-0.12)/0.26; depth=h*0.26*Math.sin(q*Math.PI/2); width=Math.max(26,w*0.045)*(1+q*0.9); }
+  else if(p<PINCH){ const q=(p-0.38)/(PINCH-0.38); depth=h*0.26*(1-q*0.72); width=Math.max(26,w*0.086)*(1-q*0.42); }
+  else { const q=(p-PINCH)/(1-PINCH); depth=h*0.073*Math.exp(-q*4.5)*Math.cos(q*9); jet=Math.max(0,Math.sin(q*Math.PI))*h*0.30*Math.exp(-q*1.1); }
+
+  g.fillStyle=C.hydro; g.globalAlpha=0.13; g.beginPath(); g.moveTo(0,h);
+  for(let x=0;x<=w;x+=3) g.lineTo(x, surfaceY(x,cx,depth,width,baseY));
+  g.lineTo(w,h); g.closePath(); g.fill(); g.globalAlpha=1;
+  g.strokeStyle=C.hydro; g.globalAlpha=0.65; g.lineWidth=1.6; g.beginPath();
+  for(let x=0;x<=w;x+=3){const y=surfaceY(x,cx,depth,width,baseY); x?g.lineTo(x,y):g.moveTo(x,y);}
+  g.stroke(); g.globalAlpha=1;
+
+  // jet
+  if(jet>1){ g.fillStyle=C.hydro; g.globalAlpha=0.5;
+    g.beginPath(); g.moveTo(cx-6,baseY); g.quadraticCurveTo(cx-3,baseY-jet,cx,baseY-jet-6);
+    g.quadraticCurveTo(cx+3,baseY-jet,cx+6,baseY); g.closePath(); g.fill(); g.globalAlpha=1; }
+
+  // falling drop
+  if(p<0.14){ const q=Math.min(1,p/0.12);
+    g.fillStyle=C.hydro; g.globalAlpha=0.9;
+    g.beginPath(); g.arc(cx, h*0.06+(baseY-h*0.06)*q, 11, 0, 6.2832); g.fill(); g.globalAlpha=1; }
+
+  // entrained bubble, oscillating after pinch-off
+  if(p>=PINCH){ const q=(p-PINCH)/(1-PINCH);
+    showBub=true;
+    bubR = 9*(1+0.42*Math.exp(-q*5)*Math.sin(q*46));
+    bubY = baseY + h*0.10 + q*h*0.02;
+    g.fillStyle=C.ground; g.strokeStyle=C.aero; g.lineWidth=2;
+    g.beginPath(); g.arc(cx,bubY,Math.max(3,bubR),0,6.2832); g.fill(); g.stroke();
+    if(q<0.45){ g.strokeStyle=C.aero; g.globalAlpha=0.45*(1-q/0.45); g.lineWidth=1.2;
+      for(let k=1;k<=3;k++){ g.beginPath(); g.arc(cx,bubY,bubR+k*11+q*40,0,6.2832); g.stroke(); }
+      g.globalAlpha=1; }
+    g.fillStyle=C.aero; g.font='10px ui-monospace, Menlo, monospace';
+    g.fillText('entrained bubble', cx+bubR+14, bubY+4);
+  }
+
+  // the pinch-off marker
+  if(p>0.42&&p<0.62){ g.strokeStyle=C.aero; g.setLineDash([4,3]); g.globalAlpha=0.8; g.lineWidth=1;
+    g.beginPath(); g.moveTo(cx-70,baseY+h*0.10); g.lineTo(cx-bubR-14,baseY+h*0.10); g.stroke();
+    g.setLineDash([]); g.globalAlpha=1;
+    g.fillStyle=C.aero; g.font='10px ui-monospace, Menlo, monospace';
+    g.fillText('4.54 mm', cx-116, baseY+h*0.10+4); }
+
+  g.fillStyle=C.ink3; g.font='10px ui-monospace, Menlo, monospace';
+  g.fillText('t = '+(p*30).toFixed(1)+' ms (real time)', 10, h-10);
+}
+
+function drawImpactSound(){
+  const cv=$('cvImpactSnd'); if(!cv) return;
+  const {g,w,h}=fit(cv);
+  const base=h/2, p=imp.p;
+  g.strokeStyle=C.rule; g.lineWidth=1;
+  g.beginPath(); g.moveTo(0,base); g.lineTo(w,base); g.stroke();
+  const x0=w*PINCH;
+  g.strokeStyle=C.aero; g.setLineDash([3,3]); g.globalAlpha=0.7;
+  g.beginPath(); g.moveTo(x0,4); g.lineTo(x0,h-4); g.stroke();
+  g.setLineDash([]); g.globalAlpha=1;
+  g.fillStyle=C.aero; g.font='9px ui-monospace, Menlo, monospace';
+  g.fillText('pinch-off', x0+5, 13);
+  const xEnd=w*p;
+  g.strokeStyle=C.hydro; g.lineWidth=1.6; g.beginPath();
+  for(let x=0;x<=Math.min(xEnd,w);x++){
+    let y=base;
+    if(x>x0){ const t=(x-x0)/w; y=base-(h*0.40)*Math.exp(-t/0.055)*Math.sin(2*Math.PI*38*t); }
+    x?g.lineTo(x,y):g.moveTo(x,y);
+  }
+  g.stroke();
+  g.fillStyle=C.ink3; g.font='9px ui-monospace, Menlo, monospace';
+  g.fillText('silent before pinch-off', 8, h-8);
+}
+
+function stageText(p){ let s=STAGES[0][1]; for(const [t,txt] of STAGES) if(p>=t) s=txt; return s; }
+
+/* ============ 2. memory / cycle overlay ============ */
+const MP={k:475,g:980,b:1,xc:0.19,alpha:0.25,rho:1,m0:0.01,v0:0.1}, MDT=1e-4;
+function mStep(s){
+  const R=s.R,dt=MDT, ax=(x,v,M)=>MP.g-MP.k*x/M-(R+MP.b)*v/M;
+  const k1x=s.v,k1v=ax(s.x,s.v,s.M);
+  const k2x=s.v+.5*dt*k1v,k2v=ax(s.x+.5*dt*k1x,s.v+.5*dt*k1v,s.M+.5*dt*R);
+  const k3x=s.v+.5*dt*k2v,k3v=ax(s.x+.5*dt*k2x,s.v+.5*dt*k2v,s.M+.5*dt*R);
+  const k4x=s.v+dt*k3v,   k4v=ax(s.x+dt*k3x,s.v+dt*k3v,s.M+dt*R);
+  const xn=s.x+dt/6*(k1x+2*k2x+2*k3x+k4x), vn=s.v+dt/6*(k1v+2*k2v+2*k3v+k4v), Mn=s.M+dt*R;
+  s.t+=dt;
+  if(xn>=MP.xc){
+    const f=(xn!==s.x)?(MP.xc-s.x)/(xn-s.x):0, tc=s.t-dt+f*dt;
+    const vc=s.v+f*(vn-s.v), Mc=s.M+f*(Mn-s.M);
+    let dM=MP.alpha*Mc*vc; dM=Math.max(1e-9,Math.min(dM,Mc-1e-4));
+    const r=Math.cbrt(3*dM/(4*Math.PI*MP.rho));
+    s.x=MP.xc-r*dM/Mc; s.v=vc; s.M=Mc-dM; s.t=tc;
+    const T=tc-s.last; s.last=tc; return T;
+  }
+  s.x=xn;s.v=vn;s.M=Mn; return null;
+}
+
+function drawMemory(){
+  const cv=$('cvMem'); if(!cv) return;
+  const {g,w,h}=fit(cv);
+  const R=parseFloat($('inMR').value);
+  const s={x:0,v:MP.v0,M:MP.m0,t:0,last:0,R:R};
+  // burn in past the transient, then record 10 cycles of (t since detachment, x)
+  let n=0; while(n<160){ if(mStep(s)!==null) n++; }
+  const cycles=[], Ts=[];
+  for(let c=0;c<10;c++){
+    const pts=[]; const t0=s.t;
+    let T=null;
+    while(T===null){ pts.push([s.t-t0,s.x]); T=mStep(s); }
+    pts.push([s.t-t0,MP.xc]); cycles.push(pts); Ts.push(T);
+  }
+  const pad={l:44,r:12,t:16,b:28};
+  const iw=w-pad.l-pad.r, ih=h-pad.t-pad.b;
+  const tmax=Math.max(...Ts)*1.04;
+  const xmin=Math.min(...cycles.flat().map(p=>p[1]))-0.01, xmax=MP.xc+0.02;
+  const X=t=>pad.l+iw*t/tmax, Y=x=>pad.t+ih*(1-(x-xmin)/(xmax-xmin));
+  g.strokeStyle=C.rule; g.lineWidth=1; g.strokeRect(pad.l,pad.t,iw,ih);
+  // critical line
+  g.strokeStyle=C.aero; g.lineWidth=1.4; g.setLineDash([5,3]);
+  g.beginPath(); g.moveTo(pad.l,Y(MP.xc)); g.lineTo(pad.l+iw,Y(MP.xc)); g.stroke(); g.setLineDash([]);
+  g.fillStyle=C.aero; g.font='10px ui-monospace, Menlo, monospace';
+  g.fillText('x_c: it lets go here', pad.l+8, Y(MP.xc)-6);
+  // cycles, newest brightest
+  cycles.forEach((pts,i)=>{
+    g.strokeStyle=C.hydro; g.globalAlpha=0.18+0.8*(i/(cycles.length-1)); g.lineWidth=1.5;
+    g.beginPath(); pts.forEach((p,j)=> j?g.lineTo(X(p[0]),Y(p[1])):g.moveTo(X(p[0]),Y(p[1]))); g.stroke();
+    g.globalAlpha=1;
+    const last=pts[pts.length-1];
+    g.fillStyle=C.hydro; g.beginPath(); g.arc(X(last[0]),Y(last[1]),2.6,0,6.2832); g.fill();
+  });
+  g.fillStyle=C.ink3; g.font='9px ui-monospace, Menlo, monospace';
+  g.fillText('0', pad.l, h-10);
+  g.fillText((tmax*1000).toFixed(0)+' ms since detachment', pad.l+iw-130, h-10);
+  g.fillText('x = '+xmax.toFixed(2)+' cm', 4, pad.t+8);
+
+  // how many distinct cycles
+  let p=0; const tol=2e-4;
+  for(let q=1;q<=8;q++){ let ok=true;
+    for(let i=0;i+q<Ts.length;i++) if(Math.abs(Ts[i]-Ts[i+q])>tol){ok=false;break;}
+    if(ok){p=q;break;} }
+  const spread=(Math.max(...Ts)-Math.min(...Ts))*1000;
+  $('oMemP').textContent = p===0?'many':p;
+  $('oMemP').className = p===0?'warn':'hi';
+  $('oMemSpread').textContent = spread.toFixed(2)+' ms';
+  const v=$('memVerdict');
+  if(p===1){ v.className='verdict';
+    v.innerHTML='Every trace lands exactly on top of the previous one. The wobble has fully died away before the drop reaches x_c, so each cycle starts from the same still condition and has no way to know about its predecessor. <b>Regular dripping.</b>'; }
+  else if(p===0){ v.className='verdict warn';
+    v.innerHTML='No two cycles are alike. The residue is always still moving when the next drop reaches x_c, so every cycle inherits a slightly different starting state and the differences never settle. <b>This is chaos</b>, and it is entirely deterministic: the same start would give the same picture every time.'; }
+  else { v.className='verdict';
+    v.innerHTML='The traces have separated into <b>'+p+' distinct families</b>. The drop now reaches x_c while the residue is still wobbling, so it lets go early or late depending on the phase, and the pattern repeats only every '+p+' drops. This is period-'+p+' dripping.'; }
+}
+
+/* ============ 3. logistic map ============ */
+function drawLog(){
+  const cv=$('cvLog'); if(!cv) return;
+  const {g,w,h}=fit(cv);
+  const z=parseFloat($('inLogR').value)/100;
+  const r0=2.4+(3.53-2.4)*z, r1=4.0-(4.0-3.60)*z;
+  $('vLogR').textContent=r0.toFixed(3)+' – '+r1.toFixed(3);
+  const pad={l:44,r:12,t:14,b:28}, iw=w-pad.l-pad.r, ih=h-pad.t-pad.b;
+  g.strokeStyle=C.rule; g.lineWidth=1; g.strokeRect(pad.l,pad.t,iw,ih);
+  g.fillStyle=C.hydro; g.globalAlpha=0.42;
+  const cols=Math.min(900,Math.round(iw*2));
+  for(let i=0;i<cols;i++){
+    const r=r0+(r1-r0)*i/(cols-1); let x=0.5;
+    for(let k=0;k<250;k++) x=r*x*(1-x);
+    const px=pad.l+iw*i/(cols-1);
+    for(let k=0;k<120;k++){ x=r*x*(1-x); g.fillRect(px,pad.t+ih*(1-x),1,1); }
+  }
+  g.globalAlpha=1;
+  g.fillStyle=C.ink3; g.font='9px ui-monospace, Menlo, monospace';
+  g.fillText('1.0',4,pad.t+8); g.fillText('0.0',4,pad.t+ih);
+  g.fillText('r = '+r0.toFixed(3),pad.l,h-10);
+  g.fillText(r1.toFixed(3),pad.l+iw-40,h-10);
+  // accumulation point
+  const rc=3.5699456;
+  if(rc>r0&&rc<r1){ const px=pad.l+iw*(rc-r0)/(r1-r0);
+    g.strokeStyle=C.aero; g.setLineDash([4,3]); g.globalAlpha=0.8;
+    g.beginPath(); g.moveTo(px,pad.t); g.lineTo(px,pad.t+ih); g.stroke();
+    g.setLineDash([]); g.globalAlpha=1;
+    g.fillStyle=C.aero; g.fillText('chaos begins, r = 3.5699', Math.min(px+5,w-150), pad.t+12); }
+}
+
+/* ---- wiring ---- */
+let tPrev=performance.now();
+function frame(now){
+  const dt=Math.min((now-tPrev)/1000,0.05); tPrev=now;
+  if(imp.playing){
+    imp.p+=dt*0.22*imp.speed;
+    if(imp.p>=1){ imp.p=0; imp.fired=false; }
+    $('inPhase').value=Math.round(imp.p*1000);
+  }
+  if(!imp.fired && imp.p>=PINCH){ imp.fired=true; plink(9258,0.008,0.25); }
+  if(imp.p<PINCH) imp.fired=false;
+  $('vPhase').textContent=(imp.p*100).toFixed(0)+'%';
+  $('impactStage').innerHTML=stageText(imp.p);
+  drawImpact(); drawImpactSound();
+  requestAnimationFrame(frame);
+}
+
+$('inPhase').addEventListener('input',e=>{ imp.p=e.target.value/1000; imp.fired=imp.p>=PINCH; });
+$('inISpeed').addEventListener('input',e=>{ imp.speed=parseFloat(e.target.value);
+  $('vISpeed').textContent=imp.speed.toFixed(1)+'×'; });
+$('btnImpact').addEventListener('click',e=>{ imp.playing=!imp.playing;
+  e.target.textContent=imp.playing?'Pause':'Play'; e.target.setAttribute('aria-pressed',String(imp.playing)); });
+$('btnImpactSnd').addEventListener('click',e=>{ sndOn=!sndOn; if(sndOn)ac();
+  e.target.textContent=sndOn?'Sound on':'Sound off'; e.target.setAttribute('aria-pressed',String(sndOn)); });
+$('btnImpactReplay').addEventListener('click',()=>{ imp.p=0; imp.fired=false; imp.playing=true;
+  $('btnImpact').textContent='Pause'; $('btnImpact').setAttribute('aria-pressed','true'); });
+
+$('inMR').addEventListener('input',e=>{ $('vMR').textContent=parseFloat(e.target.value).toFixed(3)+' ml/s'; drawMemory(); });
+document.querySelectorAll('[data-mjump]').forEach(b=>b.addEventListener('click',()=>{
+  $('inMR').value=b.dataset.mjump; $('inMR').dispatchEvent(new Event('input')); }));
+
+$('inLogR').addEventListener('input',drawLog);
+window.addEventListener('resize',()=>{ drawMemory(); drawLog(); });
+
+$('vMR').textContent='0.500 ml/s';
+drawMemory(); drawLog();
+requestAnimationFrame(frame);
+</script>
+
+</body>
+</html>
