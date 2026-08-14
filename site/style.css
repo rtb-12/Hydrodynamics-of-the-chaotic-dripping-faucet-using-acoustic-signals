@@ -774,3 +774,93 @@ a:focus-visible, .sidenav a:focus-visible {
   outline-offset: 3px;
   border-radius: 1px;
 }
+
+
+/* --- layered schematic ---------------------------------------------------
+   The rig carries four kinds of information at once: plumbing, sensors,
+   wiring and dimensions. Drawn together they compete; each is a layer the
+   reader turns on.
+   ------------------------------------------------------------------------ */
+
+.schem { display: block; width: 100%; height: auto; }
+
+.schem .L-water, .schem .L-sensors, .schem .L-signals,
+.schem .L-labels, .schem .L-dims { display: none; }
+
+.schem.on-water   .L-water   { display: inline; }
+.schem.on-sensors .L-sensors { display: inline; }
+.schem.on-signals .L-signals { display: inline; }
+.schem.on-labels  .L-labels  { display: inline; }
+.schem.on-dims    .L-dims    { display: inline; }
+
+.schem .drop, .schem .ripple, .schem .spill { opacity: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .schem.animate .flow {
+    stroke-dasharray: 5 7;
+    animation: schem-flow 1.1s linear infinite;
+  }
+  .schem.animate .drop {
+    animation: schem-drop 2.1s linear infinite;
+  }
+  .schem.animate .drop.d2 { animation-delay: 0.70s; }
+  .schem.animate .drop.d3 { animation-delay: 1.40s; }
+  .schem.animate .ripple  { animation: schem-ripple 2.1s linear infinite; }
+  .schem.animate .ripple.r2 { animation-delay: 0.70s; }
+  .schem.animate .spill   { animation: schem-spill 1.6s linear infinite; }
+  .schem.animate .impeller {
+    transform-box: view-box;
+    transform-origin: 530px 516px;
+    animation: schem-spin 1.7s linear infinite;
+  }
+}
+
+@keyframes schem-flow  { to { stroke-dashoffset: -12; } }
+@keyframes schem-spin  { to { transform: rotate(360deg); } }
+
+@keyframes schem-drop {
+  0%   { transform: translateY(0);      opacity: 0; }
+  8%   { transform: translateY(8px);    opacity: 1; }
+  82%  { transform: translateY(122px);  opacity: 1; }
+  88%  { transform: translateY(126px);  opacity: 0; }
+  100% { transform: translateY(126px);  opacity: 0; }
+}
+
+@keyframes schem-ripple {
+  0%, 82% { r: 1; opacity: 0; }
+  86%     { r: 3; opacity: 0.75; }
+  100%    { r: 30; opacity: 0; }
+}
+
+@keyframes schem-spill {
+  0%   { opacity: 0; transform: translateY(0); }
+  30%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translateY(14px); }
+}
+
+.layerbar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.8rem 1.1rem;
+  border-top: 1px solid var(--rule);
+  background: var(--sunk);
+}
+
+.layerbar .lbl {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-right: 0.2rem;
+}
+
+.layerbar button {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.62rem;
+  text-transform: none;
+}

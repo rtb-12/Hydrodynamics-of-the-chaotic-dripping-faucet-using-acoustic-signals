@@ -91,9 +91,16 @@ def check(page, css_classes):
     if unstyled:
         problems.append(f'classes used but never styled: {unstyled}')
 
-    for gid in sorted(set(re.findall(r"\$\('([^']+)'\)", text))):
+    reached = set(re.findall(r"\$\('([^']+)'\)", text))
+    reached |= set(re.findall(r"getElementById\(['\"]([^'\"]+)['\"]\)", text))
+    for gid in sorted(reached):
         if f'id="{gid}"' not in text:
             problems.append(f'JS reaches for missing element: {gid}')
+
+    # Every layer button must correspond to a layer that exists in the markup.
+    for layer in sorted(set(re.findall(r'data-layer="([^"]+)"', text))):
+        if f'class="L-{layer}"' not in text:
+            problems.append(f'layer button with no layer: {layer}')
 
     for ext in re.findall(r'(?:src|href)="(https?://[^"]+)"', text):
         problems.append(f'external request breaks offline use: {ext}')

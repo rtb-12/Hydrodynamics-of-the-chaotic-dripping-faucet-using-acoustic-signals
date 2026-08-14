@@ -67,112 +67,134 @@
     <div class="rig bleed proposed">
       <div class="rig-head">
         <h3>Constant-head acoustic dripping rig</h3>
-        <span class="tagline">phase 1 + phase 2 shown together</span>
+        <span class="tagline">turn layers on and off</span>
       </div>
       <figure>
-      <svg viewBox="0 0 760 500" role="img" aria-label="Schematic of the proposed rig. A pump in a floor sump feeds a header tank whose water level is pinned by an overflow standpipe. A needle valve below the header sets the drip rate through a nozzle. Drops fall an adjustable distance past an optical gate into an impact tank, which is also held at constant level by its own overflow. A hydrophone sits in the impact tank and a microphone above it. Both overflows return to the sump through a submerged outlet, and all sensors feed an audio interface and a gate counter.">
+      <svg id="rigSchem" class="schem on-water on-sensors on-labels animate" viewBox="0 0 900 600"
+           role="img" aria-label="Layered schematic of the proposed rig. A pump in a floor sump feeds a header tank whose level is pinned by an overflow weir. A needle valve and nozzle release drops that fall past an optical gate into an impact tank, itself held at constant level by an overflow. Both overflows return to the sump. A hydrophone sits in the impact tank and a microphone beside it, and their wiring runs to an audio interface and a gate counter.">
 
-        <!-- adjustable stand rails -->
-        <path class="sch-thin" d="M120 36 V440 M430 36 V440"/>
-        <path class="sch-thin" d="M113 250 h14 M113 276 h14 M113 302 h14 M423 250 h14 M423 276 h14 M423 302 h14"/>
-        <text class="sch-dim" x="52" y="150">adjustable</text>
-        <text class="sch-dim" x="52" y="162">stand</text>
+        <!-- ============ WATER ============ -->
+        <g class="L-water">
+          <path class="sch-thin flow" d="M110 543 V568 H40 V50 H160 V105" marker-end="url(#ar)"/>
 
-        <!-- header tank -->
-        <path class="sch" d="M160 44 v100 h230 v-100"/>
-        <rect class="sch-water" x="160" y="70" width="230" height="74"/>
-        <path class="sch-thin" d="M160 70 h230"/>
-        <text class="sch-dim" x="160" y="36">header tank &middot; 12 &times; 12 &times; 6 in &middot; 14 L</text>
+          <path class="sch" d="M125 75 v105 h235 v-105"/>
+          <rect class="sch-water" x="125" y="105" width="235" height="75"/>
+          <path class="sch-thin" d="M125 105 h235"/>
 
-        <!-- overflow weir standpipe -->
-        <path class="sch-hydro" d="M356 70 V144 M346 70 h20"/>
-        <text class="sch-label key" x="400" y="90">overflow weir</text>
-        <text class="sch-dim" x="400" y="102">head cannot fall</text>
+          <path class="sch-hydro" d="M314 105 V180 M326 105 V180 M308 105 H332"/>
+          <path class="sch-hydro spill" d="M316 108 q4 6 8 0"/>
 
-        <!-- needle valve and nozzle -->
-        <path class="sch-thin" d="M250 144 V174"/>
-        <path class="sch" d="M238 174 l24 16 v-16 l-24 16 z"/>
-        <text class="sch-label" x="120" y="186">needle valve</text>
-        <path class="sch-thin" d="M250 190 V208"/>
-        <path class="sch" d="M242 208 h16 l-4 12 h-8 z"/>
-        <text class="sch-label" x="266" y="218">nozzle</text>
+          <path class="sch-thin flow" d="M320 180 V190 H92 V512"/>
 
-        <!-- drops -->
-        <circle class="sch-drop" cx="250" cy="244" r="4"/>
-        <circle class="sch-drop" cx="250" cy="276" r="4.5"/>
+          <path class="sch-thin" d="M210 180 V200"/>
+          <path class="sch" d="M198 200 l24 16 v-16 l-24 16 z"/>
+          <path class="sch-thin" d="M210 216 V228"/>
+          <path class="sch" d="M202 228 h16 l-4 12 h-8 z"/>
 
-        <!-- optical gate -->
-        <path class="sch-fill" d="M172 250 h24 v20 h-24 z"/>
-        <path class="sch-fill" d="M306 250 h24 v20 h-24 z"/>
-        <path class="sch-dash" d="M196 260 H306"/>
-        <text class="sch-dim" x="140" y="244">optical gate &middot; phase 1 cross-check</text>
+          <circle class="sch-drop drop"    cx="210" cy="250" r="4.5"/>
+          <circle class="sch-drop drop d2" cx="210" cy="250" r="4.5"/>
+          <circle class="sch-drop drop d3" cx="210" cy="250" r="4.5"/>
 
-        <!-- fall dimension -->
-        <path class="sch-dash" d="M212 220 V322" marker-start="url(#ar)" marker-end="url(#ar)"/>
-        <text class="sch-dim" x="164" y="296">fall h</text>
+          <path class="sch" d="M115 350 v120 h260 v-120"/>
+          <rect class="sch-water" x="115" y="375" width="260" height="95"/>
+          <path class="sch-thin" d="M115 375 h260"/>
+          <circle class="ripple"    cx="210" cy="375" r="1" fill="none" stroke="var(--hydro)" stroke-width="1.4"/>
+          <circle class="ripple r2" cx="210" cy="375" r="1" fill="none" stroke="var(--hydro)" stroke-width="1.4"/>
 
-        <!-- impact tank -->
-        <path class="sch" d="M150 296 v112 h260 v-112"/>
-        <rect class="sch-water" x="150" y="322" width="260" height="86"/>
-        <path class="sch-thin" d="M150 322 h260"/>
-        <text class="sch-dim" x="150" y="424">impact tank &middot; level pinned by overflow</text>
+          <path class="sch-hydro" d="M375 375 H410"/>
+          <path class="sch-thin flow" d="M410 375 V512 H336" marker-end="url(#ar)"/>
 
-        <!-- impact tank overflow -->
-        <path class="sch-hydro" d="M410 322 H470"/>
-        <text class="sch-label key" x="414" y="316">overflow</text>
+          <path class="sch" d="M60 485 v63 h270 v-63"/>
+          <rect class="sch-water" x="60" y="505" width="270" height="43"/>
+          <path class="sch-thin" d="M60 505 h270"/>
+          <circle class="sch-fill" cx="110" cy="516" r="15"/>
+          <path class="sch impeller" d="M104 509 l12 7 l-12 7 z"/>
+        </g>
 
-        <!-- weir return joining the riser -->
-        <path class="sch-thin" d="M356 144 V168 H470"/>
-        <path class="sch-thin" d="M470 168 V440 H520" marker-end="url(#ar)"/>
-        <text class="sch-dim" x="486" y="180">returns</text>
-        <text class="sch-dim" x="486" y="192">to sump</text>
-        <text class="sch-label key" x="524" y="434">submerged outlet</text>
-        <text class="sch-dim" x="524" y="446">no splash, no bubble</text>
+        <!-- ============ SENSORS ============ -->
+        <g class="L-sensors">
+          <path class="sch-fill" d="M148 265 h24 v20 h-24 z"/>
+          <path class="sch-fill" d="M250 265 h24 v20 h-24 z"/>
+          <path class="sch-dash" d="M172 275 H250"/>
+          <path class="sch-hydro" d="M300 338 V412"/>
+          <circle class="sch-hydro-f" cx="300" cy="418" r="7"/>
+          <rect class="sch-aero" x="392" y="272" width="14" height="26" rx="7"/>
+        </g>
 
-        <!-- hydrophone -->
-        <path class="sch-hydro" d="M350 364 V288"/>
-        <circle class="sch-hydro-f" cx="350" cy="364" r="7"/>
-        <text class="sch-label key" x="248" y="382">hydrophone &middot; phase 2</text>
+        <!-- ============ WIRING ============ -->
+        <g class="L-signals">
+          <path class="sch-dash" d="M274 275 H470 V175 H620"/>
+          <path class="sch-dash" d="M406 292 H490 V95 H620"/>
+          <path class="sch-dash" d="M300 338 H510 V125 H620"/>
+          <rect class="sch-fill" x="620" y="78" width="250" height="62" rx="2"/>
+          <text class="sch-label" x="634" y="104">AUDIO INTERFACE</text>
+          <text class="sch-dim"   x="634" y="122">mic + hydrophone</text>
+          <rect class="sch-fill" x="620" y="160" width="250" height="40" rx="2"/>
+          <text class="sch-label" x="634" y="185">GATE COUNTER</text>
+        </g>
 
-        <!-- microphone -->
-        <rect class="sch-aero" x="452" y="246" width="14" height="26" rx="7"/>
-        <text class="sch-label" x="472" y="256" style="fill:var(--aero)">microphone</text>
-        <text class="sch-dim" x="472" y="268">phase 1</text>
-        <path class="sch-dash" d="M452 268 L 404 296"/>
+        <!-- ============ LABELS ============ -->
+        <g class="L-labels">
+          <text class="sch-label" x="125" y="66">header tank</text>
+          <text class="sch-label key" x="340" y="98">weir</text>
+          <text class="sch-label" x="86"  y="206">needle valve</text>
+          <text class="sch-label" x="228" y="240">nozzle</text>
+          <text class="sch-label" x="120" y="258">optical gate</text>
+          <text class="sch-label" x="120" y="344">impact tank</text>
+          <text class="sch-label key" x="384" y="368">overflow</text>
+          <text class="sch-label key" x="314" y="424">hydrophone</text>
+          <text class="sch-label" x="374" y="264" style="fill:var(--aero)">microphone</text>
+          <text class="sch-label" x="60"  y="478">sump</text>
+          <text class="sch-label" x="132" y="521">pump</text>
+          <text class="sch-label" x="172" y="44">feed</text>
+          <text class="sch-dim"   x="100" y="470">return</text>
+        </g>
 
-        <!-- signal runs -->
-        <path class="sch-dash" d="M350 288 H442 V60 H560"/>
-        <path class="sch-dash" d="M459 246 V60"/>
-        <circle class="sch-hydro-f" cx="459" cy="60" r="2.5"/>
-        <path class="sch-dash" d="M330 260 H500 V102 H560"/>
-
-        <!-- electronics -->
-        <rect class="sch-fill" x="560" y="44" width="180" height="30" rx="2"/>
-        <text class="sch-label" x="570" y="63">AUDIO INTERFACE</text>
-        <text class="sch-dim" x="560" y="88">96 kHz &middot; 2 channel</text>
-        <rect class="sch-fill" x="560" y="96" width="180" height="30" rx="2"/>
-        <text class="sch-label" x="570" y="115">GATE COUNTER</text>
-
-        <!-- sump and pump -->
-        <path class="sch" d="M500 400 v60 h220 v-60"/>
-        <rect class="sch-water" x="500" y="418" width="220" height="42"/>
-        <path class="sch-thin" d="M500 418 h220"/>
-        <text class="sch-dim" x="500" y="394">sump &middot; acoustically isolated from the impact tank</text>
-        <circle class="sch-fill" cx="586" cy="438" r="15"/>
-        <path class="sch" d="M580 431 l12 7 l-12 7 z"/>
-        <text class="sch-label" x="606" y="442">pump</text>
-
-        <!-- feed line, routed along the floor and up the far side -->
-        <path class="sch-thin" d="M586 453 V482 H30 V24 H180 V70" marker-end="url(#ar)"/>
-        <text class="sch-dim" x="200" y="20">feed</text>
+        <!-- ============ DIMENSIONS ============ -->
+        <g class="L-dims">
+          <path class="sch-thin" d="M28 60 V580 M440 60 V580" opacity="0.5"/>
+          <text class="sch-dim" x="125" y="92">12 &#215; 12 &#215; 6 in &#183; 14 L</text>
+          <path class="sch-dash" d="M185 240 V375" marker-start="url(#ar)" marker-end="url(#ar)"/>
+          <text class="sch-dim" x="140" y="312">fall h</text>
+          <text class="sch-dim" x="120" y="362">level pinned by overflow</text>
+          <text class="sch-dim" x="60"  y="566">sump is acoustically isolated</text>
+          <text class="sch-dim" x="620" y="216">96 kHz &#183; 24 bit &#183; one clock</text>
+          <text class="sch-dim" x="340" y="112">level cannot fall</text>
+        </g>
       </svg>
       </figure>
+      <div class="layerbar">
+        <span class="lbl">Layers</span>
+        <button type="button" data-layer="water"   aria-pressed="true">Water</button>
+        <button type="button" data-layer="sensors" aria-pressed="true">Sensors</button>
+        <button type="button" data-layer="signals" aria-pressed="false">Wiring</button>
+        <button type="button" data-layer="labels"  aria-pressed="true">Labels</button>
+        <button type="button" data-layer="dims"    aria-pressed="false">Dimensions</button>
+        <button type="button" data-anim            aria-pressed="true">Animation</button>
+      </div>
       <figcaption>
-        Phase 1 uses the microphone and the optical gate only. The hydrophone and any camera are
-        Phase 2 additions to the same frame. Blue marks the underwater channel and the two
-        constant-level devices; orange marks the airborne channel.
+        Four kinds of information live on this drawing: plumbing, sensors, wiring and dimensions.
+        Shown together they compete, so each is a layer. Start with water alone to follow the
+        circuit, then add wiring to see how every channel reaches one converter.
       </figcaption>
     </div>
+
+    <script>
+    (function () {
+      var svg = document.getElementById('rigSchem');
+      document.querySelectorAll('.layerbar [data-layer]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var on = svg.classList.toggle('on-' + b.dataset.layer);
+          b.setAttribute('aria-pressed', String(on));
+        });
+      });
+      var anim = document.querySelector('.layerbar [data-anim]');
+      anim.addEventListener('click', function () {
+        var on = svg.classList.toggle('animate');
+        anim.setAttribute('aria-pressed', String(on));
+      });
+    })();
+    </script>
 
     <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
 
