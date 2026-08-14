@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dripping Faucet Acoustics</title>
 <link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
 </head>
 <body>
 
@@ -15,6 +16,7 @@
 <header class="masthead">
   <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
   <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+  <button id="themeBtn" class="themetoggle" type="button">System</button>
 </header>
 
 <div class="shell">
@@ -72,6 +74,13 @@
     bubble driving the water surface directly. For this project the important part is narrower.
     The ring starts at a sharply defined instant, and that instant is <strong>when the bubble
     pinches off</strong>. It is an event you can put a timestamp on.</p>
+
+    <p>That is the shape redrawn. Here is the actual measurement it was drawn from.</p>
+
+    <figure class="paperfig bleed">
+      <img src="img/phillips-fig5-traces.png" alt="Three stacked plots from Phillips 2018 Figure 5: the airborne microphone signal, the underwater hydrophone signal, and a zoomed overlay of the two decaying wave packets." loading="lazy">
+      <figcaption>The measured event. Top, the airborne microphone at &plusmn;0.3 Pa. Middle, the hydrophone at &plusmn;40 Pa, roughly 40 dB stronger. Bottom, the two overlaid across 2 ms: same frequency, same envelope, the airborne one decaying faster. Both are flat until the bubble pinches off at about 24.5 ms. <span class="credit">Phillips, Agarwal &amp; Jordan, <em>Scientific Reports</em> <b>8</b>:9515 (2018). Reproduced under CC BY 4.0.</span></figcaption>
+    </figure>
 
     <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
 

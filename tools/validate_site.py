@@ -73,6 +73,17 @@ def check(page, css_classes):
         if tp.exists() and f'id="{frag}"' not in tp.read_text():
             problems.append(f'dead cross-page anchor: {href}')
 
+    for src in re.findall(r'src="([^"]+)"', body):
+        if src.startswith(('http', 'data:')):
+            continue
+        if not (page.parent / src).resolve().exists():
+            problems.append(f'missing asset: {src}')
+
+    # Lookbehind so data-alt= and similar do not count as a real alt attribute.
+    for img in re.findall(r'<img\b[^>]*>', body):
+        if not re.search(r'(?<![-\w])alt\s*=\s*"[^"]', img):
+            problems.append(f'image without alt text: {img[:70]}')
+
     used = set()
     for attr in re.findall(r'class="([^"]+)"', body):
         used.update(attr.split())

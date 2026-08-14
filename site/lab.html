@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Interactive lab</title>
 <link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
 </head>
 <body>
 
@@ -15,6 +16,7 @@
 <header class="masthead">
   <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
   <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+  <button id="themeBtn" class="themetoggle" type="button">System</button>
 </header>
 
 <div class="shell">
@@ -150,11 +152,21 @@
       </div>
     </div>
 
+    <figure class="paperfig bleed">
+      <img src="img/sekatchev-fig4-bifurcation.png" alt="Sekatchev's measured bifurcation diagram: inter-drop interval against volumetric flow rate from 22 to 36 ml per minute, showing branches that split, rejoin and eventually scatter." loading="lazy">
+      <figcaption>The measured version, from 1.17 million real drops. Compare the shape with the computed diagram above. Note what the model does not predict: the branches <b>rejoin</b>, returning from period-2 to period-1, and chaos only sets in past 34 ml/min. <span class="credit">Sekatchev, arXiv:2307.05484 (2023).</span></figcaption>
+    </figure>
+
     <p>This is the figure the whole field is built around, generated from the same integrator
     running above. Compare it with Sekatchev&rsquo;s measured version: his real faucet did
     <em>not</em> climb the ladder cleanly, returning from period-2 to period-1 and only becoming
     chaotic past 34 ml/min. Model and reality disagree, and that disagreement is a large part of
     what makes this worth measuring properly.</p>
+
+    <figure class="paperfig bleed">
+      <img src="img/sekatchev-fig2-maps.jpg" alt="Four rows of paired plots from Sekatchev 2023: inter-drop interval against drop number on the left, and return maps on the right, for missing-drop, period-4, period-2 and period-1 regimes." loading="lazy">
+      <figcaption>What real return maps look like. Left column, interval against drop number. Right column, the return map. Top row is the missing-drop artefact from a detector too slow to resolve short intervals, which is the failure this project&rsquo;s acoustic clock exists to avoid. <span class="credit">Sekatchev, arXiv:2307.05484 (2023).</span></figcaption>
+    </figure>
 
     <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
 

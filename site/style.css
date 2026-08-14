@@ -17,9 +17,9 @@
   --aero:    #b8551d;
   --water:   rgba(11, 110, 143, 0.13);
 
-  --display: "Futura", "Avenir Next", "Avenir", "Century Gothic", system-ui, sans-serif;
-  --body:    "Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --mono:    "SF Mono", "Menlo", "Consolas", monospace;
+  --display: "Inter", "Helvetica Neue", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --body:    "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif Pro", "Palatino Linotype", Georgia, serif;
+  --mono:    "JetBrains Mono", "SF Mono", "IBM Plex Mono", "Menlo", "Consolas", monospace;
 
   --gap: clamp(1.5rem, 4vw, 3.5rem);
   --measure: 68ch;
@@ -60,8 +60,9 @@ body {
   background: var(--ground);
   color: var(--ink);
   font-family: var(--body);
-  font-size: 17px;
-  line-height: 1.62;
+  font-size: 17.5px;
+  line-height: 1.68;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -78,9 +79,9 @@ body {
 
 .wordmark {
   font-family: var(--display);
-  font-weight: 600;
-  font-size: 0.94rem;
-  letter-spacing: 0.16em;
+  font-weight: 620;
+  font-size: 0.95rem;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
   color: var(--ink);
   text-decoration: none;
@@ -95,6 +96,69 @@ body {
   color: var(--ink-3);
   margin-left: auto;
 }
+
+.themetoggle {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.62rem;
+  color: var(--ink-3);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color 0.14s, border-color 0.14s;
+}
+
+.themetoggle:hover { color: var(--hydro); border-color: var(--hydro); }
+.themetoggle:focus-visible { outline: 2px solid var(--hydro); outline-offset: 2px; }
+
+/* --- reproduced figures from the papers ---------------------------------
+   Published figures keep their own white ground in both themes. Recolouring
+   someone else's data to match a site palette misrepresents it.
+   ------------------------------------------------------------------------ */
+
+.paperfig {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--surface);
+  margin: 0 0 1.9rem;
+  overflow: hidden;
+}
+
+.paperfig img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+}
+
+.paperfig.narrow img { max-width: 620px; margin: 0 auto; }
+
+.paperfig figcaption {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  line-height: 1.75;
+  color: var(--ink-2);
+  padding: 0.85rem 1.1rem;
+  border-top: 1px solid var(--rule);
+}
+
+.paperfig .credit {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--ink-3);
+}
+
+.sidebyside {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.1rem;
+  margin: 0 0 1.9rem;
+}
+
+.sidebyside .paperfig, .sidebyside .rig { margin: 0; }
 
 /* --- shell -------------------------------------------------------------- */
 
@@ -119,8 +183,8 @@ body {
   position: sticky;
   top: var(--gap);
   font-family: var(--display);
-  font-size: 0.82rem;
-  letter-spacing: 0.04em;
+  font-size: 0.845rem;
+  letter-spacing: -0.002em;
 }
 
 .sidenav h2 {
@@ -175,32 +239,33 @@ main > .bleed { max-width: none; }
 
 h1 {
   font-family: var(--display);
-  font-weight: 600;
-  font-size: clamp(1.9rem, 4.2vw, 3rem);
-  line-height: 1.08;
-  letter-spacing: -0.015em;
-  margin: 0 0 1.1rem;
+  font-weight: 650;
+  font-size: clamp(1.95rem, 4.2vw, 2.9rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 0 0 1.15rem;
 }
 
 h2 {
   font-family: var(--display);
-  font-weight: 600;
-  font-size: 1.32rem;
-  letter-spacing: 0.005em;
-  margin: 0 0 0.75rem;
+  font-weight: 620;
+  font-size: 1.38rem;
+  letter-spacing: -0.015em;
+  margin: 2.6rem 0 0.8rem;
 }
+
+main > h2:first-of-type { margin-top: 0; }
 
 h3 {
   font-family: var(--display);
   font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-  margin: 0 0 0.5rem;
+  font-size: 1.04rem;
+  letter-spacing: -0.008em;
+  color: var(--ink);
+  margin: 1.7rem 0 0.55rem;
 }
 
-.lede { font-size: 1.12rem; color: var(--ink-2); }
+.lede { font-size: 1.14rem; line-height: 1.6; color: var(--ink-2); }
 
 p { margin: 0 0 1.15rem; }
 
