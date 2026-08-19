@@ -30,6 +30,7 @@
       <li><a href="index.html">Overview</a></li>
       <li><a href="explainers.html">Explainers</a></li>
       <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="sensors.html">Choosing sensors</a></li>
       <li><a href="build.html">Build guide</a></li>
       <li><a href="pipeline.html">Data pipeline</a></li>
       <li><a href="setups.html">Experimental setups</a></li>
@@ -42,6 +43,7 @@
     <ul>
       <li><a href="#schematic">Schematic</a></li>
       <li><a href="#why">Why the overflows</a></li>
+      <li><a href="#dimensions">Dimensional stack</a></li>
       <li><a href="#bom">Bill of materials</a></li>
       <li><a href="#hydrophone">Hydrophone</a></li>
       <li><a href="#build">Build order</a></li>
@@ -242,6 +244,104 @@
       descent through the whole bifurcation diagram in a single long run. Pump on for stationary
       runs at a fixed operating point, pump off for the sweep. The same hardware does both, so
       you are not choosing between the two philosophies in the literature.</p>
+    </div>
+
+    <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
+
+    <h2 id="dimensions">The dimensional stack</h2>
+    <p>Two numbers fix everything else: the <strong>head</strong>, 30 cm from the weir rim down to
+    the nozzle, and the <strong>fall</strong>, 86 mm from the nozzle down to the water. Every other
+    height on the rig falls out of those plus the tank geometry.</p>
+
+    <div class="rig bleed proposed">
+      <div class="rig-head">
+        <h3>Elevation, measured from the impact water surface</h3>
+        <span class="tagline">vertical scale only &middot; 5 px = 1 cm</span>
+      </div>
+      <figure>
+      <svg viewBox="0 0 760 430" role="img" aria-label="Elevation drawing of the two tanks with heights measured from the impact tank water surface. The header tank floor sits 28.6 cm above the datum and its weir rim 38.6 cm above. The nozzle tip is 8.6 cm above the datum and the impact tank rim 5.2 cm above it, leaving about 23 centimetres of clear air between the two tanks.">
+        <g class="sch-dim">
+          <text x="16" y="115">+43.8</text><text x="16" y="141">+38.6</text>
+          <text x="16" y="191">+28.6</text><text x="16" y="291">+8.6</text>
+          <text x="16" y="308">+5.2</text><text x="16" y="334">0</text>
+          <text x="16" y="384">&minus;10</text>
+          <text x="16" y="100">cm</text>
+        </g>
+        <path class="sch-dash" d="M56 137 H250 M56 187 H250 M56 287 H322 M56 304 H240 M56 330 H240" opacity="0.45"/>
+
+        <path class="sch" d="M250 111 v76 h220 v-76"/>
+        <rect class="sch-water" x="250" y="137" width="220" height="50"/>
+        <path class="sch-thin" d="M250 137 h220"/>
+        <path class="sch-hydro" d="M424 137 V187 M436 137 V187 M418 137 h24"/>
+        <text class="sch-label" x="256" y="104">header tank &middot; 12 &times; 12 &times; 6 in</text>
+        <text class="sch-label key" x="482" y="141">weir rim = water level</text>
+        <text class="sch-dim" x="482" y="191">header floor</text>
+
+        <path class="sch-thin" d="M330 187 V210"/>
+        <path class="sch" d="M318 210 l24 16 v-16 l-24 16 z"/>
+        <text class="sch-label" x="352" y="224">needle valve</text>
+        <path class="sch-thin" d="M330 226 V275"/>
+        <path class="sch" d="M322 275 h16 l-4 12 h-8 z"/>
+        <text class="sch-label" x="352" y="291">nozzle</text>
+        <circle class="sch-drop" cx="330" cy="303" r="3.5"/>
+        <circle class="sch-drop" cx="330" cy="320" r="4"/>
+
+        <path class="sch" d="M240 304 v76 h240 v-76"/>
+        <rect class="sch-water" x="240" y="330" width="240" height="50"/>
+        <path class="sch-thin" d="M240 330 h240"/>
+        <text class="sch-dim" x="492" y="308">impact rim</text>
+        <text class="sch-label key" x="492" y="334">WATER SURFACE &middot; datum</text>
+        <text class="sch-dim" x="492" y="384">impact floor</text>
+        <text class="sch-label" x="246" y="402">impact tank &middot; level pinned by overflow</text>
+
+        <path class="sch-hydro" d="M110 187 V304" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <text class="sch-label key" x="66" y="240">CLEAR</text>
+        <text class="sch-label key" x="66" y="253">GAP</text>
+        <text class="sch-label key" x="66" y="266">23 cm</text>
+
+        <path class="sch-dash" d="M170 137 V287" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="176" y="206">HEAD</text>
+        <text class="sch-dim" x="176" y="218">30 cm</text>
+
+        <path class="sch-dash" d="M210 287 V330" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <text class="sch-dim" x="216" y="304">FALL</text>
+        <text class="sch-dim" x="216" y="316">8.6 cm</text>
+      </svg>
+      </figure>
+      <figcaption>
+        The 23 cm gap is not a design choice, it is the remainder:
+        30 &minus; 10 (header water depth) &minus; 5.2 (impact freeboard) + 8.6 (fall) = 23.4 cm.
+        Base to base, the header floor sits 38.6 cm above the impact floor.
+      </figcaption>
+    </div>
+
+    <h3>As the carriage moves</h3>
+    <p>The header travels with the nozzle so the head stays locked at 30 cm and only the fall
+    height changes. One variable at a time.</p>
+
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Fall height</th><th>Impact velocity</th><th>Clear gap</th><th>Base to base</th><th>Regime</th></tr></thead>
+        <tbody>
+          <tr><td>40 mm (min)</td><td>0.89 m/s</td><td>19 cm</td><td>34 cm</td><td>below anything tested</td></tr>
+          <tr><td><strong>86 mm (default)</strong></td><td><strong>1.30 m/s</strong></td><td><strong>23 cm</strong></td><td><strong>39 cm</strong></td><td><strong>Pumphrey 7&ndash;8 cm, Phillips 8.6 cm</strong></td></tr>
+          <tr><td>180 mm</td><td>1.88 m/s</td><td>33 cm</td><td>48 cm</td><td>mode boundary</td></tr>
+          <tr><td>300 mm (max)</td><td>2.43 m/s</td><td>45 cm</td><td>60 cm</td><td>splash formation</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Build the frame for 19 to 45 cm of clear separation</strong>, about 26 cm of travel.
+    Two independent groups thirty years apart converged on roughly 8 cm for reproducible bubble
+    entrainment, so start at 86 mm and treat any change as a separate experiment with its own flow
+    recalibration.</p>
+
+    <div class="callout">
+      <b>Check this with a ruler before cutting</b>
+      <p>At the 40 mm minimum you have 20 cm between the nozzle tip and the header floor, and the
+      nozzle-pipe-valve-pipe stack needs about 10 to 11 cm of it. It fits, but with only ~9 cm
+      spare. Measure your actual valve body first; if it is tall, raise the minimum to 60 mm and
+      you lose nothing that matters.</p>
     </div>
 
     <svg class="plink" viewBox="0 0 300 40" aria-hidden="true"><use href="#plink-path"/></svg>
@@ -522,7 +622,7 @@
 </div>
 
 <footer class="foot">
-  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  Personal research wiki &middot; sources are the papers in <code>papers/</code> &middot;
   notes in <code>vault/</code>
 </footer>
 

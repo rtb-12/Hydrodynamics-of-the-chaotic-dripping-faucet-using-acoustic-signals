@@ -23,6 +23,7 @@
       <li><a href="index.html">Overview</a></li>
       <li><a href="explainers.html">Explainers</a></li>
       <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="sensors.html">Choosing sensors</a></li>
       <li><a href="build.html">Build guide</a></li>
       <li><a href="pipeline.html">Data pipeline</a></li>
       <li><a href="setups.html">Experimental setups</a></li>
@@ -32,8 +33,8 @@
       <li><a href="concepts.html">Concepts</a></li>
     </ul>
     <div class="tally">
-      <b>8</b> papers<br>
-      <b>3</b> with acoustics<br>
+      <b>13</b> papers<br>
+      <b>8</b> with acoustics<br>
       <b>0</b> with both
     </div>
   </nav>
@@ -41,7 +42,7 @@
   <main>
     <p class="eyebrow">Reference</p>
     <h1>Papers</h1>
-    <p class="lede">Eight distinct works, from nine PDFs. Sorted by what they contribute rather
+    <p class="lede">Thirteen distinct works, from fourteen PDFs. Sorted by what they contribute rather
     than by date, because the split between the two literatures is the point.</p>
 
     <h2>Acoustics of drop impact</h2>
@@ -63,6 +64,31 @@
             <td>Vazquez, Manasseh, S&aacute;nchez &amp; Metcalfe 2008<br><small>Chem. Eng. Sci. 63:5860&ndash;5869 &middot; 10.1016/j.ces.2008.08.032</small></td>
             <td>Experiment</td>
             <td>The only paper applying chaos tooling to acoustic data. Submerged nozzle, not a faucet. Proves a 44.1 kHz consumer sound card is enough</td>
+          </tr>
+          <tr>
+            <td><strong>Pumphrey &amp; Walton 1988</strong><br><small>Eur. J. Phys. 9, 225&ndash;231</small></td>
+            <td>Experiment</td>
+            <td>The primary source for the entrainment window Phillips cites. Names a <strong>B&amp;K 8103</strong> hydrophone, and gates drops with a BDX 25 phototransistor into an NE 555. Optimum fall height 7&ndash;8 cm</td>
+          </tr>
+          <tr>
+            <td><strong>Prokhorov &amp; Chashechkin 2011</strong><br><small>Acoust. Phys. 57(6) 807&ndash;818 &middot; 10.1134/S1063771011050137</small></td>
+            <td>Experiment</td>
+            <td>Air and water recorded together. <strong>GI-51B</strong> hydrophone and <strong>MV-101</strong> microphone, both fully specified. Fall heights 8 to 110 cm</td>
+          </tr>
+          <tr>
+            <td><strong>Chashechkin &amp; Prokhorov 2014</strong><br><small>Adv. Appl. Acoust. 3 &middot; 10.14355/aiaas.2014.0301.01</small></td>
+            <td>Experiment</td>
+            <td>The only paper publishing a complete sensor layout: mic 22 cm up and 7 cm out, hydrophone 4 cm down and 6 cm out</td>
+          </tr>
+          <tr>
+            <td><strong>Chashechkin &amp; Prokhorov 2023</strong><br><small>Acoust. Phys. 69(3) 348&ndash;356 &middot; 10.1134/S1063771022700099</small></td>
+            <td>Experiment</td>
+            <td><strong>The closest paper to this project.</strong> A periodic drop train at T = 218 ms. Shock pulses repeat stably; resonance packets do not, because the surface has not settled between impacts</td>
+          </tr>
+          <tr>
+            <td>Chashechkin &amp; Prokhorov 2025<br><small>Fluid Dyn. 60:132 &middot; 10.1134/S0015462825603560</small></td>
+            <td>Experiment</td>
+            <td>Drop merging in an electrostatic field. <strong>GI-54</strong> hydrophone; optical and acoustic sync to 20 &micro;s</td>
           </tr>
         </tbody>
       </table>
@@ -104,15 +130,14 @@
 
     <div class="callout">
       <b>The whole point in one row</b>
-      <p>No paper appears in both tables. Full notes for each live in
-      <code>vault/papers/</code>, following the WHY / HOW / WHAT structure.</p>
+      <p>No paper appears in both tables. Full citations with DOIs are in <code>papers/README.md</code>.</p>
     </div>
   </main>
 
   <aside class="rail">
     <div class="note">
-      <b>Nine files, eight papers</b>
-      <code>0408096v1.pdf</code> is the arXiv preprint of the JFM paper. One note covers both.
+      <b>Fourteen files, thirteen papers</b>
+      <code>0408096v1.pdf</code> is the arXiv preprint of the JFM paper, so one entry covers both.
     </div>
     <div class="note">
       <b>Not reported</b>
@@ -123,7 +148,7 @@
 </div>
 
 <footer class="foot">
-  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  Personal research wiki &middot; sources are the papers in <code>papers/</code> &middot;
   notes in <code>vault/</code>
 </footer>
 

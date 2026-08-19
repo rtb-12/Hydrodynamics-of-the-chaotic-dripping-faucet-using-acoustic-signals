@@ -30,6 +30,7 @@
       <li><a href="index.html">Overview</a></li>
       <li><a href="explainers.html">Explainers</a></li>
       <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="sensors.html">Choosing sensors</a></li>
       <li><a href="build.html">Build guide</a></li>
       <li><a href="pipeline.html">Data pipeline</a></li>
       <li><a href="setups.html" aria-current="page">Experimental setups</a></li>
@@ -51,7 +52,7 @@
       <li><a href="#equipment">Equipment</a></li>
     </ul>
     <div class="tally">
-      <b>6</b> rigs in literature<br>
+      <b>11</b> rigs in literature<br>
       <b>2</b> pure theory<br>
       <b>0</b> combine both
     </div>
@@ -113,6 +114,27 @@
             <td>Sage MP362 syringe pump, &plusmn;1%</td>
             <td>Optical only. Contact line pinned to capillary outer edge</td>
             <td>Kodak Ektapro intensified<br>12,000 fps</td>
+          </tr>
+          <tr>
+            <td><strong>Pumphrey &amp; Walton 1988</strong><br><small>Eur. J. Phys. 9, 225</small></td>
+            <td>Airborne + underwater acoustics</td>
+            <td>Single drops. Optimum fall 7&ndash;8 cm; studied 8&ndash;30 cm</td>
+            <td>Dynamic mic 50 Hz&ndash;14 kHz + <strong>B&amp;K 8103</strong> hydrophone, 0.1 Hz&ndash;200 kHz. BDX 25 phototransistor into an NE 555 as the trigger</td>
+            <td>Delayed flash photography, not high-speed video</td>
+          </tr>
+          <tr>
+            <td><strong>Prokhorov &amp; Chashechkin 2011</strong><br><small>Acoust. Phys. 57(6) 807</small></td>
+            <td>Air and water simultaneously</td>
+            <td>Single drops, fall heights 8 to 110 cm</td>
+            <td><strong>GI-51B</strong> hydrophone, 30 mV/Pa, 2 Hz&ndash;120 kHz + <strong>MV-101</strong> mic, 1.58 V/Pa, 20 Hz&ndash;40 kHz</td>
+            <td>synchronised video</td>
+          </tr>
+          <tr>
+            <td><strong>Chashechkin &amp; Prokhorov 2023</strong><br><small>Acoust. Phys. 69(3) 348</small></td>
+            <td>Underwater acoustics of <strong>periodic drop trains</strong></td>
+            <td><strong>Periodic dripping, T = 218 ms</strong> from a 0.4 cm capillary, 50 cm fall</td>
+            <td><strong>GI-54</strong>, 30 mV/Pa, 0.002&ndash;100 kHz, centred at 5 cm depth. Sampling to 1 MHz</td>
+            <td>high-speed, 0.07 mm resolution</td>
           </tr>
           <tr>
             <td>D&rsquo;Innocenzo 1996<br>Coullet 2004/05</td>
@@ -482,9 +504,9 @@
           <tr><td>Metering valve</td><td>Nupro fine-metering</td><td class="nr">model not reported</td><td>Sets drip rate downstream of a constant head. The one part worth buying properly</td><td>&#8377;3&ndash;8 k</td></tr>
           <tr><td>Nozzle</td><td>Drummond glass capillary</td><td>990 &plusmn; 10 &micro;m ID</td><td>Sets drop diameter. Must land inside the 1&ndash;5 mm entrainment window</td><td>&#8377;1&ndash;4 k</td></tr>
           <tr><td>Sound card</td><td>Sound Blaster 64 PCI</td><td>44.1 kHz, 16 bit, 60 s runs</td><td>Vazquez got correlation dimension from this. Any modern interface beats it</td><td>&#8377;8&ndash;25 k</td></tr>
-          <tr><td>Hydrophone</td><td>In-house piezo (Vazquez)<br>Unnamed (Chashechkin)</td><td>0.002&ndash;100 kHz, 30 mV/Pa</td><td>Underwater channel, roughly 40 dB stronger than airborne</td><td>&#8377;20&ndash;60 k</td></tr>
+          <tr><td>Hydrophone</td><td><strong>GI-51B</strong> / <strong>GI-54</strong><br><strong>B&amp;K 8103</strong> (Pumphrey)</td><td>30 mV/Pa, 0.002&ndash;120 kHz<br>0.1 Hz&ndash;200 kHz</td><td>Underwater channel, ~40 dB stronger than airborne. <a href="sensors.html#hydrophones">Model comparison</a></td><td>&#8377;20&ndash;60 k</td></tr>
           <tr><td>DAQ</td><td>NI USB-6009</td><td>500 Hz</td><td>Optical gate logging. Far too slow to serve as an acoustic clock</td><td>&#8377;15&ndash;30 k</td></tr>
-          <tr><td>Optical gate</td><td>HeNe + photodiode<br>Phototransistor</td><td>2 ms and 25 ms floors</td><td>The cross-check channel. Cheap, and it never misses a silent drop</td><td>&#8377;500&ndash;2 k</td></tr>
+          <tr><td>Optical gate</td><td>HeNe + photodiode<br>Phototransistor<br>BDX 25 + NE 555 (Pumphrey)</td><td>2 ms and 25 ms floors</td><td>The cross-check channel. Cheap, and it never misses a silent drop</td><td>&#8377;500&ndash;2 k</td></tr>
           <tr><td>Pressure sensor</td><td>Motorola MPXV5004G</td><td class="nr">calibration not reported</td><td>Reports production rate rather than bubble size</td><td>&#8377;1&ndash;3 k</td></tr>
           <tr><td>High-speed camera</td><td>Vision Research V2512 Mono</td><td>75,000 fps, 512&times;512</td><td>Bubble-scale physics only. Not needed for timing work</td><td>&#8377;50 L+</td></tr>
           <tr><td>High-speed camera</td><td>MotionScope 8000S<br>Kodak Ektapro</td><td>1,000 fps, 160&times;140<br>12,000 fps</td><td>Enough for publishable results. The realistic tier</td><td>&#8377;2&ndash;10 L</td></tr>
@@ -530,7 +552,7 @@
 </div>
 
 <footer class="foot">
-  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  Personal research wiki &middot; sources are the papers in <code>papers/</code> &middot;
   notes in <code>vault/</code>
 </footer>
 

@@ -30,6 +30,7 @@
       <li><a href="index.html">Overview</a></li>
       <li><a href="explainers.html">Explainers</a></li>
       <li><a href="lab.html">Interactive lab</a></li>
+      <li><a href="sensors.html">Choosing sensors</a></li>
       <li><a href="build.html" aria-current="page">Build guide</a></li>
       <li><a href="pipeline.html">Data pipeline</a></li>
       <li><a href="setups.html">Experimental setups</a></li>
@@ -89,8 +90,8 @@
           <tr><td>Black heatshrink or tube</td><td>Apertures. This is what makes the gate sharp</td><td>&#8377;50</td></tr>
 
           <tr><td rowspan="3"><strong>5. Audio</strong></td><td>Audio interface</td><td><strong>4 input channels, 96 kHz, 24 bit.</strong> Channel count is the hard requirement</td><td>&#8377;15&ndash;30 k</td></tr>
-          <tr><td>Measurement microphone</td><td>Flat to 20 kHz. Phantom or plug-in power, match the interface</td><td>&#8377;8&ndash;20 k</td></tr>
-          <tr><td>Hydrophone <span class="nr">(phase 2)</span></td><td>See <a href="rig.html#hydrophone">the derived spec</a></td><td>&#8377;20&ndash;60 k</td></tr>
+          <tr><td>Measurement microphone</td><td>Flat to 20 kHz. <a href="sensors.html#buy">Cheaper options work for Phase 1</a></td><td>&#8377;8&ndash;20 k</td></tr>
+          <tr><td>Hydrophone <span class="nr">(phase 2)</span></td><td>See <a href="sensors.html#hydrophones">the models the literature used</a></td><td>&#8377;20&ndash;60 k</td></tr>
 
           <tr><td rowspan="3"><strong>6. Calibration</strong></td><td>Graduated cylinder</td><td>10 or 25 ml. Non-negotiable, it fixes your x-axis</td><td>&#8377;300</td></tr>
           <tr><td>Thermometer</td><td>&plusmn;0.2 &deg;C. Sekatchev blamed unexplained jumps partly on temperature</td><td>&#8377;500</td></tr>
@@ -391,7 +392,7 @@ dk.write_csv('run_042.csv', list(enumerate(T)), ['n', 'T_s'])</code></pre>
 </div>
 
 <footer class="foot">
-  Personal research wiki &middot; sources are the eight papers in <code>papers/</code> &middot;
+  Personal research wiki &middot; sources are the papers in <code>papers/</code> &middot;
   notes in <code>vault/</code> &middot; code in <code>analysis/</code>
 </footer>
 
