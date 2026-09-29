@@ -180,24 +180,29 @@
 
   // --- lanes: everything left of the playhead has happened ------------------
 
+  var TOP = 20, AXIS = 18;   // title band above each plot; time-label band under the drops lane
+  var shownPeak = 1;         // auto gain, eased so the waveform does not pump as spikes scroll in and out
   function ph() { return vid.paused ? 0.5 : PH; }
-  function view(c, t) {   // time <-> x inside a lane's plot area
+  function view(c, t) {   // time <-> x, and the plot rectangle, for one lane
     var x0 = t - WIN * ph(), pw = c.W - GUT - PAD;
-    return { x0: x0, pw: pw, x: function (tt) { return GUT + (tt - x0) / WIN * pw; }, t: function (x) { return x0 + (x - GUT) / pw * WIN; } };
+    return { x0: x0, pw: pw, top: TOP, h: c.H - TOP - (c === cvs[3] ? AXIS : 4),
+             x: function (tt) { return GUT + (tt - x0) / WIN * pw; }, t: function (x) { return x0 + (x - GUT) / pw * WIN; } };
   }
-  function lane(c, t, draw, col, yAxis) {
-    var g = c.getContext('2d'), v = view(c, t), phx = v.x(t);
+  function lane(c, t, col, yTicks, draw) {
+    var g = c.getContext('2d'), v = view(c, t), phx = v.x(t), yt = yTicks ? yTicks(v) : [];
     g.clearRect(0, 0, c.W, c.H);
-    g.strokeStyle = col.rule; g.lineWidth = 1; g.globalAlpha = 0.6;
-    ticks(v.x0, v.x0 + WIN, 6).v.forEach(function (tt) { var x = Math.round(v.x(tt)) + 0.5; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, c.H); g.stroke(); });
-    g.globalAlpha = 1;
-    g.save(); g.beginPath(); g.rect(GUT, 0, v.pw, c.H); g.clip();
-    draw(g, c.W, c.H, v);
-    g.globalAlpha = 0.55; g.fillStyle = col.ground; g.fillRect(phx, 0, c.W - phx, c.H); g.globalAlpha = 1;
-    g.fillStyle = col.hydro; g.fillRect(phx - 0.5, 0, 1, c.H);
-    if (hover) { g.fillStyle = col.ink3; g.fillRect(v.x(hover.t) - 0.5, 0, 1, c.H); }
+    g.strokeStyle = col.rule; g.lineWidth = 1; g.globalAlpha = 0.55; g.beginPath();
+    ticks(v.x0, v.x0 + WIN, 6).v.forEach(function (tt) { var x = Math.round(v.x(tt)) + 0.5; g.moveTo(x, v.top); g.lineTo(x, v.top + v.h); });
+    yt.forEach(function (k) { var y = Math.round(k[0]) + 0.5; g.moveTo(GUT, y); g.lineTo(GUT + v.pw, y); });
+    g.stroke(); g.globalAlpha = 1;
+    g.strokeRect(GUT + 0.5, v.top + 0.5, v.pw - 1, v.h - 1);
+    g.save(); g.beginPath(); g.rect(GUT, v.top, v.pw, v.h); g.clip();
+    draw(g, v);
+    g.globalAlpha = 0.55; g.fillStyle = col.ground; g.fillRect(phx, v.top, c.W - phx, v.h); g.globalAlpha = 1;
+    g.fillStyle = col.hydro; g.fillRect(phx - 0.5, v.top, 1, v.h);
+    if (hover) { g.fillStyle = col.ink3; g.fillRect(v.x(hover.t) - 0.5, v.top, 1, v.h); }
     g.restore();
-    if (yAxis) yAxis(g, c.H);
+    yt.forEach(function (k) { if (k[1]) label(g, col, k[1], GUT - 6, k[0]); });
   }
   function sq(v) { return v < 0 ? -Math.sqrt(-v) : Math.sqrt(v); }   // lifts quiet plinks beside a loud one
   function unpack(b64) {   // int8 (max, min) pairs
@@ -228,72 +233,74 @@
     if (!loudCache[key]) loudCache[key] = boxcar(Float32Array.from(D.loud[src]), Math.round(smoothMs / 1000 * D.loud_rate));
     return loudCache[key];
   }
-  function waveCols(v) {   // per-pixel (max, min) on the sqrt display scale, smoothed across pixels
-    var w = D.wave[src], n = w.length / 2, hi = new Float32Array(Math.ceil(v.pw)), lo = new Float32Array(hi.length), ok = [];
-    for (var px = 0; px < hi.length; px++) {
-      var a = Math.floor((v.x0 + px / v.pw * WIN) * D.wave_rate), b = Math.max(a + 1, Math.floor((v.x0 + (px + 1) / v.pw * WIN) * D.wave_rate));
+  function waveCols(v) {   // (max, min) per pixel on the sqrt scale, in columns pinned to time so scrolling only slides them
+    var w = D.wave[src], n = w.length / 2, dt = WIN / v.pw, c0 = Math.floor(v.x0 / dt), cols = Math.ceil(v.pw) + 2;
+    var hi = new Float32Array(cols), lo = new Float32Array(cols), ok = [];
+    for (var j = 0; j < cols; j++) {
+      var a = Math.floor((c0 + j) * dt * D.wave_rate), b = Math.max(a + 1, Math.floor((c0 + j + 1) * dt * D.wave_rate));
       ok.push(b > 0 && a < n);
       var mx = 0, mn = 0;
       for (var k = Math.max(0, a); k < Math.min(n, b); k++) { mx = Math.max(mx, w[2 * k] / 127); mn = Math.min(mn, w[2 * k + 1] / 127); }
-      hi[px] = sq(mx); lo[px] = sq(mn);
+      hi[j] = sq(mx); lo[j] = sq(mn);
     }
-    var m = Math.round(smoothMs / 1000 / WIN * v.pw);
-    return { hi: boxcar(hi, m), lo: boxcar(lo, m), ok: ok };
+    var m = Math.round(smoothMs / 1000 / dt);
+    return { hi: boxcar(hi, m), lo: boxcar(lo, m), ok: ok, x: function (j) { return v.x((c0 + j + 0.5) * dt); } };
   }
 
   function drawLanes(t, col) {
-    var peak = 0.02, L = loudness();
-    lane(cvs[0], t, function (g, W, H, v) {
-      var c = waveCols(v);
-      for (var i = 0; i < c.hi.length; i++) if (c.ok[i]) peak = Math.max(peak, c.hi[i], -c.lo[i]);
-      if (gain !== 'auto') peak = 1;
-      var y = function (s) { return H / 2 - s / peak * (H / 2 - 8); };
+    var L = loudness();
+    lane(cvs[0], t, col, function (v) {
+      var mid = v.top + v.h / 2, y = function (s) { return mid - s / shownPeak * (v.h / 2 - 4); };
+      return [[y(shownPeak), pct(shownPeak * shownPeak)], [y(shownPeak / 2), pct(shownPeak * shownPeak / 4)], [mid, '0'],
+              [y(-shownPeak / 2), ''], [y(-shownPeak), '']];   // on a sqrt scale, height f of peak is amplitude (f * peak)^2
+    }, function (g, v) {
+      var c = waveCols(v), target = 0.02;
+      for (var i = 0; i < c.hi.length; i++) if (c.ok[i]) target = Math.max(target, c.hi[i], -c.lo[i]);
+      shownPeak = gain === 'auto' ? shownPeak + (target - shownPeak) * 0.2 : 1;
+      var mid = v.top + v.h / 2, y = function (s) { return mid - Math.max(-1, Math.min(1, s / shownPeak)) * (v.h / 2 - 4); };
       g.setLineDash([3, 3]);
       hits.forEach(function (h, i) {
         var x = v.x(h);
-        if (x < GUT || x > W) return;
-        g.strokeStyle = D.heard[i] ? col.chan : col.ink3; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke();
+        g.strokeStyle = D.heard[i] ? col.chan : col.ink3; g.beginPath(); g.moveTo(x, v.top); g.lineTo(x, v.top + v.h); g.stroke();
       });
-      g.setLineDash([]); g.fillStyle = col.chan; g.beginPath();
-      var first = true, px;
-      for (px = 0; px < c.hi.length; px++) if (c.ok[px]) { first ? g.moveTo(GUT + px, y(c.hi[px])) : g.lineTo(GUT + px, y(c.hi[px])); first = false; }
-      for (px = c.hi.length - 1; px >= 0; px--) if (c.ok[px]) g.lineTo(GUT + px, y(Math.min(c.lo[px], c.hi[px] - 2 * peak / H)));
-      g.closePath(); g.fill();
-    }, col, function (g, H) {
-      [1, 0.5, 0].forEach(function (f) {   // on a sqrt scale, height f of peak is amplitude (f * peak)^2
-        label(g, col, f ? pct(Math.pow(f * peak, 2)) : '0', GUT - 6, H / 2 - f * (H / 2 - 8));
-      });
+      g.setLineDash([]);
+      var edge = function (arr, fwd) {
+        for (var j = fwd ? 0 : arr.length - 1; fwd ? j < arr.length : j >= 0; j += fwd ? 1 : -1) if (c.ok[j]) g.lineTo(c.x(j), y(arr[j]));
+      };
+      g.beginPath(); edge(c.hi, true); edge(c.lo, false); g.closePath();
+      g.globalAlpha = 0.35; g.fillStyle = col.chan; g.fill(); g.globalAlpha = 1;
+      g.strokeStyle = col.chan; g.lineWidth = 1.25; g.lineJoin = 'round';
+      g.beginPath(); edge(c.hi, true); g.stroke(); g.beginPath(); edge(c.lo, true); g.stroke(); g.lineWidth = 1;
     });
-    lane(cvs[1], t, function (g, W, H, v) {
-      var y = function (db) { return 8 + (-db / 60) * (H - 16); }, pts = [];
+    lane(cvs[1], t, col, function (v) {
+      return [0, -20, -40, -60].map(function (db) { return [v.top + 4 + (-db / 60) * (v.h - 8), db ? String(db) : '0 dB']; });
+    }, function (g, v) {
+      var y = function (db) { return v.top + 4 + (-db / 60) * (v.h - 8); }, pts = [];
       var k0 = Math.max(0, Math.floor(v.x0 * D.loud_rate) - 1), k1 = Math.min(L.length, Math.ceil((v.x0 + WIN) * D.loud_rate) + 2);
       for (var k = k0; k < k1; k++) pts.push([v.x(k / D.loud_rate), y(L[k])]);
-      g.strokeStyle = col.chan; g.lineWidth = 1.75; g.lineJoin = 'round'; g.beginPath();
-      if (smoothMs) smoothPath(g, pts); else pts.forEach(function (p, i) { i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); });
-      g.stroke(); g.lineWidth = 1;
-    }, col, function (g, H) {
-      [0, -20, -40, -60].forEach(function (db) { label(g, col, db ? String(db) : '0 dB', GUT - 6, 8 + (-db / 60) * (H - 16)); });
+      if (pts.length < 2) return;
+      var path = function () { if (smoothMs) smoothPath(g, pts); else pts.forEach(function (p, i) { i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); }); };
+      g.beginPath(); path(); g.lineTo(pts[pts.length - 1][0], y(-60)); g.lineTo(pts[0][0], y(-60)); g.closePath();
+      g.globalAlpha = 0.14; g.fillStyle = col.chan; g.fill(); g.globalAlpha = 1;
+      g.strokeStyle = col.chan; g.lineWidth = 1.75; g.lineJoin = 'round'; g.beginPath(); path(); g.stroke(); g.lineWidth = 1;
     });
-    lane(cvs[2], t, function (g, W, H, v) {
+    lane(cvs[2], t, col, function (v) {
+      return ticks(0, D.spec_fmax / 1000, 4).v.map(function (k) { return [v.top + v.h - k * 1000 / D.spec_fmax * v.h, k ? k + ' kHz' : '0']; });
+    }, function (g, v) {
       var im = tinted(col.chan);
       if (!im) return;
-      var sx = v.x0 * D.spec_cps, sw = WIN * D.spec_cps, dx = GUT;
-      if (sx < 0) { dx = GUT - sx / sw * v.pw; sw += sx; sx = 0; }
-      if (sw > 0) g.drawImage(im, sx, 0, sw, im.height, dx, 0, sw / (WIN * D.spec_cps) * v.pw, H);
-    }, col, function (g, H) {
-      ticks(0, D.spec_fmax / 1000, 4).v.forEach(function (k) { label(g, col, k + ' kHz', GUT - 6, Math.max(7, Math.min(H - 7, H - k * 1000 / D.spec_fmax * H))); });
+      var cps = D.spec_cps, a = Math.max(0, Math.floor(v.x0 * cps)), b = Math.min(im.width, Math.ceil((v.x0 + WIN) * cps) + 1);
+      if (b > a) g.drawImage(im, a, 0, b - a, im.height, v.x(a / cps), v.top, (b - a) / cps / WIN * v.pw, v.h);   // whole columns, so it slides without shimmer
     });
-    lane(cvs[3], t, function (g, W, H, v) {
+    lane(cvs[3], t, col, null, function (g, v) {
       hits.forEach(function (d, i) {
         var x = v.x(d);
-        if (x < GUT || x > W) return;
-        g.fillStyle = col.ink; g.fillRect(x - 0.75, H * 0.42, 1.5, H * 0.3);
-        if (D.heard[i]) { g.fillStyle = col.chan; g.beginPath(); g.arc(x, H * 0.36, 3, 0, 7); g.fill(); }
+        g.fillStyle = col.ink; g.fillRect(x - 0.75, v.top + v.h * 0.38, 1.5, v.h * 0.5);
+        if (D.heard[i]) { g.fillStyle = col.chan; g.beginPath(); g.arc(x, v.top + v.h * 0.22, 3, 0, 7); g.fill(); }
       });
-    }, col, function (g, H) {
-      var v = view(cvs[3], t), tk = ticks(v.x0, v.x0 + WIN, 6), dec = Math.max(0, -Math.floor(Math.log10(tk.step)));
-      tk.v.forEach(function (tt) { var x = v.x(tt); if (x > GUT + 12 && x < cvs[3].W - 20) label(g, col, tt.toFixed(dec) + ' s', x, H - 9, 'center'); });
     });
+    var v = view(cvs[3], t), tk = ticks(v.x0, v.x0 + WIN, 6), dec = Math.max(0, -Math.floor(Math.log10(tk.step))), g = cvs[3].getContext('2d');
+    tk.v.forEach(function (tt) { var x = v.x(tt); if (x > GUT + 14 && x < cvs[3].W - 22) label(g, col, tt.toFixed(dec) + ' s', x, v.top + v.h + 10, 'center'); });
   }
 
   // The spectrogram PNG stores loudness as alpha; paint it in the channel colour once per theme.
@@ -333,7 +340,8 @@
     if (k >= 0 && 2 * k + 1 < w.length) rows.push([pct(Math.max(w[2 * k], -w[2 * k + 1]) / 127), 'of loudest']);
     var L = loudness(), j = Math.round(th * D.loud_rate);
     if (j >= 0 && j < L.length) rows.push([L[j].toFixed(0) + ' dB', 'loudness']);
-    if (c === cvs[2]) rows.push([((1 - y / r.height) * D.spec_fmax / 1000).toFixed(1) + ' kHz', 'frequency']);
+    var pv = view(c, vid.currentTime);
+    if (c === cvs[2] && y >= pv.top) rows.push([(Math.min(1, 1 - (y - pv.top) / pv.h) * D.spec_fmax / 1000).toFixed(1) + ' kHz', 'frequency']);
     var n = nearest(th);
     if (n >= 0) rows.push(['#' + (n + 1) + ' ' + (th >= hits[n] ? '+' : '') + Math.round((th - hits[n]) * 1e3) + ' ms', D.heard[n] ? 'nearest drop, heard' : 'nearest drop']);
     hover = { t: th };

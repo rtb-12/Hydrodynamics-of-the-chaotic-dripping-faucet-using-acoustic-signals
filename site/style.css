@@ -886,18 +886,19 @@ a:focus-visible, .sidenav a:focus-visible {
 }
 .vmeta { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.05em; color: var(--ink-3); }
 
-.vgrid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0.9rem; }
+.vgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.9rem; }
 .vgrid video {
   width: 100%;
   aspect-ratio: 16 / 9;
   display: block;
+  align-self: center;
   background: #000;
   border: 1px solid var(--rule);
   border-radius: 2px;
 }
 
-.lanes { display: grid; grid-template-rows: 1.7fr 1fr 1fr 0.62fr; gap: 0.6rem; position: relative; }
-.lane .cap { left: 54px; }
+.lanes { display: grid; grid-template-rows: minmax(150px, 1.6fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(64px, 0.7fr); gap: 0.5rem; position: relative; }
+.lane .cap { left: 54px; top: 4px; }
 .lane canvas, .chaos canvas { cursor: crosshair; }
 
 .tip {
@@ -935,7 +936,7 @@ a:focus-visible, .sidenav a:focus-visible {
 
 @media (max-width: 900px) {
   .vgrid, .chaos { grid-template-columns: minmax(0, 1fr); }
-  .lanes { grid-template-rows: 170px 100px 110px 60px; }
+  .lanes { grid-template-rows: 180px 120px 120px 70px; }
   .clock { margin-left: 0; width: 100%; }
   .chaos .plot { height: 300px; }
 }
