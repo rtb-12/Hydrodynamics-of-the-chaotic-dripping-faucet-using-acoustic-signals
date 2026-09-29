@@ -51,13 +51,15 @@ Everything it found is drawn on `site/recordings/<name>/check.jpg`; `--impact`, 
 
 ## The site
 
-Ten pages, about 290 KB, zero external requests, no libraries.
+Twelve pages, about 300 KB before any recordings, zero external requests, no libraries.
 
 | Page | What it holds |
 | --- | --- |
 | Overview | The thesis, the gap, the failure mode that could sink it |
 | Explainers | Three animated mechanisms: the plink, why the rhythm splits, why 4.669 matters |
 | Interactive lab | Live faucet simulator with audio, bifurcation diagram, plink synthesiser, nozzle designer |
+| Recordings | Real drip videos beside their audio on one clock, zoomable to a single impact, with the return map |
+| Choosing sensors | Which microphone and hydrophone to buy, and why |
 | Build guide | Shopping list, overflow cross-sections, the optical gate circuit, day-one checks |
 | Data pipeline | Sensor roles, signal chain, six analysis stages |
 | Experimental setups | Every rig in the literature drawn in one visual language |
