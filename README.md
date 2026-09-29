@@ -22,7 +22,7 @@ A microphone at 96 kHz timestamps a drop to about 10 µs, roughly three orders o
 
 ```
 site/        Static site. Opens by double-clicking site/index.html. No build step.
-analysis/    Drip analysis toolkit. Standard library only, no install needed.
+analysis/    Drip analysis toolkit (standard library only) and the recording pipeline (runs through uv).
 papers/      Source PDFs, with citations and DOIs in papers/README.md.
 tools/       Repository checks that CI runs.
 ```
@@ -35,6 +35,19 @@ python3 tools/validate_site.py      # structural checks on the site
 ```
 
 Both run on a stock Python 3 with nothing installed.
+
+### Recordings
+
+`site/recording.html` plays a drip video beside its audio, locked to one clock, with the return map of the detected drops.
+Each recording is prepared once by the pipeline, which needs only [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv run analysis/recording.py exp/1.MOV --audio "exp/WhatsApp Audio.mp4" --name exp1
+uv run analysis/recording.py --selftest    # synthetic clips with known drops, run by CI
+```
+
+It finds the drop column and the water line, levels and crops the video (tone-mapping iPhone HDR), aligns the separately recorded audio by cross-correlation, cleans it, and times every drop.
+Everything it found is drawn on `site/recordings/<name>/check.jpg`; `--impact`, `--tilt` and `--gate` override it when a scene fools it.
 
 ## The site
 

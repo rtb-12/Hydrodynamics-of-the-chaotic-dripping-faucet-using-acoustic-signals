@@ -29,6 +29,11 @@ jobs:
       - name: Analysis toolkit self-check
         run: python3 analysis/test_dripkit.py
 
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Recording pipeline end to end on synthetic clips
+        run: uv run analysis/recording.py --selftest
+
       - name: Site structure, links and offline guarantee
         run: python3 tools/validate_site.py
 
