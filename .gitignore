@@ -8,3 +8,6 @@ docs/superpowers/
 .DS_Store
 __pycache__/
 *.pyc
+
+# Raw experiment footage; the processed copies under site/recordings/ are what gets published.
+/exp*/
