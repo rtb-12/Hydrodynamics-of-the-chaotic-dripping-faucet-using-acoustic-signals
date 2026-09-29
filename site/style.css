@@ -864,3 +864,78 @@ a:focus-visible, .sidenav a:focus-visible {
   padding: 0.3rem 0.62rem;
   text-transform: none;
 }
+
+/* --- recording viewer ----------------------------------------------------
+   Full-width page: the video and the audio lanes share one clock, and the
+   lanes take their height from the video beside them.
+   ------------------------------------------------------------------------ */
+
+.viewer { max-width: 1680px; margin: 0 auto; padding: 1.4rem var(--gap) var(--gap); }
+.viewer > * { max-width: none; }   /* main caps children at reading width; this page is all figures */
+
+.vhead { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+.vhead h1 { margin: 0; font-size: 1.6rem; }
+.vhead select {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  padding: 0.35rem 0.6rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+.vmeta { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.05em; color: var(--ink-3); }
+
+.vgrid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0.9rem; }
+.vgrid video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: block;
+  background: #000;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.lanes { display: grid; grid-template-rows: 1.7fr 1fr 1fr 0.62fr; gap: 0.6rem; position: relative; }
+.lane .cap { left: 54px; }
+.lane canvas, .chaos canvas { cursor: crosshair; }
+
+.tip {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  padding: 0.4rem 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  line-height: 1.55;
+  white-space: nowrap;
+  color: var(--ink-3);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+.tip b { color: var(--ink); font-weight: 500; margin-right: 0.5em; font-variant-numeric: tabular-nums; }
+.lane { min-height: 0; }
+.lane canvas, .chaos canvas { position: absolute; inset: 0; }
+
+.scrub { width: 100%; accent-color: var(--hydro); margin: 1rem 0 0; }
+
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; margin-left: -1px; }
+.seg button:first-child { border-radius: 2px 0 0 2px; margin-left: 0; }
+.seg button:last-child { border-radius: 0 2px 2px 0; }
+
+.clock { margin-left: auto; font-family: var(--mono); font-size: 0.8rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+.chaos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 0.9rem; margin-top: 1.4rem; }
+.chaos .plot { height: 380px; }
+
+.empty { font-family: var(--mono); font-size: 0.85rem; color: var(--ink-2); }
+
+@media (max-width: 900px) {
+  .vgrid, .chaos { grid-template-columns: minmax(0, 1fr); }
+  .lanes { grid-template-rows: 170px 100px 110px 60px; }
+  .clock { margin-left: 0; width: 100%; }
+  .chaos .plot { height: 300px; }
+}
