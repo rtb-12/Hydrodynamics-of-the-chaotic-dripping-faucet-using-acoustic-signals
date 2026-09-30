@@ -54,6 +54,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }   /* components that set display must still honour the attribute */
 
 body {
   margin: 0;
