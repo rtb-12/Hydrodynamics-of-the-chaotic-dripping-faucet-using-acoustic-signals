@@ -11,537 +11,575 @@
 
 <header class="masthead">
   <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
-  <span class="masthead-meta">RECORDINGS</span>
+  <nav class="topnav" aria-label="Site">
+    <a href="index.html">Overview</a><a href="explainers.html">Explainers</a><a href="lab.html">Lab</a><a href="recording.html" aria-current="page">Recordings</a><a href="pipeline.html">Pipeline</a><a href="papers.html">Papers</a>
+  </nav>
   <button id="themeBtn" class="themetoggle" type="button">System</button>
 </header>
 
 <main class="viewer">
   <div class="vhead">
-    <h1>Recording</h1>
-    <select id="pick" aria-label="Recording"></select>
-    <span class="vmeta" id="meta"></span>
+    <div class="vtitle">
+      <h1>Recordings</h1>
+      <select id="pick" aria-label="Recording"></select>
+      <span class="vmeta" id="meta"></span>
+    </div>
+    <p class="lede">Each recording pairs a 60 fps video of the drip with sound from a separate phone microphone, lined up to one clock.
+    The video and sound load fully before playback, so seeking and slow motion stay smooth. Click any graph to enlarge it, and use the <b>i</b> buttons to see how each quantity is measured.</p>
   </div>
 
   <p class="empty" id="empty" hidden>No recordings yet. Run
   <code>uv run analysis/recording.py VIDEO --audio AUDIO</code>, then reload.</p>
 
-  <div id="body">
+  <div class="vbody" id="body">
     <div class="vgrid">
-      <video id="vid" muted playsinline preload="auto"></video>
+      <div class="vidbox">
+        <video id="vid" muted playsinline preload="auto"></video>
+        <div class="loading" id="loading">
+          <p id="loadHead">Loading the recording</p>
+          <div class="loadbar"><i id="loadBar"></i></div>
+          <small id="loadText">Starting</small>
+        </div>
+      </div>
       <div class="lanes">
-        <div class="plot lane"><span class="cap">Waveform &middot; % of loudest &middot; scroll to zoom</span><canvas id="cvWave"></canvas></div>
-        <div class="plot lane"><span class="cap">Loudness &middot; dB below loudest</span><canvas id="cvLoud"></canvas></div>
-        <div class="plot lane"><span class="cap">Spectrogram &middot; kHz</span><canvas id="cvSpec"></canvas></div>
-        <div class="plot lane"><span class="cap">Drops &middot; dot = heard</span><canvas id="cvDrops"></canvas></div>
-        <div class="tip" id="laneTip" hidden></div>
+        <div class="plot card" tabindex="0" data-kind="wave"><span class="cap">Waveform <span>% of loudest</span><button class="info" type="button" data-info="wave" aria-label="About the waveform">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
+        <div class="plot card" tabindex="0" data-kind="loud"><span class="cap">Loudness <span>dB below the loudest moment</span><button class="info" type="button" data-info="loud" aria-label="About loudness">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
+        <div class="plot card" tabindex="0" data-kind="spec"><span class="cap">Spectrogram <span>kHz</span><button class="info" type="button" data-info="spec" aria-label="About the spectrogram">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
+        <div class="plot card" tabindex="0" data-kind="drops"><span class="cap">Drops <span>dot means heard</span><button class="info" type="button" data-info="dropsLane" aria-label="About the drops lane">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
       </div>
     </div>
 
-    <input id="scrub" class="scrub" type="range" min="0" max="1" step="0.001" value="0" aria-label="Scrub">
+    <fieldset id="ctl" class="vbody" disabled>
+      <div class="transport card">
+        <button class="primary" id="bPlay" type="button">Play</button>
+        <input type="range" id="scrub" class="scrub" min="0" max="1" step="0.001" value="0" aria-label="Position">
+        <span class="clock"><span><b id="cT">0.000</b> s</span><span>Frame <b id="cF">0</b></span><span>Drop <b id="cD">-</b></span><span>Interval <b id="cI">-</b> ms</span></span>
+      </div>
 
-    <div class="btnrow">
-      <button id="bPlay" type="button">Play</button>
-      <span class="seg">
-        <button id="bBack" type="button" title="Previous frame (,)">&lsaquo; Frame</button>
-        <button id="bFwd" type="button" title="Next frame (.)">Frame &rsaquo;</button>
-      </span>
-      <span class="seg" id="speeds">
-        <button type="button" data-r="1" aria-pressed="true">1&times;</button>
-        <button type="button" data-r="0.5">0.5&times;</button>
-        <button type="button" data-r="0.25">0.25&times;</button>
-        <button type="button" data-r="0.1">0.1&times;</button>
-      </span>
-      <span class="seg">
-        <button id="bPrev" type="button" title="Previous drop ([)">&lsaquo; Drop</button>
-        <button id="bNext" type="button" title="Next drop (])">Drop &rsaquo;</button>
-      </span>
-      <span class="seg" id="which">
-        <button type="button" data-h="all" aria-pressed="true">All drops</button>
-        <button type="button" data-h="heard">Heard</button>
-      </span>
-      <span class="seg" id="wins">
-        <button type="button" data-w="4">4 s</button>
-        <button type="button" data-w="2" aria-pressed="true">2 s</button>
-        <button type="button" data-w="0.5">0.5 s</button>
-        <button type="button" data-w="0.1">0.1 s</button>
-      </span>
-      <span class="seg" id="gains">
-        <button type="button" data-g="auto" aria-pressed="true">Auto gain</button>
-        <button type="button" data-g="full">Full</button>
-      </span>
-      <span class="seg" id="smooths">
-        <button type="button" data-m="0">Sharp</button>
-        <button type="button" data-m="15" aria-pressed="true">Smooth</button>
-        <button type="button" data-m="50">Smoother</button>
-      </span>
-      <span class="seg" id="srcs">
-        <button type="button" data-s="clean" aria-pressed="true">Cleaned</button>
-        <button type="button" data-s="raw">Raw</button>
-      </span>
-      <span class="clock" id="clock"></span>
+    <div class="options">
+      <div class="optgroup"><span>Step</span>
+        <span class="seg"><button type="button" id="bBack" title="Previous frame (,)">&lsaquo; Frame</button><button type="button" id="bFwd" title="Next frame (.)">Frame &rsaquo;</button></span>
+        <span class="seg"><button type="button" id="bPrev" title="Previous drop ([)">&lsaquo; Drop</button><button type="button" id="bNext" title="Next drop (])">Drop &rsaquo;</button></span></div>
+      <div class="optgroup"><span>Drop steps land on</span><span class="seg" id="which"><button type="button" data-h="all" aria-pressed="true">Any drop</button><button type="button" data-h="heard">Heard drops</button></span></div>
+      <div class="optgroup"><span>Speed</span><span class="seg" id="speeds"><button type="button" data-r="1" aria-pressed="true">1&times;</button><button type="button" data-r="0.5">0.5&times;</button><button type="button" data-r="0.25">0.25&times;</button><button type="button" data-r="0.1">0.1&times;</button></span></div>
+      <div class="optgroup"><span>Window</span><span class="seg" id="wins"><button type="button" data-w="4">4 s</button><button type="button" data-w="2" aria-pressed="true">2 s</button><button type="button" data-w="0.5">0.5 s</button><button type="button" data-w="0.1">0.1 s</button></span></div>
+      <div class="optgroup"><span>Waveform</span><span class="seg" id="detail"><button type="button" data-m="0" aria-pressed="true">Sharp</button><button type="button" data-m="15">Smooth</button></span></div>
+      <div class="optgroup"><span>Gain</span><span class="seg" id="gains"><button type="button" data-g="auto" aria-pressed="true">Fit to window</button><button type="button" data-g="full">Whole recording</button></span></div>
+      <div class="optgroup"><span>Audio</span><span class="seg" id="srcs"><button type="button" data-s="clean" aria-pressed="true">Cleaned</button><button type="button" data-s="raw">Raw</button></span><button class="info" type="button" data-info="audio" aria-label="About the audio tracks">i</button></div>
     </div>
+    <div class="keys"><span><kbd>Space</kbd> play or pause</span><span><kbd>,</kbd> <kbd>.</kbd> previous or next frame</span><span><kbd>[</kbd> <kbd>]</kbd> previous or next drop</span></div>
+    </fieldset>
 
-    <div class="chaos">
-      <div class="plot"><span class="cap">Return map &middot; T<sub>n+1</sub> vs T<sub>n</sub>, ms &middot; click a point</span><canvas id="cvMap"></canvas><div class="tip" id="mapTip" hidden></div></div>
-      <div class="plot"><span class="cap">Interval T<sub>n</sub>, ms, vs drop n</span><canvas id="cvSeries"></canvas><div class="tip" id="seriesTip" hidden></div></div>
-    </div>
-
-    <div class="readout" id="stats"></div>
+    <section class="intervals">
+      <h2>Drop intervals, whole recording</h2>
+      <div class="dstats card" id="stats"></div>
+      <div class="chaos">
+        <div class="plot card" tabindex="0" data-kind="map"><span class="cap">Return map <span>next interval against this one, ms</span><button class="info" type="button" data-info="map" aria-label="About the return map">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
+        <div class="plot card" tabindex="0" data-kind="series"><span class="cap">Interval per drop <span>ms</span><button class="info" type="button" data-info="series" aria-label="About the interval series">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
+      </div>
+    </section>
   </div>
-</main>
 
-<audio id="aud" preload="auto"></audio>
+  <audio id="aud" preload="auto"></audio>
+  <div class="tip" id="tip" role="tooltip" hidden></div>
+
+  <dialog class="zoom" id="zoom" aria-labelledby="zTitle">
+    <div class="zhead"><h2 id="zTitle"></h2><span class="zread" id="zRead"></span><button id="zPlay" type="button">Play</button><button id="zClose" type="button" autofocus>Close</button></div>
+    <div class="zbody" id="zBody"><canvas id="zc"></canvas></div>
+    <div class="zfoot" id="zFoot"></div>
+  </dialog>
+</main>
 
 <script>
 (function () {
-  var WIN = 2.0, PH = 0.8;   // lane window in seconds (zoomable); playhead position while playing, centred when paused
-  var vid = document.getElementById('vid'), aud = document.getElementById('aud');
-  var scrub = document.getElementById('scrub'), D, iv, hits, src = 'clean', gain = 'auto', heardOnly = false, lastDrop = -2;
-  var smoothMs = 15, specCache = {}, loudCache = {};
+  var PH = 0.8, GUT = 46, PAD = 8;   // playhead position while playing; lane gutters
+  var HARD_SYNC = 0.2, NUDGE = 0.02, SYNC_HOLD_MS = 300;   // re-seek audio beyond this real-time drift (s); else trim its rate by up to 2%; settle time after a seek
+  var TIME = ['wave', 'loud', 'spec', 'drops'];
+  var INFO = {
+    wave: ['Waveform', 'The microphone signal. Each pixel column is drawn from the highest to the lowest sample in that slice of time, so nothing is averaged away.',
+      'Height uses a square-root scale so quiet plinks stay visible next to loud ones; the labels give the true percentage of the loudest sample in the recording.',
+      'Dashed lines mark drops, orange where the drop was heard.'],
+    loud: ['Loudness', 'How loud the 2 to 15 kHz band is over time; drop impacts and bubble plinks live in that band, room noise mostly below it.',
+      '0 dB is the loudest moment of this recording, so every other value is negative: -20 dB is a tenth as loud, -40 dB a hundredth.',
+      'This is a relative scale, not a sound pressure level. The phone applies its own automatic gain, so values should not be compared between recordings.'],
+    spec: ['Spectrogram', 'Which frequencies are present over time, from 0 to 16 kHz. Stronger colour means more energy. Each column is a 10.7 ms slice (512 samples at 48 kHz).',
+      'A drop impact shows as a thin vertical streak across many frequencies. The bubble plink that follows shows as a short horizontal mark at the frequency the trapped bubble rings at.'],
+    dropsLane: ['Drops lane', 'Every drop the video detected, placed at the moment its sound reaches the microphone (gate crossing plus the gate-to-sound delay). A dot above a tick means the microphone recorded a sound for that drop.',
+      'The blue line is now. While playing it sits near the right, so what is to its left has already happened; lighter colour to its right is still to come.'],
+    audio: ['Audio tracks', 'Raw is the phone recording as captured, only shifted onto the video clock.',
+      'Cleaned has an 800 Hz high-pass filter to remove room rumble, then spectral noise reduction that uses the quietest 40% of the recording as its noise profile. The graphs follow whichever track is selected.',
+      'At slower speeds the sound drops in pitch like tape, so a 5 kHz plink stays audible when slowed. Firefox mutes sound below 0.25×.'],
+    drops: ['How drops are counted', 'Drops are counted from the video, not the audio. The pipeline finds the thin vertical streak the falling drops draw, then watches a band of pixels on that path, the gate.',
+      'Each drop crossing the gate makes a short pulse of pixel change. A pulse above 3 robust standard deviations of the background counts as one drop, timed at the centre of the pulse, finer than one frame.',
+      'Changes in a strip beside the drop path are subtracted first, which cancels flicker and camera shake. The gate position is chosen automatically as the band giving the most regular drip rate.'],
+    rate: ['Rate', 'One over the median interval between drops. The median ignores a few missed or doubled drops, so this stays close to the true drip rate even when the mean interval does not.'],
+    mean: ['Mean interval', 'Average time between consecutive drops, with one standard deviation. A perfectly periodic faucet would show a deviation near zero.',
+      'Unlike the rate, the mean includes every gap, so a stretch where the video missed drops pulls it far up and widens the deviation. If it disagrees strongly with the rate, check the interval plot for long gaps.'],
+    heard: ['How "heard" is decided', 'Sound onsets are peaks in the 2 to 15 kHz loudness that rise above 8 times its median, at least 50 ms apart.',
+      'Every drop makes its sound a fixed delay after crossing the gate, so the pipeline takes that delay as the most common gap between gate crossings and sound onsets.',
+      'A drop counts as heard if a sound onset lands within 15 ms of its crossing time plus that delay. Unheard drops trapped no ringing bubble, or were too quiet for the phone.'],
+    lag: ['Gate to sound', 'The delay found while matching drops to sounds. With the gate above the water it is the time a drop takes to fall from the gate to the surface.',
+      'It is negative when the automatically chosen gate sits at or just below the water line: the video then sees the splash a little after the sound.'],
+    offset: ['Audio offset', 'The sound was recorded on a separate phone. It is lined up with the video by cross-correlating the loudness of the video’s own soundtrack with the phone recording, and this is the shift applied.',
+      'The confidence says how much stronger the best match was than the next best. Below 1.5× the alignment is flagged as unsure and drops are not matched to sounds.'],
+    map: ['Return map', 'Each dot is one pair of consecutive intervals: this interval across, the next one up. It is the standard test for chaos in the dripping faucet.',
+      'A regular drip puts every dot at one spot on the dashed diagonal. Period doubling gives two spots mirrored across it. Deterministic chaos gives a thin curve or folded band, because each interval fixes the next. Random noise gives a round cloud.',
+      'The ringed dot is the latest drop at the playhead.'],
+    series: ['Interval per drop', 'The time between each drop and the one before it, in order through the recording.',
+      'A flat line is periodic dripping, a line flipping between two levels is period 2, and irregular jumps are chaos or noise; the return map tells those two apart. The blue line marks the latest drop at the playhead.']
+  };
 
-  function load(url, done) {
+  function $(id) { return document.getElementById(id); }
+  var vid = $('vid'), aud = $('aud'), scrub = $('scrub'), zoom = $('zoom'), zc = $('zc'), zRead = $('zRead'), tip = $('tip');
+  var inline = [].slice.call(document.querySelectorAll('#body .plot'));
+  var R = null, ready = false, WIN = 2, smoothMs = 0, gain = 'auto', src = 'clean', heardOnly = false;
+  var zoomKind = null, zView = null, zHover = null, lastDrop = -2, lastInk = '', pinned = null, syncHold = 0, spaceHandled = false;
+
+  // --- loading -------------------------------------------------------------------
+
+  function script(url, done) {   // script tags rather than fetch, so the site also opens straight from the filesystem
     var s = document.createElement('script');
     s.src = url; s.onload = done; s.onerror = done; document.head.appendChild(s);
   }
-  function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  // Whole file into memory, so playback never waits on the network; plain streaming where fetch is unavailable (file://).
+  function fetchBlob(url, onBytes) {
+    return fetch(url).then(function (r) {
+      if (!r.ok || !r.body) throw new Error(r.status);
+      var total = +r.headers.get('Content-Length') || 0, rd = r.body.getReader(), parts = [], got = 0;
+      function pump() {
+        return rd.read().then(function (x) {
+          if (x.done) return URL.createObjectURL(new Blob(parts, { type: r.headers.get('Content-Type') || '' }));
+          parts.push(x.value); got += x.value.length; onBytes(got, total); return pump();
+        });
+      }
+      return pump();
+    }).catch(function () { return url; });
+  }
+  function canPlay(el) {
+    return new Promise(function (ok, fail) {
+      if (el.readyState >= 1) return ok();   // the file is already in memory; iOS never buffers further before a tap
+      el.addEventListener('loadedmetadata', ok, { once: true });
+      el.addEventListener('error', function () { fail(new Error('media')); }, { once: true });
+    });
+  }
+  function unpack(b64) { var s = atob(b64), a = new Int8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
+  function showEmpty() { $('empty').hidden = false; $('body').hidden = true; }
 
-  load('recordings/index.js', function () {
+  script('recordings/index.js', function () {
     var list = window.RECORDING_LIST || [];
-    if (!list.length) {
-      document.getElementById('empty').hidden = false;
-      document.getElementById('body').hidden = true;
-      return;
-    }
-    var want = new URLSearchParams(location.search).get('r'), name = list.indexOf(want) >= 0 ? want : list[0];
-    var pick = document.getElementById('pick');
+    if (!list.length) return showEmpty();
+    var want = new URLSearchParams(location.search).get('r'), name = list.indexOf(want) >= 0 ? want : list[0], pick = $('pick');
     list.forEach(function (n) { pick.add(new Option(n, n, false, n === name)); });
     pick.onchange = function () { location.search = '?r=' + encodeURIComponent(pick.value); };
-    load('recordings/' + name + '/data.js', function () {
-      if (window.RECORDINGS && window.RECORDINGS[name]) init(window.RECORDINGS[name]);
-      else { document.getElementById('empty').hidden = false; document.getElementById('body').hidden = true; }
+    script('recordings/' + name + '/data.js', function () {
+      if (window.RECORDINGS && window.RECORDINGS[name]) init(window.RECORDINGS[name]); else showEmpty();
     });
   });
 
-  // --- setup ---------------------------------------------------------------
-
-  function init(data) {
-    D = data;
-    iv = D.drops.slice(1).map(function (t, i) { return t - D.drops[i]; });
-    // Drops are timed where they cross the gate; shift by the measured gate-to-sound delay to mark the impact.
-    var lag = (D.stats.av_ms || 0) / 1000;
-    hits = D.drops.map(function (t) { return t + lag; });
-    D.wave = { clean: unpack(D.wave.clean), raw: unpack(D.wave.raw) };
-    var dir = 'recordings/' + D.name + '/';
-    vid.src = dir + 'video.mp4';
-    aud.src = dir + 'clean.wav';
-    D.spec = {};
-    ['clean', 'raw'].forEach(function (k) { var im = new Image(); im.src = dir + 'spec-' + k + '.png'; D.spec[k] = im; });
-    scrub.max = D.duration;
-    var s = D.stats;
-    document.getElementById('meta').textContent =
-      [D.created, D.duration.toFixed(1) + ' s', Math.round(D.fps) + ' fps', D.channel].filter(Boolean).join(' · ');
-    document.getElementById('stats').innerHTML = [
-      ['drops', s.drops], ['rate', s.rate + ' Hz'], ['interval', s.mean_ms + ' ± ' + s.sd_ms + ' ms'],
-      ['heard', s.heard + ' / ' + s.drops], ['gate to sound', s.av_ms == null ? '-' : s.av_ms + ' ms'],
-      ['audio offset' + (D.offset_unsure ? ' \u00b7 unsure' : ''), D.offset.toFixed(3) + ' s' + (D.confidence ? ' (' + D.confidence + '\u00d7)' : ''),
-       D.offset_unsure ? 'warn' : '']
-    ].map(function (r) { return '<div><span>' + r[0] + '</span><b class="' + (r[2] || '') + '">' + r[1] + '</b></div>'; }).join('');
-    new ResizeObserver(function () { fitAll(); lastDrop = -2; }).observe(document.body);
-    fitAll(); setRate(1); tick();
-  }
-
-  var cvs = ['cvWave', 'cvLoud', 'cvSpec', 'cvDrops', 'cvMap', 'cvSeries'].map(function (id) { return document.getElementById(id); });
-  function fitAll() {
-    var d = devicePixelRatio || 1;
-    cvs.forEach(function (c) {
-      var r = c.parentNode.getBoundingClientRect();
-      c.width = r.width * d; c.height = r.height * d;
-      var g = c.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); c.W = r.width; c.H = r.height;
-    });
-  }
-
-  // --- axes ----------------------------------------------------------------
-
-  var GUT = 46, PAD = 6;   // lane gutter for y labels; right padding
-  function niceStep(span, n) {
-    var raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
-    return [1, 2, 5, 10].map(function (m) { return m * mag; }).filter(function (v) { return v >= raw; })[0];
-  }
-  function ticks(lo, hi, n) {
-    var st = niceStep(hi - lo, n), out = [];
-    for (var v = Math.ceil(lo / st) * st; v <= hi + 1e-9; v += st) out.push(+v.toFixed(10));
-    return { v: out, step: st };
-  }
-  function label(g, col, text, x, y, align) {
-    g.fillStyle = col.ink3; g.font = '10px ' + col.mono; g.textAlign = align || 'right'; g.textBaseline = 'middle';
-    g.fillText(text, x, y);
-  }
-  function pct(v) { v *= 100; return (v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toFixed(2)) + '%'; }
-
-  // --- lanes: everything left of the playhead has happened ------------------
-
-  var TOP = 20, AXIS = 18;   // title band above each plot; time-label band under the drops lane
-  var shownPeak = 1;         // auto gain, eased so the waveform does not pump as spikes scroll in and out
-  function ph() { return vid.paused ? 0.5 : PH; }
-  function view(c, t) {   // time <-> x, and the plot rectangle, for one lane
-    var x0 = t - WIN * ph(), pw = c.W - GUT - PAD;
-    return { x0: x0, pw: pw, top: TOP, h: c.H - TOP - (c === cvs[3] ? AXIS : 4),
-             x: function (tt) { return GUT + (tt - x0) / WIN * pw; }, t: function (x) { return x0 + (x - GUT) / pw * WIN; } };
-  }
-  function lane(c, t, col, yTicks, draw) {
-    var g = c.getContext('2d'), v = view(c, t), phx = v.x(t), yt = yTicks ? yTicks(v) : [];
-    g.clearRect(0, 0, c.W, c.H);
-    g.strokeStyle = col.rule; g.lineWidth = 1; g.globalAlpha = 0.55; g.beginPath();
-    ticks(v.x0, v.x0 + WIN, 6).v.forEach(function (tt) { var x = Math.round(v.x(tt)) + 0.5; g.moveTo(x, v.top); g.lineTo(x, v.top + v.h); });
-    yt.forEach(function (k) { var y = Math.round(k[0]) + 0.5; g.moveTo(GUT, y); g.lineTo(GUT + v.pw, y); });
-    g.stroke(); g.globalAlpha = 1;
-    g.strokeRect(GUT + 0.5, v.top + 0.5, v.pw - 1, v.h - 1);
-    g.save(); g.beginPath(); g.rect(GUT, v.top, v.pw, v.h); g.clip();
-    draw(g, v);
-    g.globalAlpha = 0.55; g.fillStyle = col.ground; g.fillRect(phx, v.top, c.W - phx, v.h); g.globalAlpha = 1;
-    g.fillStyle = col.hydro; g.fillRect(phx - 0.5, v.top, 1, v.h);
-    if (hover) { g.fillStyle = col.ink3; g.fillRect(v.x(hover.t) - 0.5, v.top, 1, v.h); }
-    g.restore();
-    yt.forEach(function (k) { if (k[1]) label(g, col, k[1], GUT - 6, k[0]); });
-  }
-  function unpack(b64) {   // int8 (max, min) pairs
-    var s = atob(b64), a = new Int8Array(s.length);
-    for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i);
-    return a;
-  }
-  function boxcar(a, n) {   // centred moving average, n points wide, shrinking at the ends
-    if (n < 2) return a;
-    var out = new Float32Array(a.length), cum = new Float64Array(a.length + 1), h = n >> 1;
-    for (var i = 0; i < a.length; i++) cum[i + 1] = cum[i] + a[i];
-    for (i = 0; i < a.length; i++) {
-      var lo = Math.max(0, i - h), hi = Math.min(a.length, i + h + 1);
-      out[i] = (cum[hi] - cum[lo]) / (hi - lo);
+  function init(D) {
+    var dir = 'recordings/' + D.name + '/', lag = (D.stats.av_ms || 0) / 1000, spec = {};
+    ['clean', 'raw'].forEach(function (k) { var im = new Image(); im.onload = function () { lastDrop = -2; }; im.src = dir + 'spec-' + k + '.png'; spec[k] = im; });
+    R = { D: D, iv: D.drops.slice(1).map(function (t, i) { return t - D.drops[i]; }), hits: D.drops.map(function (t) { return t + lag; }),
+          wave: { clean: unpack(D.wave.clean), raw: unpack(D.wave.raw) }, spec: spec, tint: {}, urls: {} };
+    fillHeader(D);
+    requestAnimationFrame(tick);
+    var files = ['video.mp4', 'clean.wav', 'raw.wav'], got = [0, 0, 0], tot = [0, 0, 0];
+    function progress() {
+      var g = got.reduce(function (a, b) { return a + b; }), t = tot.reduce(function (a, b) { return a + b; });
+      $('loadBar').style.width = (t ? Math.min(100, g / t * 100) : 0) + '%';
+      $('loadText').textContent = (g / 1e6).toFixed(1) + (t ? ' of ' + (t / 1e6).toFixed(1) : '') + ' MB';
     }
+    $('loadHead').textContent = 'Loading ' + D.name;
+    Promise.all(files.map(function (f, i) { return fetchBlob(dir + f, function (g, t) { got[i] = g; tot[i] = t; progress(); }); }))
+      .then(function (u) {
+        R.urls = { video: u[0], clean: u[1], raw: u[2] };
+        vid.src = R.urls.video; aud.src = R.urls[src];
+        return Promise.all([canPlay(vid), canPlay(aud)]);
+      })
+      .then(function () {
+        scrub.max = D.duration; setRate(1);
+        ready = true; $('ctl').disabled = false; $('loading').hidden = true; lastDrop = -2;
+      })
+      .catch(function () {
+        $('loadHead').textContent = 'Could not load ' + D.name;
+        $('loadText').textContent = 'Check the connection, then reload the page.';
+      });
+  }
+
+  function fillHeader(D) {
+    var s = D.stats, p = D.created.split('-').map(Number);
+    var when = p[2] + ' ' + 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')[p[1] - 1] + ' ' + p[0];
+    $('meta').innerHTML = '<b>' + when + '</b>, ' + D.duration.toFixed(1) + ' s, ' + Math.round(D.fps) + ' fps, ' + D.channel;
+    function cell(label, k, val, warn) {
+      return '<div><span class="lbl">' + label + '<button class="info" type="button" data-info="' + k + '" aria-label="About ' + label.toLowerCase() + '">i</button></span>' +
+             '<b' + (warn ? ' class="warn"' : '') + '>' + val + '</b></div>';
+    }
+    var gappy = s.rate != null && s.mean_ms > 1.5 * 1000 / s.rate;   // long gaps in detection have dragged the mean far above the median
+    $('stats').innerHTML = [
+      cell('Drops', 'drops', s.drops), cell('Rate', 'rate', s.rate == null ? '-' : s.rate + ' <small>Hz</small>'),
+      cell('Mean interval', 'mean', s.mean_ms == null ? '-' : s.mean_ms + ' <small>&plusmn; ' + s.sd_ms + ' ms</small>', gappy),
+      cell('Heard by microphone', 'heard', s.heard + ' <small>of ' + s.drops + '</small>'),
+      cell('Gate to sound', 'lag', s.av_ms == null ? '-' : s.av_ms + ' <small>ms</small>'),
+      cell('Audio offset', 'offset', D.offset.toFixed(3) + ' <small>s, ' + (D.confidence ? D.confidence + '&times; confidence' : 'own soundtrack') +
+           (D.offset_unsure ? ', unsure' : '') + '</small>', D.offset_unsure)
+    ].join('');
+  }
+
+  // --- drawing helpers -------------------------------------------------------------
+
+  function tokens() {
+    var s = getComputedStyle(document.documentElement), g = function (n) { return s.getPropertyValue(n).trim(); };
+    return { ink: g('--ink'), ink2: g('--ink-2'), ink3: g('--ink-3'), rule: g('--rule'), surface: g('--surface'), hydro: g('--hydro'),
+             chan: g(R.D.channel === 'hydrophone' ? '--hydro' : '--aero'), sans: g('--display') };
+  }
+  function fit(c) {
+    var cw = c.clientWidth, ch = c.clientHeight, d = devicePixelRatio || 1, w = Math.round(cw * d), h = Math.round(ch * d);
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    c.W = cw; c.H = ch;
+    var g = c.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); return g;
+  }
+  function nice(lo, hi, n) {
+    var raw = (hi - lo) / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    var st = [1, 2, 5, 10].map(function (m) { return m * mag; }).filter(function (v) { return v >= raw; })[0], out = [];
+    for (var v = Math.ceil(lo / st) * st; v <= hi + 1e-9; v += st) out.push(+v.toFixed(10));
+    return { v: out, st: st };
+  }
+  function text(g, k, s, x, y, align, base) { g.fillStyle = k.ink3; g.font = '11px ' + k.sans; g.textAlign = align || 'right'; g.textBaseline = base || 'middle'; g.fillText(s, x, y); }
+  function pct(v) { v *= 100; return (v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toFixed(2)) + '%'; }
+  function boxcar(a, n) {   // centred moving average over prefix sums, shrinking at the ends
+    if (n < 2) return a;
+    var out = new Float32Array(a.length), cum = new Float64Array(a.length + 1), h = n >> 1, i;
+    for (i = 0; i < a.length; i++) cum[i + 1] = cum[i] + a[i];
+    for (i = 0; i < a.length; i++) { var lo = Math.max(0, i - h), hi = Math.min(a.length, i + h + 1); out[i] = (cum[hi] - cum[lo]) / (hi - lo); }
     return out;
   }
-  function smoothPath(g, pts) {   // quadratic curve through midpoints: no corners, still passes near every point
-    if (pts.length < 2) return;
-    g.moveTo(pts[0][0], pts[0][1]);
-    for (var i = 1; i < pts.length - 1; i++) {
-      g.quadraticCurveTo(pts[i][0], pts[i][1], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2);
-    }
-    g.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
-  }
-  function loudness() {
-    var key = src + smoothMs;
-    if (!loudCache[key]) loudCache[key] = boxcar(Float32Array.from(D.loud[src]), Math.round(smoothMs / 1000 * D.loud_rate));
-    return loudCache[key];
-  }
-  function waveCols(v) {   // (max, min) per pixel on the sqrt scale, in columns pinned to time so scrolling only slides them
-    var w = D.wave[src], n = w.length / 2, dt = WIN / v.pw, c0 = Math.floor(v.x0 / dt), cols = Math.ceil(v.pw) + 2;
-    var hi = new Float32Array(cols), lo = new Float32Array(cols), ok = [];
-    for (var j = 0; j < cols; j++) {
-      var a = Math.floor((c0 + j) * dt * D.wave_rate), b = Math.max(a + 1, Math.floor((c0 + j + 1) * dt * D.wave_rate));
-      ok.push(b > 0 && a < n);
-      var mx = 0, mn = 0;
-      for (var k = Math.max(0, a); k < Math.min(n, b); k++) { mx = Math.max(mx, w[2 * k] / 127); mn = Math.min(mn, w[2 * k + 1] / 127); }
-      hi[j] = mx; lo[j] = mn;   // stored square-root companded, which is the drawing scale
-    }
-    var m = Math.round(smoothMs / 1000 / dt);
-    return { hi: boxcar(hi, m), lo: boxcar(lo, m), ok: ok, x: function (j) { return v.x((c0 + j + 0.5) * dt); } };
-  }
-
-  function drawLanes(t, col) {
-    var L = loudness();
-    lane(cvs[0], t, col, function (v) {
-      var mid = v.top + v.h / 2, y = function (s) { return mid - s / shownPeak * (v.h / 2 - 4); };
-      return [[y(shownPeak), pct(shownPeak * shownPeak)], [y(shownPeak / 2), pct(shownPeak * shownPeak / 4)], [mid, '0'],
-              [y(-shownPeak / 2), ''], [y(-shownPeak), '']];   // on a sqrt scale, height f of peak is amplitude (f * peak)^2
-    }, function (g, v) {
-      var c = waveCols(v), target = 0.02;
-      for (var i = 0; i < c.hi.length; i++) if (c.ok[i]) target = Math.max(target, c.hi[i], -c.lo[i]);
-      shownPeak = gain === 'auto' ? shownPeak + (target - shownPeak) * 0.2 : 1;
-      var mid = v.top + v.h / 2, y = function (s) { return mid - Math.max(-1, Math.min(1, s / shownPeak)) * (v.h / 2 - 4); };
-      g.setLineDash([3, 3]);
-      hits.forEach(function (h, i) {
-        var x = v.x(h);
-        g.strokeStyle = D.heard[i] ? col.chan : col.ink3; g.beginPath(); g.moveTo(x, v.top); g.lineTo(x, v.top + v.h); g.stroke();
-      });
-      g.setLineDash([]);
-      var edge = function (arr, fwd) {
-        for (var j = fwd ? 0 : arr.length - 1; fwd ? j < arr.length : j >= 0; j += fwd ? 1 : -1) if (c.ok[j]) g.lineTo(c.x(j), y(arr[j]));
-      };
-      g.beginPath(); edge(c.hi, true); edge(c.lo, false); g.closePath();
-      g.globalAlpha = 0.35; g.fillStyle = col.chan; g.fill(); g.globalAlpha = 1;
-      g.strokeStyle = col.chan; g.lineWidth = 1.25; g.lineJoin = 'round';
-      g.beginPath(); edge(c.hi, true); g.stroke(); g.beginPath(); edge(c.lo, true); g.stroke(); g.lineWidth = 1;
-    });
-    lane(cvs[1], t, col, function (v) {
-      return [0, -20, -40, -60].map(function (db) { return [v.top + 4 + (-db / 60) * (v.h - 8), db ? String(db) : '0 dB']; });
-    }, function (g, v) {
-      var y = function (db) { return v.top + 4 + (-db / 60) * (v.h - 8); }, pts = [];
-      var k0 = Math.max(0, Math.floor(v.x0 * D.loud_rate) - 1), k1 = Math.min(L.length, Math.ceil((v.x0 + WIN) * D.loud_rate) + 2);
-      for (var k = k0; k < k1; k++) pts.push([v.x(k / D.loud_rate), y(L[k])]);
-      if (pts.length < 2) return;
-      var path = function () { if (smoothMs) smoothPath(g, pts); else pts.forEach(function (p, i) { i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); }); };
-      g.beginPath(); path(); g.lineTo(pts[pts.length - 1][0], y(-60)); g.lineTo(pts[0][0], y(-60)); g.closePath();
-      g.globalAlpha = 0.14; g.fillStyle = col.chan; g.fill(); g.globalAlpha = 1;
-      g.strokeStyle = col.chan; g.lineWidth = 1.75; g.lineJoin = 'round'; g.beginPath(); path(); g.stroke(); g.lineWidth = 1;
-    });
-    lane(cvs[2], t, col, function (v) {
-      return ticks(0, D.spec_fmax / 1000, 4).v.map(function (k) { return [v.top + v.h - k * 1000 / D.spec_fmax * v.h, k ? k + ' kHz' : '0']; });
-    }, function (g, v) {
-      var im = tinted(col.chan);
-      if (!im) return;
-      var cps = D.spec_cps, a = Math.max(0, Math.floor(v.x0 * cps)), b = Math.min(im.width, Math.ceil((v.x0 + WIN) * cps) + 1);
-      if (b > a) g.drawImage(im, a, 0, b - a, im.height, v.x(a / cps), v.top, (b - a) / cps / WIN * v.pw, v.h);   // whole columns, so it slides without shimmer
-    });
-    lane(cvs[3], t, col, null, function (g, v) {
-      hits.forEach(function (d, i) {
-        var x = v.x(d);
-        g.fillStyle = col.ink; g.fillRect(x - 0.75, v.top + v.h * 0.38, 1.5, v.h * 0.5);
-        if (D.heard[i]) { g.fillStyle = col.chan; g.beginPath(); g.arc(x, v.top + v.h * 0.22, 3, 0, 7); g.fill(); }
-      });
-    });
-    var v = view(cvs[3], t), tk = ticks(v.x0, v.x0 + WIN, 6), dec = Math.max(0, -Math.floor(Math.log10(tk.step))), g = cvs[3].getContext('2d');
-    tk.v.forEach(function (tt) { var x = v.x(tt); if (x > GUT + 14 && x < cvs[3].W - 22) label(g, col, tt.toFixed(dec) + ' s', x, v.top + v.h + 10, 'center'); });
-  }
-
   // The spectrogram PNG stores loudness as alpha; paint it in the channel colour once per theme.
-  function tinted(colour) {
-    var im = D.spec[src], key = src + colour;
+  function tinted(col) {
+    var im = R.spec[src], key = src + col;
     if (!im.complete || !im.naturalWidth) return null;
-    if (!specCache[key]) {
+    if (!R.tint[key]) {
       var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
-      var g = c.getContext('2d'); g.drawImage(im, 0, 0);
-      g.globalCompositeOperation = 'source-in'; g.fillStyle = colour; g.fillRect(0, 0, c.width, c.height);
-      specCache[key] = c;
+      var g = c.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = col; g.fillRect(0, 0, c.width, c.height);
+      R.tint[key] = c;
     }
-    return specCache[key];
+    return R.tint[key];
   }
-
-  // --- hover: one readout for every lane at the pointer's time ---------------
-
-  var hover = null, laneTip = document.getElementById('laneTip'), lanesEl = document.querySelector('.lanes');
-  function tipRows(el, rows, x, y, box) {
-    el.textContent = '';
-    rows.forEach(function (r) {
-      var d = document.createElement('div'), b = document.createElement('b'), sp = document.createElement('span');
-      b.textContent = r[0]; sp.textContent = r[1]; d.appendChild(b); d.appendChild(sp); el.appendChild(d);
-    });
-    el.hidden = false;
-    var w = el.offsetWidth, h = el.offsetHeight;
-    el.style.left = (x + 14 + w > box.width ? x - 14 - w : x + 14) + 'px';
-    el.style.top = Math.max(0, Math.min(box.height - h, y - h / 2)) + 'px';
-  }
-  function laneHover(e) {
-    var laneEl = e.target.closest('.lane');
-    if (!laneEl || !D) return;
-    var c = laneEl.querySelector('canvas'), r = c.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-    if (x < GUT) { hover = null; laneTip.hidden = true; return; }
-    var th = view(c, vid.currentTime).t(x), rows = [[th.toFixed(3) + ' s', 'time']];
-    var k = Math.floor(th * D.wave_rate), w = D.wave[src];
-    if (k >= 0 && 2 * k + 1 < w.length) rows.push([pct(Math.pow(Math.max(w[2 * k], -w[2 * k + 1]) / 127, 2)), 'of loudest']);
-    var L = loudness(), j = Math.round(th * D.loud_rate);
-    if (j >= 0 && j < L.length) rows.push([L[j].toFixed(0) + ' dB', 'loudness']);
-    var pv = view(c, vid.currentTime);
-    if (c === cvs[2] && y >= pv.top) rows.push([(Math.min(1, 1 - (y - pv.top) / pv.h) * D.spec_fmax / 1000).toFixed(1) + ' kHz', 'frequency']);
-    var n = nearest(th);
-    if (n >= 0) rows.push(['#' + (n + 1) + ' ' + (th >= hits[n] ? '+' : '') + Math.round((th - hits[n]) * 1e3) + ' ms', D.heard[n] ? 'nearest drop, heard' : 'nearest drop']);
-    hover = { t: th };
-    var box = lanesEl.getBoundingClientRect();
-    tipRows(laneTip, rows, e.clientX - box.left, e.clientY - box.top, box);
-  }
-  function nearest(t) {
-    var i = dropIndex(t), best = -1;
-    [i, i + 1].forEach(function (k) { if (k >= 0 && k < hits.length && (best < 0 || Math.abs(hits[k] - t) < Math.abs(hits[best] - t))) best = k; });
-    return best;
-  }
-  lanesEl.addEventListener('pointermove', laneHover);
-  lanesEl.addEventListener('pointerleave', function () { hover = null; laneTip.hidden = true; });
-  lanesEl.addEventListener('click', function () { if (hover) seek(hover.t); });
-
-  // --- chaos plots ------------------------------------------------------------
-
-  var chaosHover = { map: -1, series: -1 };
-  function range() {
-    var s = iv.slice().sort(function (a, b) { return a - b; });
-    var lo = s[Math.floor(s.length * 0.01)] || 0, hi = s[Math.floor(s.length * 0.99)] || 1, pad = (hi - lo) * 0.12 || 0.01;
-    return [Math.max(0, lo - pad), hi + pad];
-  }
-  function mapFrame(c) {   // square plot area with room for tick labels
-    var S = Math.min(c.W - 64, c.H - 56), ox = 50 + (c.W - 64 - S) / 2, oy = 26;
-    return { S: S, ox: ox, oy: oy };
-  }
-  function mapXY(c, p, R) {
-    var f = mapFrame(c);
-    return [f.ox + (p[0] - R[0]) / (R[1] - R[0]) * f.S, f.oy + f.S - (p[1] - R[0]) / (R[1] - R[0]) * f.S];
-  }
-  function seriesXY(c, i, v, R) {
-    return [50 + i / Math.max(1, iv.length - 1) * (c.W - 62), 26 + (1 - (Math.min(R[1], Math.max(R[0], v)) - R[0]) / (R[1] - R[0])) * (c.H - 56)];
-  }
-  function drawChaos(n, col) {
-    var R = range(), tk = ticks(R[0] * 1e3, R[1] * 1e3, 5), c = cvs[4], g = c.getContext('2d'), f = mapFrame(c);
-    g.clearRect(0, 0, c.W, c.H);
-    g.strokeStyle = col.rule; g.lineWidth = 1;
-    tk.v.forEach(function (ms) {
-      var q = mapXY(c, [ms / 1e3, ms / 1e3], R);
-      g.globalAlpha = 0.6; g.beginPath(); g.moveTo(q[0], f.oy); g.lineTo(q[0], f.oy + f.S); g.moveTo(f.ox, q[1]); g.lineTo(f.ox + f.S, q[1]); g.stroke(); g.globalAlpha = 1;
-      label(g, col, String(ms), q[0], f.oy + f.S + 12, 'center'); label(g, col, String(ms), f.ox - 6, q[1]);
-    });
-    g.strokeRect(f.ox, f.oy, f.S, f.S);
-    g.setLineDash([2, 4]); g.beginPath(); g.moveTo(f.ox, f.oy + f.S); g.lineTo(f.ox + f.S, f.oy); g.stroke(); g.setLineDash([]);   // T(n+1) = T(n)
-    g.fillStyle = col.ink3; g.globalAlpha = 0.6;
-    for (var i = 0; i + 1 < iv.length; i++) { var q = mapXY(c, [iv[i], iv[i + 1]], R); g.beginPath(); g.arc(q[0], q[1], 2, 0, 7); g.fill(); }
-    g.globalAlpha = 1;
-    if (n >= 2 && n - 1 < iv.length) {
-      var p = mapXY(c, [iv[n - 2], iv[n - 1]], R);
-      g.strokeStyle = col.hydro; g.lineWidth = 2; g.beginPath(); g.arc(p[0], p[1], 7, 0, 7); g.stroke(); g.lineWidth = 1;
-    }
-    if (chaosHover.map >= 0) {
-      var hq = mapXY(c, [iv[chaosHover.map], iv[chaosHover.map + 1]], R);
-      g.strokeStyle = col.ink; g.lineWidth = 1.5; g.beginPath(); g.arc(hq[0], hq[1], 5, 0, 7); g.stroke(); g.lineWidth = 1;
-    }
-
-    c = cvs[5]; g = c.getContext('2d'); g.clearRect(0, 0, c.W, c.H);
-    g.strokeStyle = col.rule;
-    tk.v.forEach(function (ms) {
-      var y = seriesXY(c, 0, ms / 1e3, R)[1];
-      g.globalAlpha = 0.6; g.beginPath(); g.moveTo(50, y); g.lineTo(c.W - 12, y); g.stroke(); g.globalAlpha = 1;
-      label(g, col, String(ms), 44, y);
-    });
-    ticks(1, Math.max(2, iv.length), 6).v.forEach(function (k) {
-      if (k < 1) return;
-      label(g, col, String(k), seriesXY(c, k - 1, R[0], R)[0], c.H - 16, 'center');
-    });
-    g.strokeStyle = col.ink3; g.lineWidth = 1.25; g.lineJoin = 'round'; g.beginPath();
-    iv.forEach(function (v, i) { var q = seriesXY(c, i, v, R); i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); });
-    g.stroke(); g.lineWidth = 1;
-    if (n >= 1) { g.fillStyle = col.hydro; g.fillRect(seriesXY(c, n - 1, 0, R)[0] - 0.75, 22, 1.5, c.H - 48); }
-    if (chaosHover.series >= 0) {
-      var sq2 = seriesXY(c, chaosHover.series, iv[chaosHover.series], R);
-      g.fillStyle = col.ink3; g.fillRect(sq2[0] - 0.5, 22, 1, c.H - 48);
-      g.fillStyle = col.ink; g.beginPath(); g.arc(sq2[0], sq2[1], 3.5, 0, 7); g.fill();
-    }
-  }
-
-  function mapPick(e) {   // nearest point, within 24 px
-    var r = cvs[4].getBoundingClientRect(), R = range(), best = -1, bd = 24;
-    for (var i = 0; i + 1 < iv.length; i++) {
-      var q = mapXY(cvs[4], [iv[i], iv[i + 1]], R), d = Math.hypot(q[0] - (e.clientX - r.left), q[1] - (e.clientY - r.top));
-      if (d < bd) { bd = d; best = i; }
-    }
-    return best;
-  }
-  function seriesPick(e) {
-    var r = cvs[5].getBoundingClientRect();
-    return Math.max(0, Math.min(iv.length - 1, Math.round((e.clientX - r.left - 50) / (r.width - 62) * (iv.length - 1))));
-  }
-  function chaosTip(el, c, rows, e) {
-    var box = c.parentNode.getBoundingClientRect();
-    tipRows(el, rows, e.clientX - box.left, e.clientY - box.top, box);
-  }
-  cvs[4].addEventListener('pointermove', function (e) {
-    var i = mapPick(e), tip = document.getElementById('mapTip');
-    if (i !== chaosHover.map) { chaosHover.map = i; lastDrop = -2; }
-    if (i < 0) { tip.hidden = true; return; }
-    chaosTip(tip, cvs[4], [[Math.round(iv[i] * 1e3) + ' ms', 'T' + (i + 1)], [Math.round(iv[i + 1] * 1e3) + ' ms', 'T' + (i + 2)],
-      ['#' + (i + 2) + ' → #' + (i + 3), 'drops']], e);
-  });
-  cvs[5].addEventListener('pointermove', function (e) {
-    var i = seriesPick(e);
-    if (i !== chaosHover.series) { chaosHover.series = i; lastDrop = -2; }
-    chaosTip(document.getElementById('seriesTip'), cvs[5], [[Math.round(iv[i] * 1e3) + ' ms', 'T' + (i + 1)],
-      ['#' + (i + 1) + ' → #' + (i + 2), 'drops'], [hits[i + 1].toFixed(2) + ' s', 'at']], e);
-  });
-  [[cvs[4], 'mapTip', 'map'], [cvs[5], 'seriesTip', 'series']].forEach(function (a) {
-    a[0].addEventListener('pointerleave', function () { document.getElementById(a[1]).hidden = true; chaosHover[a[2]] = -1; lastDrop = -2; });
-  });
-  cvs[4].onclick = function (e) { var i = mapPick(e); if (i >= 0) seek(hits[i + 2]); };
-  cvs[5].onclick = function (e) { seek(hits[seriesPick(e) + 1]); };
-
-  // --- clock ----------------------------------------------------------------
-
   function dropIndex(t) {
-    var lo = 0, hi = hits.length;
-    while (lo < hi) { var m = (lo + hi) >> 1; if (hits[m] <= t + 1e-4) lo = m + 1; else hi = m; }
+    var h = R.hits, lo = 0, hi = h.length;
+    while (lo < hi) { var m = (lo + hi) >> 1; if (h[m] <= t + 1e-4) lo = m + 1; else hi = m; }
     return lo - 1;
   }
-
-  function tick() {
-    // The audio element follows the video clock; resync when drift exceeds about two frames.
-    if (!vid.paused && Math.abs(aud.currentTime - vid.currentTime) > 0.035) aud.currentTime = vid.currentTime;
-    var t = vid.currentTime, n = dropIndex(t);
-    var col = { chan: css(D.channel === 'hydrophone' ? '--hydro' : '--aero'), ink: css('--ink'), ink3: css('--ink-3'),
-                ground: css('--ground'), rule: css('--rule'), hydro: css('--hydro'), mono: css('--mono') };
-    drawLanes(t, col);
-    if (n !== lastDrop || col.ink !== tick.ink) { drawChaos(n, col); lastDrop = n; tick.ink = col.ink; }
-    document.getElementById('clock').textContent = t.toFixed(3) + ' s · frame ' + Math.round(t * D.fps) +
-      ' · drop ' + (n >= 0 ? n + 1 : '-') + ' · ' + (n >= 1 ? Math.round(iv[n - 1] * 1e3) + ' ms' : '-');
-    if (!scrub.matches(':active')) scrub.value = t;
-    requestAnimationFrame(tick);
+  function grid(g, k, tk, X, yt, top, h, pw) {
+    g.strokeStyle = k.rule; g.lineWidth = 1; g.beginPath();
+    tk.v.forEach(function (tt) { var x = Math.round(X(tt)) + 0.5; g.moveTo(x, top); g.lineTo(x, top + h); });
+    yt.forEach(function (y) { var yy = Math.round(y[0]) + 0.5; g.moveTo(GUT, yy); g.lineTo(GUT + pw, yy); });
+    g.stroke();
   }
 
-  // --- transport --------------------------------------------------------------
+  // --- time lanes: everything left of the playhead has happened ---------------------
+
+  function lane(kind, c, big, t, hoverT) {
+    var D = R.D, g = fit(c), k = tokens(), top = big ? 8 : 24, axis = (big || kind === 'drops') ? 20 : 4;
+    var x0 = t - WIN * (vid.paused ? 0.5 : PH), pw = c.W - GUT - PAD, h = c.H - top - axis, yt = [];
+    function X(tt) { return GUT + (tt - x0) / WIN * pw; }
+    var tk = nice(x0, x0 + WIN, big ? 12 : 6);
+    g.clearRect(0, 0, c.W, c.H);
+    g.save(); g.beginPath(); g.rect(GUT, top, pw, h); g.clip();
+    if (kind === 'wave') drawWave(g, k, c, x0, pw, top, h, X, tk, yt);
+    else if (kind === 'loud') drawLoud(g, k, x0, pw, top, h, X, tk, yt);
+    else if (kind === 'spec') {
+      nice(0, D.spec_fmax / 1000, big ? 8 : 3).v.forEach(function (f) { yt.push([top + h - f * 1000 / D.spec_fmax * h, f ? f + ' kHz' : '0']); });
+      grid(g, k, tk, X, yt, top, h, pw);
+      var im = tinted(k.chan), cps = D.spec_cps;
+      if (im) {
+        var a = Math.max(0, Math.floor(x0 * cps)), b = Math.min(im.width, Math.ceil((x0 + WIN) * cps) + 1);
+        g.imageSmoothingEnabled = false;   // one column per analysis slice, drawn as measured
+        if (b > a) g.drawImage(im, a, 0, b - a, im.height, X(a / cps), top, (b - a) / cps / WIN * pw, h);
+      }
+    } else {
+      grid(g, k, tk, X, [], top, h, pw);
+      R.hits.forEach(function (tt, i) {
+        var x = X(tt); if (x < GUT - 5 || x > c.W) return;
+        g.fillStyle = k.ink; g.fillRect(x - 0.75, top + h * 0.4, 1.5, h * 0.5);
+        if (D.heard[i]) { g.fillStyle = k.chan; g.beginPath(); g.arc(x, top + h * 0.24, 3.2, 0, 7); g.fill(); }
+      });
+    }
+    if (kind !== 'drops') {   // drops as faint guides on every lane, so events line up by eye
+      g.setLineDash([2, 4]); g.lineWidth = 1;
+      R.hits.forEach(function (tt, i) {
+        var x = Math.round(X(tt)) + 0.5; if (x < GUT || x > c.W) return;
+        g.strokeStyle = D.heard[i] ? k.chan : k.ink3; g.globalAlpha = D.heard[i] ? 0.55 : 0.3;
+        g.beginPath(); g.moveTo(x, top); g.lineTo(x, top + h); g.stroke();
+      });
+      g.setLineDash([]); g.globalAlpha = 1;
+    }
+    var phx = X(t);
+    g.globalAlpha = 0.5; g.fillStyle = k.surface; g.fillRect(phx, top, c.W, h); g.globalAlpha = 1;
+    g.fillStyle = k.hydro; g.fillRect(phx - 0.75, top, 1.5, h);
+    if (hoverT != null) { g.fillStyle = k.ink2; g.fillRect(X(hoverT) - 0.5, top, 1, h); }
+    g.restore();
+    g.strokeStyle = k.rule; g.lineWidth = 1; g.strokeRect(GUT + 0.5, top + 0.5, pw - 1, h - 1);
+    yt.forEach(function (y) { if (y[1]) text(g, k, y[1], GUT - 6, y[0]); });
+    if (axis > 4) {
+      var dec = Math.max(0, -Math.floor(Math.log10(tk.st)));
+      tk.v.forEach(function (tt) { var x = X(tt); if (x > GUT + 16 && x < c.W - 24) text(g, k, tt.toFixed(dec) + ' s', x, top + h + 6, 'center', 'top'); });
+    }
+    return { x0: x0, pw: pw };
+  }
+  function drawWave(g, k, c, x0, pw, top, h, X, tk, yt) {
+    var D = R.D, w = R.wave[src], n = w.length / 2, dt = WIN / pw, c0 = Math.floor(x0 / dt), cols = Math.ceil(pw) + 2;
+    var hi = new Float32Array(cols), lo = new Float32Array(cols), ok = new Uint8Array(cols), target = 0.02, j;
+    for (j = 0; j < cols; j++) {
+      var a = Math.floor((c0 + j) * dt * D.wave_rate), b = Math.max(a + 1, Math.floor((c0 + j + 1) * dt * D.wave_rate)), mx = 0, mn = 0;
+      for (var q = Math.max(0, a); q < Math.min(n, b); q++) { if (w[2 * q] > mx) mx = w[2 * q]; if (w[2 * q + 1] < mn) mn = w[2 * q + 1]; }
+      ok[j] = b > 0 && a < n; hi[j] = mx / 127; lo[j] = mn / 127;   // stored square-root companded, which is the drawing scale
+      if (ok[j]) target = Math.max(target, hi[j], -lo[j]);
+    }
+    // Eased while playing so auto gain does not pump as loud drops scroll in and out.
+    c.peak = gain === 'full' ? 1 : c.peak && !vid.paused ? c.peak + (target - c.peak) * 0.2 : target;
+    var peak = c.peak, m = Math.round(smoothMs / 1000 / dt), H = boxcar(hi, m), L = boxcar(lo, m), mid = top + h / 2;
+    function Y(s) { return mid - Math.max(-1, Math.min(1, s / peak)) * (h / 2 - 4); }
+    yt.push([Y(peak), pct(peak * peak)], [Y(peak / 2), pct(peak * peak / 4)], [mid, '0'], [Y(-peak / 2), ''], [Y(-peak), '']);
+    grid(g, k, tk, X, yt, top, h, pw);
+    g.fillStyle = k.chan;
+    if (m < 2) {   // sharp: one min-to-max bar per pixel column, the way audio editors draw it
+      for (j = 0; j < cols; j++) if (ok[j]) { var y0 = Y(H[j]); g.fillRect(Math.round(X((c0 + j) * dt)), y0, 1, Math.max(1, Y(L[j]) - y0)); }
+    } else {
+      g.beginPath();
+      for (j = 0; j < cols; j++) if (ok[j]) g.lineTo(X((c0 + j + 0.5) * dt), Y(H[j]));
+      for (j = cols - 1; j >= 0; j--) if (ok[j]) g.lineTo(X((c0 + j + 0.5) * dt), Y(L[j]));
+      g.globalAlpha = 0.4; g.fill(); g.globalAlpha = 1;
+    }
+  }
+  function drawLoud(g, k, x0, pw, top, h, X, tk, yt) {
+    var Lr = R.D.loud_rate, arr = R.D.loud[src];
+    function Y(db) { return top + 4 + (-db / 60) * (h - 8); }
+    [0, -20, -40, -60].forEach(function (db) { yt.push([Y(db), db ? String(db) : '0 dB']); });
+    grid(g, k, tk, X, yt, top, h, pw);
+    var k0 = Math.max(0, Math.floor(x0 * Lr) - 1), k1 = Math.min(arr.length, Math.ceil((x0 + WIN) * Lr) + 2);
+    var pad = Math.round(smoothMs / 1000 * Lr), s0 = Math.max(0, k0 - pad), seg = boxcar(Float32Array.from(arr.slice(s0, k1 + pad)), pad);
+    if (k1 - k0 < 2) return;
+    g.beginPath(); for (var q = k0; q < k1; q++) g.lineTo(X(q / Lr), Y(seg[q - s0]));
+    g.strokeStyle = k.chan; g.lineWidth = 1.25; g.lineJoin = 'miter'; g.stroke();
+    g.lineTo(X((k1 - 1) / Lr), Y(-60)); g.lineTo(X(k0 / Lr), Y(-60));
+    g.globalAlpha = 0.12; g.fillStyle = k.chan; g.fill(); g.globalAlpha = 1;
+  }
+
+  // --- chaos plots ---------------------------------------------------------------------
+
+  function range() {
+    var s = R.iv.slice().sort(function (a, b) { return a - b; }), lo = s[Math.floor(s.length * 0.01)] || 0, hi = s[Math.floor(s.length * 0.99)] || 1;
+    var p = (hi - lo) * 0.12 || 0.01;
+    return [Math.max(0, lo - p), hi + p];
+  }
+  function chaos(kind, c, big, n, hover) {
+    var iv = R.iv, g = fit(c), k = tokens(), Rg = range(), tk = nice(Rg[0] * 1e3, Rg[1] * 1e3, big ? 8 : 5), top = big ? 10 : 28;
+    g.clearRect(0, 0, c.W, c.H); g.lineWidth = 1;
+    if (kind === 'map') {
+      var Sz = Math.min(c.W - 70, c.H - top - 30), ox = 54 + (c.W - 70 - Sz) / 2;
+      var P = function (a, b) { return [ox + (a - Rg[0]) / (Rg[1] - Rg[0]) * Sz, top + Sz - (b - Rg[0]) / (Rg[1] - Rg[0]) * Sz]; };
+      g.strokeStyle = k.rule; g.beginPath();
+      tk.v.forEach(function (ms) {
+        var q = P(ms / 1e3, ms / 1e3);
+        g.moveTo(q[0], top); g.lineTo(q[0], top + Sz); g.moveTo(ox, q[1]); g.lineTo(ox + Sz, q[1]);
+        text(g, k, ms, q[0], top + Sz + 6, 'center', 'top'); text(g, k, ms, ox - 6, q[1]);
+      });
+      g.stroke(); g.strokeRect(ox, top, Sz, Sz);
+      g.save(); g.beginPath(); g.rect(ox, top, Sz, Sz); g.clip();
+      g.setLineDash([2, 4]); g.beginPath(); g.moveTo(ox, top + Sz); g.lineTo(ox + Sz, top); g.stroke(); g.setLineDash([]);   // T(n+1) = T(n)
+      g.fillStyle = k.ink2; g.globalAlpha = 0.55;
+      for (var i = 0; i + 1 < iv.length; i++) { var q = P(iv[i], iv[i + 1]); g.beginPath(); g.arc(q[0], q[1], big ? 3 : 2.2, 0, 7); g.fill(); }
+      g.globalAlpha = 1;
+      if (n >= 2 && n - 1 < iv.length) { q = P(iv[n - 2], iv[n - 1]); g.strokeStyle = k.hydro; g.lineWidth = 2; g.beginPath(); g.arc(q[0], q[1], 7, 0, 7); g.stroke(); }
+      if (hover != null) { q = P(iv[hover], iv[hover + 1]); g.strokeStyle = k.ink; g.lineWidth = 1.5; g.beginPath(); g.arc(q[0], q[1], 5, 0, 7); g.stroke(); }
+      g.restore();
+      return { pick: function (x, y) {   // nearest point within 20 px
+        var best = -1, bd = 20;
+        for (var i = 0; i + 1 < iv.length; i++) { var p = P(iv[i], iv[i + 1]), d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; best = i; } }
+        return best;
+      } };
+    }
+    var L = 54, W = c.W - L - 14, H = c.H - top - 28;
+    var S = function (i, v) { return [L + i / Math.max(1, iv.length - 1) * W, top + (1 - (Math.min(Rg[1], Math.max(Rg[0], v)) - Rg[0]) / (Rg[1] - Rg[0])) * H]; };
+    g.strokeStyle = k.rule; g.beginPath();
+    tk.v.forEach(function (ms) { var y = Math.round(S(0, ms / 1e3)[1]) + 0.5; g.moveTo(L, y); g.lineTo(L + W, y); text(g, k, ms, L - 6, y); });
+    g.stroke(); g.strokeRect(L + 0.5, top + 0.5, W, H);
+    nice(1, Math.max(2, iv.length), big ? 12 : 6).v.forEach(function (q) { if (q >= 1) text(g, k, 'n = ' + q, S(q - 1, 0)[0], top + H + 6, 'center', 'top'); });
+    g.strokeStyle = k.ink2; g.lineWidth = big ? 1.25 : 1; g.lineJoin = 'miter'; g.beginPath();
+    iv.forEach(function (v, i) { var q = S(i, v); g.lineTo(q[0], q[1]); }); g.stroke();
+    if (n >= 1) { g.fillStyle = k.hydro; g.fillRect(S(n - 1, 0)[0] - 0.75, top, 1.5, H); }
+    if (hover != null) { var q = S(hover, iv[hover]); g.fillStyle = k.ink3; g.fillRect(q[0] - 0.5, top, 1, H); g.fillStyle = k.ink; g.beginPath(); g.arc(q[0], q[1], 3.5, 0, 7); g.fill(); }
+    return { pick: function (x) { return iv.length ? Math.max(0, Math.min(iv.length - 1, Math.round((x - L) / W * (iv.length - 1)))) : -1; } };
+  }
+
+  // --- clock ----------------------------------------------------------------------------
+
+  function tick() {
+    requestAnimationFrame(tick);
+    followVideo();
+    var t = vid.currentTime, n = dropIndex(t), ink = tokens().ink;
+    inline.forEach(function (p) { if (TIME.indexOf(p.dataset.kind) >= 0) lane(p.dataset.kind, p.querySelector('canvas'), false, t); });
+    if (n !== lastDrop || ink !== lastInk) {
+      inline.forEach(function (p) { if (TIME.indexOf(p.dataset.kind) < 0) chaos(p.dataset.kind, p.querySelector('canvas'), false, n); });
+      if (zoom.open && TIME.indexOf(zoomKind) < 0) zView = chaos(zoomKind, zc, true, n, zHover);
+      lastDrop = n; lastInk = ink;
+    }
+    if (zoom.open && TIME.indexOf(zoomKind) >= 0) zView = lane(zoomKind, zc, true, t, zHover);
+    $('cT').textContent = t.toFixed(3); $('cF').textContent = Math.round(t * R.D.fps);
+    $('cD').textContent = n >= 0 ? n + 1 : '-'; $('cI').textContent = n >= 1 ? Math.round(R.iv[n - 1] * 1000) : '-';
+    if (!scrub.matches(':active')) scrub.value = t;
+  }
+
+  // The audio element follows the video clock. Audio starts ~50 ms late, so seeking on small drift would
+  // retrigger forever; small drift is trimmed through the rate instead. Drift is divided by rate to get real time.
+  function followVideo() {
+    if (vid.paused || aud.paused || performance.now() < syncHold) return;
+    var r = vid.playbackRate, drift = (aud.currentTime - vid.currentTime) / r;
+    if (Math.abs(drift) > HARD_SYNC) { aud.currentTime = vid.currentTime; aud.playbackRate = r; syncHold = performance.now() + SYNC_HOLD_MS; }
+    else aud.playbackRate = r * (1 - Math.max(-NUDGE, Math.min(NUDGE, drift)));
+  }
+
+  // --- transport ------------------------------------------------------------------------
 
   function setRate(r) {
     vid.playbackRate = r; aud.playbackRate = r;
     aud.preservesPitch = false;   // slowed audio drops in pitch like tape, so a 5 kHz plink stays audible
   }
   function press(group, btn) { group.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b === btn); }); }
-  function pause() { vid.pause(); aud.pause(); document.getElementById('bPlay').textContent = 'Play'; }
-  function seek(t) { vid.currentTime = Math.max(0, Math.min(D.duration, t)); aud.currentTime = vid.currentTime; }
-  function step(k) { pause(); seek(vid.currentTime + k / D.fps); }
-
-  document.getElementById('bPlay').onclick = function () {
-    if (vid.paused) { aud.currentTime = vid.currentTime; vid.play(); aud.play(); this.textContent = 'Pause'; }
-    else pause();
-  };
-  document.getElementById('bBack').onclick = function () { step(-1); };
-  function jump(k) {   // to the previous/next drop (or heard drop) strictly before/after now
-    var t = vid.currentTime, i = k > 0 ? 0 : hits.length - 1, pick = -1;
-    for (; i >= 0 && i < hits.length; i += k > 0 ? 1 : -1) {
-      if ((k > 0 ? hits[i] > t + 1e-3 : hits[i] < t - 1e-3) && (!heardOnly || D.heard[i])) { pick = i; break; }
-    }
-    if (pick >= 0) { pause(); seek(hits[pick]); }
+  function playLabel() { $('bPlay').textContent = $('zPlay').textContent = vid.paused ? 'Play' : 'Pause'; }
+  function pause() { vid.pause(); aud.pause(); playLabel(); }
+  function togglePlay() {
+    if (!ready) return;
+    if (vid.paused) { aud.currentTime = vid.currentTime; syncHold = performance.now() + SYNC_HOLD_MS; vid.play(); aud.play().catch(function () {}); } else { vid.pause(); aud.pause(); }
+    playLabel();
   }
-  document.getElementById('which').onclick = function (e) {
-    if (e.target.dataset.h) { heardOnly = e.target.dataset.h === 'heard'; press(this, e.target); }
-  };
-  document.getElementById('bPrev').onclick = function () { jump(-1); };
-  document.getElementById('bNext').onclick = function () { jump(1); };
-  document.getElementById('bFwd').onclick = function () { step(1); };
-  vid.onended = pause;
-  addEventListener('keydown', function (e) {
-    if (!D || e.target.tagName === 'SELECT') return;
-    if (e.key === ',') step(-1);
-    else if (e.key === '.') step(1);
-    else if (e.key === '[') jump(-1);
-    else if (e.key === ']') jump(1);
-    else if (e.key === ' ') { e.preventDefault(); document.getElementById('bPlay').click(); }
-  });
-  document.getElementById('speeds').onclick = function (e) {
-    if (e.target.dataset.r) { setRate(+e.target.dataset.r); press(this, e.target); }
-  };
+  function seek(t) { vid.currentTime = Math.max(0, Math.min(R.D.duration, t)); aud.currentTime = vid.currentTime; }
+  function step(k) { if (ready) { pause(); seek(vid.currentTime + k / R.D.fps); } }
+  function jump(k) {   // to the previous or next drop strictly before or after now
+    if (!ready) return;
+    var t = vid.currentTime, h = R.hits;
+    for (var i = k > 0 ? 0 : h.length - 1; i >= 0 && i < h.length; i += k) {
+      if ((k > 0 ? h[i] > t + 1e-3 : h[i] < t - 1e-3) && (!heardOnly || R.D.heard[i])) { pause(); seek(h[i]); return; }
+    }
+  }
   function setWin(w) {
     WIN = Math.max(0.05, Math.min(8, w));
     document.querySelectorAll('#wins button').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.w === WIN); });
   }
-  document.getElementById('wins').onclick = function (e) { if (e.target.dataset.w) setWin(+e.target.dataset.w); };
-  document.querySelector('.lanes').addEventListener('wheel', function (e) {
-    e.preventDefault(); setWin(WIN * (e.deltaY > 0 ? 1.25 : 0.8));
-  }, { passive: false });
-  document.getElementById('gains').onclick = function (e) {
-    if (e.target.dataset.g) { gain = e.target.dataset.g; press(this, e.target); }
-  };
-  document.getElementById('smooths').onclick = function (e) {
-    if (e.target.dataset.m) { smoothMs = +e.target.dataset.m; press(this, e.target); }
-  };
-  document.getElementById('srcs').onclick = function (e) {
+  $('bPlay').onclick = $('zPlay').onclick = togglePlay;
+  $('bBack').onclick = function () { step(-1); }; $('bFwd').onclick = function () { step(1); };
+  $('bPrev').onclick = function () { jump(-1); }; $('bNext').onclick = function () { jump(1); };
+  vid.onended = pause;
+  vid.addEventListener('seeked', function () { aud.currentTime = vid.currentTime; });
+  scrub.oninput = function () { if (ready) seek(+scrub.value); };
+  $('which').onclick = function (e) { if (e.target.dataset.h) { heardOnly = e.target.dataset.h === 'heard'; press(this, e.target); } };
+  $('speeds').onclick = function (e) { if (e.target.dataset.r) { setRate(+e.target.dataset.r); press(this, e.target); } };
+  $('wins').onclick = function (e) { if (e.target.dataset.w) setWin(+e.target.dataset.w); };
+  $('detail').onclick = function (e) { if (e.target.dataset.m != null) { smoothMs = +e.target.dataset.m; press(this, e.target); } };
+  $('gains').onclick = function (e) { if (e.target.dataset.g) { gain = e.target.dataset.g; press(this, e.target); } };
+  $('srcs').onclick = function (e) {
     var s = e.target.dataset.s;
     if (!s || s === src) return;
+    src = s; press(this, e.target);
+    if (!R || !R.urls[s]) return;
     var playing = !vid.paused;
-    src = s; aud.src = 'recordings/' + D.name + '/' + s + '.wav'; aud.currentTime = vid.currentTime; setRate(vid.playbackRate);
-    if (playing) aud.play();
-    press(this, e.target);
+    aud.src = R.urls[s]; aud.currentTime = vid.currentTime; setRate(vid.playbackRate);
+    if (playing) aud.play().catch(function () {});
   };
-  scrub.oninput = function () { seek(+scrub.value); };
-  vid.addEventListener('seeked', function () { aud.currentTime = vid.currentTime; });
+  addEventListener('keydown', function (e) {
+    if (!ready || e.target.tagName === 'SELECT' || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === ',') step(-1);
+    else if (e.key === '.') step(1);
+    else if (e.key === '[') jump(-1);
+    else if (e.key === ']') jump(1);
+    else if (e.key === ' ') {
+      var b = e.target.closest && e.target.closest('button');
+      if (b && b.matches(':focus-visible') && b !== $('bPlay') && b !== $('zPlay')) return;   // keyboard users keep Space for buttons
+      e.preventDefault(); spaceHandled = true; togglePlay();
+    }
+  });
+  addEventListener('keyup', function (e) { if (e.key === ' ' && spaceHandled) { e.preventDefault(); spaceHandled = false; } });   // Firefox clicks on keyup
+
+  // --- zoom: the same plot redrawn at dialog size, live ------------------------------------
+
+  function openZoom(p) {
+    if (!R) return;
+    zoomKind = p.dataset.kind; zHover = null;
+    $('zTitle').innerHTML = p.querySelector('.cap').innerHTML;
+    $('zFoot').innerHTML = TIME.indexOf(zoomKind) >= 0
+      ? '<span>Click to jump the video there</span><span>Scroll to widen or narrow the window</span><span><kbd>Space</kbd> play or pause</span><span><kbd>[</kbd> <kbd>]</kbd> previous or next drop</span><span><kbd>Esc</kbd> close</span>'
+      : '<span>Click a point to jump the video to that drop</span><span><kbd>Space</kbd> play or pause</span><span><kbd>Esc</kbd> close</span>';
+    zRead.textContent = ''; hideTip(); zoom.showModal(); lastDrop = -2;
+  }
+  inline.forEach(function (p) {
+    p.addEventListener('click', function (e) { if (!e.target.closest('.info')) openZoom(p); });
+    p.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target === p) openZoom(p); });
+  });
+  $('zClose').onclick = function () { zoom.close(); };
+  zoom.addEventListener('click', function (e) { if (e.target === zoom) zoom.close(); });
+  zoom.addEventListener('close', function () { hideTip(); zHover = null; });
+  function zPoint(e) { var r = zc.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+  function zTime(x) { return zView.x0 + (x - GUT) / zView.pw * WIN; }
+  zc.addEventListener('pointermove', function (e) {
+    if (!zView) return;
+    var xy = zPoint(e), x = xy[0], D = R.D;
+    if (TIME.indexOf(zoomKind) >= 0) {
+      if (x < GUT || x > GUT + zView.pw) { zHover = null; zRead.textContent = ''; return; }
+      var t = zHover = zTime(x), w = R.wave[src], q = Math.floor(t * D.wave_rate), dB = D.loud[src][Math.round(t * D.loud_rate)];
+      var amp = q >= 0 && 2 * q + 1 < w.length ? pct(Math.pow(Math.max(w[2 * q], -w[2 * q + 1]) / 127, 2)) + ' of loudest   ' : '';
+      var i = dropIndex(t), near = [i, i + 1].filter(function (j) { return j >= 0 && j < R.hits.length; })
+        .sort(function (a, b) { return Math.abs(R.hits[a] - t) - Math.abs(R.hits[b] - t); })[0];
+      zRead.textContent = t.toFixed(3) + ' s   ' + amp + (dB == null ? '' : dB + ' dB') +
+        (near == null ? '' : '   drop ' + (near + 1) + ' ' + (t >= R.hits[near] ? '+' : '') + Math.round((t - R.hits[near]) * 1e3) + ' ms');
+    } else {
+      var iv = R.iv, k = zView.pick(x, xy[1]);
+      zHover = k < 0 ? null : k; lastDrop = -2;
+      zRead.textContent = k < 0 ? '' : zoomKind === 'map'
+        ? 'Drops ' + (k + 1) + ' to ' + (k + 3) + ':  ' + Math.round(iv[k] * 1e3) + ' ms, then ' + Math.round(iv[k + 1] * 1e3) + ' ms'
+        : 'Drop ' + (k + 1) + ' to ' + (k + 2) + ':  ' + Math.round(iv[k] * 1e3) + ' ms';
+    }
+  });
+  zc.addEventListener('pointerleave', function () { zHover = null; zRead.textContent = ''; lastDrop = -2; });
+  zc.addEventListener('click', function (e) {
+    if (!ready || !zView) return;
+    var xy = zPoint(e);
+    if (TIME.indexOf(zoomKind) >= 0) { if (xy[0] >= GUT) seek(zTime(xy[0])); return; }
+    var i = zView.pick(xy[0], xy[1]);
+    if (i >= 0) seek(R.hits[zoomKind === 'map' ? i + 2 : i + 1]);
+  });
+  zc.addEventListener('wheel', function (e) {
+    if (TIME.indexOf(zoomKind) < 0) return;
+    e.preventDefault(); setWin(WIN * (e.deltaY > 0 ? 1.25 : 0.8));
+  }, { passive: false });
+
+  // --- info popovers: hover or focus shows one, a click pins it (touch screens have no hover) ---
+
+  function showTip(btn) {
+    var d = INFO[btn.dataset.info];
+    tip.innerHTML = '<b>' + d[0] + '</b>' + d.slice(1).map(function (p) { return '<p>' + p + '</p>'; }).join('');
+    (zoom.open ? zoom : document.querySelector('.viewer')).appendChild(tip);   // a modal dialog sits above the rest of the page
+    tip.hidden = false;
+    var r = btn.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.max(16, Math.min(innerWidth - w - 16, r.left - 12)) + 'px';
+    tip.style.top = (r.bottom + 8 + h < innerHeight ? r.bottom + 8 : Math.max(8, r.top - 8 - h)) + 'px';
+  }
+  function hideTip() { tip.hidden = true; if (pinned) { pinned.setAttribute('aria-expanded', 'false'); pinned = null; } }
+  document.addEventListener('pointerover', function (e) { var b = e.target.closest('.info'); if (b && !pinned) showTip(b); });
+  document.addEventListener('pointerout', function (e) { if (e.target.closest('.info') && !pinned) tip.hidden = true; });
+  document.addEventListener('focusin', function (e) { var b = e.target.closest('.info'); if (b && !pinned) showTip(b); });
+  document.addEventListener('focusout', function (e) { if (e.target.closest('.info') && !pinned) tip.hidden = true; });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.info');
+    if (!b) { if (pinned && !e.target.closest('.tip')) hideTip(); return; }
+    e.stopPropagation();
+    var same = pinned === b;
+    hideTip();
+    if (!same) { pinned = b; b.setAttribute('aria-expanded', 'true'); showTip(b); }
+  }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !tip.hidden) hideTip(); });
+  addEventListener('scroll', function () { if (pinned) showTip(pinned); else tip.hidden = true; }, { passive: true });
+  var resized = new ResizeObserver(function () { lastDrop = -2; });
+  resized.observe(document.body); resized.observe($('zBody'));
 })();
 </script>
 </body>
