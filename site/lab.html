@@ -15,7 +15,7 @@
 
 <header class="masthead">
   <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
-  <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+  <span class="masthead-meta">B.Tech project, 2026&ndash;27</span>
   <button id="themeBtn" class="themetoggle" type="button">System</button>
 </header>
 
@@ -536,7 +536,7 @@ function drawDrip(dt) {
 function drawSeries() {
   const cv = $('cvSeries'); if (!cv) return;
   const { g, w, h } = fit(cv);
-  const pad = { l: 40, r: 10, t: 22, b: 24 };
+  const pad = { l: 40, r: 10, t: 32, b: 24 };   // top clears the caption
   const T = sim.Ts.slice(-140);
   g.strokeStyle = C.rule; g.lineWidth = 1;
   g.strokeRect(pad.l, pad.t, w - pad.l - pad.r, h - pad.t - pad.b);
@@ -636,7 +636,7 @@ function computeBif(done) {
 function drawBifCached() {
   const cv = $('cvBif'); if (!cv) return;
   const { g, w, h } = fit(cv);
-  const pad = { l: 46, r: 12, t: 16, b: 30 };
+  const pad = { l: 46, r: 12, t: 32, b: 30 };   // top clears the caption
   const iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
   g.strokeStyle = C.rule; g.lineWidth = 1; g.strokeRect(pad.l, pad.t, iw, ih);
   g.fillStyle = C.ink3; g.font = '9px ui-monospace, Menlo, monospace';

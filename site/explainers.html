@@ -15,7 +15,7 @@
 
 <header class="masthead">
   <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
-  <span class="masthead-meta">B.TECH PROJECT &middot; 2026&ndash;27</span>
+  <span class="masthead-meta">B.Tech project, 2026&ndash;27</span>
   <button id="themeBtn" class="themetoggle" type="button">System</button>
 </header>
 
@@ -456,7 +456,7 @@ function drawMemory(){
     while(T===null){ pts.push([s.t-t0,s.x]); T=mStep(s); }
     pts.push([s.t-t0,MP.xc]); cycles.push(pts); Ts.push(T);
   }
-  const pad={l:44,r:12,t:16,b:28};
+  const pad={l:44,r:12,t:32,b:28};   // top clears the caption
   const iw=w-pad.l-pad.r, ih=h-pad.t-pad.b;
   const tmax=Math.max(...Ts)*1.04;
   const xmin=Math.min(...cycles.flat().map(p=>p[1]))-0.01, xmax=MP.xc+0.02;
@@ -505,7 +505,7 @@ function drawLog(){
   const z=parseFloat($('inLogR').value)/100;
   const r0=2.4+(3.53-2.4)*z, r1=4.0-(4.0-3.60)*z;
   $('vLogR').textContent=r0.toFixed(3)+' – '+r1.toFixed(3);
-  const pad={l:44,r:12,t:14,b:28}, iw=w-pad.l-pad.r, ih=h-pad.t-pad.b;
+  const pad={l:44,r:12,t:32,b:28}, iw=w-pad.l-pad.r, ih=h-pad.t-pad.b;   // top clears the caption
   g.strokeStyle=C.rule; g.lineWidth=1; g.strokeRect(pad.l,pad.t,iw,ih);
   g.fillStyle=C.hydro; g.globalAlpha=0.42;
   const cols=Math.min(900,Math.round(iw*2));
