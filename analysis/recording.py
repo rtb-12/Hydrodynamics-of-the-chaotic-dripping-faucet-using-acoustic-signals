@@ -262,10 +262,12 @@ def onsets(x):
 # --- page data -------------------------------------------------------------
 
 def minmax(x):
-    """Base64 of int8 (max, min) pairs at WAVE_RATE, fine enough to zoom into one plink."""
+    """Base64 of int8 (max, min) pairs at WAVE_RATE, fine enough to zoom into one plink. Square-root
+    companded, the scale the viewer draws on, so a plink at 1% of the loudest keeps 13 levels instead of 1."""
     n = FS // WAVE_RATE
     r = x[:len(x) // n * n].reshape(-1, n) / (np.abs(x).max() or 1)
-    pairs = np.round(np.c_[r.max(1), r.min(1)] * 127).astype(np.int8)
+    r = np.c_[r.max(1), r.min(1)]
+    pairs = np.round(np.sign(r) * np.sqrt(np.abs(r)) * 127).astype(np.int8)
     return base64.b64encode(pairs.tobytes()).decode()
 
 
@@ -471,6 +473,12 @@ def selftest():
     d = process(tmp / 'clip.mov', tmp / 'other.wav', name='t', out_root=tmp / 'out', quiet=True)
     check('flagged unsure', d['offset_unsure'], f'{d["confidence"]}x')
     check('claims no sounds and no delay', d['stats']['heard'] == 0 and d['stats']['av_ms'] is None)
+
+    print('\nwaveform encoding')
+    n = FS // WAVE_RATE
+    q = np.frombuffer(base64.b64decode(minmax(np.r_[np.ones(n), np.full(n, 0.01), np.full(n, -0.01)])), np.int8)
+    check('a sound at 1% of the loudest keeps a tenth of the height range', q[2] == 13, f'{q[2]} of 127')
+    check('and keeps its sign', q[4] == q[5] == -13, f'{q[4]}, {q[5]}')
 
     print('\nno drops anywhere')
     g, d = choose_gate(np.arange(600) / 60, np.zeros((600, 360), np.float32), 20, 250, 360)
