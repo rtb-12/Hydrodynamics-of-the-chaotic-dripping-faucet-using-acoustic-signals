@@ -112,13 +112,18 @@ def main():
     if not SITE.is_dir():
         print(f'no site directory at {SITE}')
         return 1
-    css_classes = set(re.findall(r'\.([a-zA-Z][\w-]*)', (SITE / 'style.css').read_text()))
+    css = (SITE / 'style.css').read_text()
+    css_classes = set(re.findall(r'\.([a-zA-Z][\w-]*)', css))
     pages = sorted(SITE.glob('*.html'))
     if not pages:
         print('no pages found')
         return 1
 
     failed = 0
+    # Without it, any element whose class sets display stays visible when the page sets .hidden.
+    if not re.search(r'\[hidden\]\s*\{\s*display:\s*none\s*!important', css):
+        failed += 1
+        print('FAIL  style.css\n        no [hidden] { display: none !important } rule')
     for page in pages:
         problems = check(page, css_classes)
         if problems:
