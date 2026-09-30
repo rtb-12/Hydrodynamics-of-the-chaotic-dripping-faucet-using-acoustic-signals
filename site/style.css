@@ -113,12 +113,6 @@ body {
 .themetoggle:hover { color: var(--hydro); border-color: var(--hydro); }
 .themetoggle:focus-visible { outline: 2px solid var(--hydro); outline-offset: 2px; }
 
-.topnav { display: flex; gap: 0.25rem; flex-wrap: wrap; font-family: var(--display); font-size: 0.86rem; }
-.topnav a { color: var(--ink-2); text-decoration: none; padding: 0.3rem 0.6rem; border-radius: var(--radius); }
-.topnav a:hover { background: var(--sunk); color: var(--ink); }
-.topnav a[aria-current="page"] { background: var(--sunk); color: var(--ink); font-weight: 550; }
-.topnav + .themetoggle { margin-left: auto; }
-
 /* --- reproduced figures from the papers ---------------------------------
    Published figures keep their own white ground in both themes. Recolouring
    someone else's data to match a site palette misrepresents it.
