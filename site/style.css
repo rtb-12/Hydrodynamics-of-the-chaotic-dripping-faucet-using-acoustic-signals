@@ -932,6 +932,18 @@ a:focus-visible, .sidenav a:focus-visible {
 .dstats b { font-size: 1.2rem; font-weight: 550; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .dstats b small { font-size: 0.8rem; color: var(--ink-3); font-weight: 400; }
 .dstats b.warn { color: var(--aero); }
+.counts { padding: 0.8rem 1rem 1rem; display: grid; gap: 0.7rem; }
+.xy { display: block; width: 100%; max-width: 620px; height: auto; }
+.xy text { font-size: 12px; fill: var(--ink-3); font-variant-numeric: tabular-nums; }
+.xy .name { font-size: 13px; fill: var(--ink-2); }
+.xy .grid { stroke: var(--rule); }
+.xy .axis { stroke: var(--ink-3); }
+.xy .same { stroke: var(--ink-3); stroke-dasharray: 5 4; }
+.xy .pt { fill: var(--aero); }
+.xy .lab { fill: var(--ink-2); }
+.xy .lab.now { font-weight: 600; }
+.xy .pt.now { stroke: var(--ink-2); stroke-width: 2; }
+
 .chaos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 0.75rem; }
 .chaos .plot { height: 380px; }
 

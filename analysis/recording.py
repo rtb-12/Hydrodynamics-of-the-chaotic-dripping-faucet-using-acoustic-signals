@@ -8,6 +8,7 @@ for site/recording.html: levelled, cropped, tone-mapped video, aligned and clean
 detected drops and the plots' data.
 
     uv run analysis/recording.py exp/1.MOV --audio "exp/WhatsApp Audio.mp4"
+    uv run analysis/recording.py slowmo.mov --capture-fps 120 --slow 10 179
     uv run analysis/recording.py --selftest
 
 Everything it finds automatically (impact point, tilt, gate band) can be overridden;
@@ -29,7 +30,7 @@ ALIGN_OK = 1.5              # audio alignment peak must beat the runner-up by th
 SCOUT_FRAMES = 600          # frames used to locate the impact point and water line
 SCOUT_SCALE = 4             # downscale factor for that scouting pass
 CROP_W = 0.6                # crop width as a fraction of frame width (16:9 crop)
-GATE_HALF_W = 0.045         # gate half-width as a fraction of frame height
+GATE_HALF_W = 0.015         # gate half-width as a fraction of frame height: one drop wide, or reflections get in
 GATE_SIZES = (0.08, 0.15)   # candidate gate heights, fractions of frame height
 GATE_STEP = 0.02            # candidate gate spacing along the drop column, fraction of frame height
 MIN_DROPS = 10              # a gate that sees fewer drops than this is not a gate
@@ -40,15 +41,18 @@ BELOW_SURFACE = 0.1         # gates may reach this far under the water line, whe
 STREAK_K = 0.35             # the drop streak ends where its motion falls below this fraction of its peak
 SURFACE_SEARCH = 0.15       # look for the water-line edge this far (fraction of height) below the streak's end
 SURFACE_ABOVE = 0.05        # ...and this far above it, since a tilted line rises above it on one side
+BG_BLOCK_S = 1.0            # the background each frame is compared with is the median of this many seconds
+REF_STEP = 16               # every this-many-th column of the frame measures flicker and shake
+BASELINE_S = 0.5            # the gate signal's slow baseline is its median over at least this long
 GATE_K = 3.0                # gate threshold in robust standard deviations
-GATE_FLOOR = 0.25           # ...but never below this fraction of a typical crossing
+GATE_FLOOR = 0.5            # ...but never below this fraction of a typical strong crossing
+BURST_K = 0.5               # a drop is timed at its first pulse at least this fraction of its tallest
 MIN_GAP_S = 0.05            # two drops closer than this are one drop (20 Hz ceiling)
 BAND = (2000, 15000)        # impact and plink energy lives here, below it is room noise
 HIGHPASS = 800              # cleaning high-pass, Hz
 ONSET_K = 8.0               # onset threshold as a multiple of the median envelope
-HEARD_TOL = 0.015           # a drop is "heard" if an onset lands this close to the usual gate-to-sound delay
-MAX_LAG = 0.5               # longest plausible gate-to-sound delay (gate far above the surface), seconds
-LAG_BIN = 0.004             # histogram bin for finding that delay, seconds
+HEARD_WITHIN = 0.4          # a drop is "heard" if a sound starts within this long after it crosses the gate
+HEARD_TOL = 0.015           # ...or this little before, for a gate that sits on the water line
 WAVE_RATE = 4000            # waveform min/max pairs per second
 LOUD_RATE = 200             # loudness points per second
 SPEC_MAX_W = 16000          # spectrogram PNG width cap, browsers struggle beyond this
@@ -58,29 +62,41 @@ HLG, PQ = 18, 16            # colour-transfer codes that mean HDR
 
 # --- video -----------------------------------------------------------------
 
-def probe(path):
+def probe(path, capture_fps=None, span=None):
+    """`capture_fps` is the rate a slow-motion clip was shot at and `span` the clip seconds its slowed stretch
+    covers (phones leave both ends at normal speed). Only that stretch is used, timed in real seconds."""
     with av.open(str(path)) as c:
         v = c.streams.video[0]
-        return dict(w=v.width, h=v.height, fps=float(v.average_rate),
-                    duration=float(v.duration * v.time_base) if v.duration else float(c.duration / 1e6),
+        fps = float(v.average_rate)
+        slow = capture_fps / fps if capture_fps else 1.0
+        length = float(v.duration * v.time_base) if v.duration else float(c.duration / 1e6)
+        t0, t1 = span or (0.0, length)
+        return dict(w=v.width, h=v.height, fps=fps * slow, slow=slow, span=(t0, min(t1, length)),
+                    duration=(min(t1, length) - t0) / slow,
                     hdr=v.codec_context.color_trc in (HLG, PQ), has_audio=bool(c.streams.audio),
                     created=c.metadata.get('creation_time', '')[:10])
 
 
-def gray_frames(path, scale=1, limit=None):
-    """Yield (time_s, gray uint8 array) per frame."""
+def frames(path, meta, scale=1, limit=None, fmt='gray'):
+    """Yield (real time_s, uint8 array) per frame of the stretch `meta` describes."""
+    t0, t1 = meta['span']
     with av.open(str(path)) as c:
         v = c.streams.video[0]
         v.thread_type = 'AUTO'
-        for i, f in enumerate(c.decode(v)):
-            if limit and i >= limit:
+        c.seek(int(t0 / v.time_base), stream=v)
+        i = 0
+        for f in c.decode(v):
+            if f.time < t0:
+                continue
+            if f.time >= t1 or (limit and i >= limit):
                 return
-            yield f.time, f.reformat(f.width // scale, f.height // scale, format='gray').to_ndarray()
+            i += 1
+            yield (f.time - t0) / meta['slow'], f.reformat(f.width // scale, f.height // scale, format=fmt).to_ndarray()
 
 
 def find_geometry(path, meta):
     """Drop column, and the water line and its tilt, from the first few seconds."""
-    fr = np.array([g for _, g in gray_frames(path, SCOUT_SCALE, SCOUT_FRAMES)], np.float32)
+    fr = np.array([g for _, g in frames(path, meta, SCOUT_SCALE, SCOUT_FRAMES)], np.float32)
     mx, top, end = drop_column(np.abs(np.diff(fr, axis=0)).mean(0))
     h = fr.shape[1]
     edge = np.abs(nd.sobel(nd.gaussian_filter(np.median(fr, 0), 1), 0))
@@ -115,20 +131,43 @@ def crop_box(meta, geo):
     return cw, ch, cx, cy
 
 
-def column_motion(path, meta, x):
-    """Per-frame, per-row change in the drop column minus the same in a strip beside it,
-    which cancels light flicker and camera shake since they move every column alike."""
-    W, half = meta['w'], int(GATE_HALF_W * meta['h'])
-    rx = x + 4 * half if x + 5 * half < W else x - 4 * half
-    cols = (slice(max(0, x - half), x + half), slice(max(0, rx - half), rx + half))
-    ts, rows, prev = [], [], None
-    for t, g in gray_frames(path):
-        cur = [g[:, c].astype(np.float32) for c in cols]
-        if prev is not None:
-            rows.append(np.abs(cur[0] - prev[0]).mean(1) - np.abs(cur[1] - prev[1]).mean(1))
-            ts.append(t)
-        prev = cur
+def column_change(path, meta, x):
+    """Per-frame, per-row RGB distance of the drop column from its background: the median of the same pixels
+    over the surrounding BG_BLOCK_S. A drop is the only thing that is in front of the background that briefly."""
+    half, block = int(GATE_HALF_W * meta['h']), max(8, int(round(BG_BLOCK_S * meta['fps'])))
+    col = slice(max(0, x - half), x + half)
+    ts, rows, strip, ref = [], [], [], []
+
+    def flush():
+        if strip:
+            rows.extend(block_change(np.array(strip), np.array(ref)))
+            strip.clear(), ref.clear()
+
+    for t, f in frames(path, meta, fmt='rgb24'):
+        ts.append(t)
+        strip.append(f[:, col])
+        ref.append(f[:, ::REF_STEP])
+        if len(strip) == block:
+            flush()
+    flush()
     return np.array(ts), np.array(rows, np.float32)
+
+
+def block_change(strip, ref):
+    """Lamp flicker under a rolling shutter dims whole rows at a time and each pixel follows it by its own
+    amount, so that is fitted per pixel and removed; what the rest of the row still moves by (shake) is taken off."""
+    ref = ref.astype(np.float32)
+    row = np.median((ref + 1) / (np.median(ref, 0) + 1), axis=(2, 3))    # frames x rows: brightness of each row
+    row = (row - row.mean(0))[:, :, None, None]
+    power = (row * row).sum(0) + 1e-9
+
+    def change(x):
+        x = x.astype(np.float32)
+        x -= np.median(x, 0)
+        x -= (row * x).sum(0) / power * row
+        return np.abs(x).max(3)
+
+    return list(change(strip).mean(2) - np.median(change(ref), axis=2))
 
 
 def choose_gate(ts, M, top, surface, h):
@@ -161,21 +200,26 @@ def weighted_median(values, weights):
 
 
 def detect_drops(ts, sig):
-    """Gate crossings, each timed by the centroid of its motion pulse."""
-    s = sig - ss.medfilt(sig, 31)
-    noise = 1.4826 * np.median(np.abs(s - np.median(s)))
-    # Codecs store a still background as exactly zero change, so noise alone can be 0.
-    thr = max(GATE_K * noise, GATE_FLOOR * np.percentile(s[s > 0], 99)) if (s > 0).any() else np.inf
+    """Gate crossings, each timed by the centroid of its motion pulse. An impact pulses several times (crater,
+    then jet), so pulses closer than half the usual drip interval are one drop, timed at its first strong one."""
     dt = float(np.median(np.diff(ts)))
-    peaks, _ = ss.find_peaks(s, height=thr, distance=max(1, int(MIN_GAP_S / dt)))
-    if len(peaks) > 2:   # one drop can pulse over several frames: space peaks by half the typical interval
-        gap = 0.5 * float(np.median(np.diff(ts[peaks])))
-        peaks, _ = ss.find_peaks(s, height=thr, distance=max(1, int(gap / dt)))
-    mid = np.r_[ts[0], 0.5 * (ts[1:] + ts[:-1])]   # change p happened between frames p-1 and p
+    s = sig - ss.medfilt(sig, max(31, int(BASELINE_S / dt) // 2 * 2 + 1))
+    noise = 1.4826 * np.median(np.abs(s - np.median(s)))
+    near = max(1, int(MIN_GAP_S / dt))
+    # Codecs store a still background as exactly zero change, so noise alone can be 0.
+    _, found = ss.find_peaks(s, height=max(GATE_K * noise, 1e-6), distance=near)
+    if not len(found['peak_heights']):
+        return np.array([])
+    strong = np.sort(found['peak_heights'])[len(found['peak_heights']) // 2:]
+    peaks, _ = ss.find_peaks(s, height=max(GATE_K * noise, GATE_FLOOR * float(np.median(strong))), distance=near)
+    if len(peaks) > 2:
+        iv = np.diff(ts[peaks])
+        bursts = np.split(peaks, np.flatnonzero(iv > 0.5 * weighted_median(iv, iv)) + 1)   # weighted by length: the gaps between bursts
+        peaks = np.array([b[np.argmax(s[b] >= BURST_K * s[b].max())] for b in bursts])
     out = []
     for p in peaks[(peaks >= 2) & (peaks < len(s) - 2)]:
         w = np.clip(s[p - 2:p + 3], 0, None)
-        out.append(float((w * mid[p - 2:p + 3]).sum() / w.sum()))
+        out.append(float((w * ts[p - 2:p + 3]).sum() / w.sum()))
     return np.array(out)
 
 
@@ -183,8 +227,10 @@ def encode_video(src, dst, meta, box, tilt):
     cw, ch, cx, cy = box
     tone = ('zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=hable:desat=0,'
             'zscale=t=bt709:m=bt709:r=tv,format=yuv420p,') if meta['hdr'] else 'format=yuv420p,'
-    vf = f'{tone}rotate={-tilt}*PI/180,crop={cw}:{ch}:{cx}:{cy},hqdn3d=1.5:1.5:3:3,unsharp=5:5:0.4'
-    subprocess.run([FFMPEG, '-loglevel', 'error', '-y', '-i', str(src), '-an', '-vf', vf,
+    real = f'setpts=PTS/{meta["slow"]},' if meta['slow'] != 1 else ''
+    t0, t1 = meta['span']
+    vf = f'{real}{tone}rotate={-tilt}*PI/180,crop={cw}:{ch}:{cx}:{cy},hqdn3d=1.5:1.5:3:3,unsharp=5:5:0.4'
+    subprocess.run([FFMPEG, '-loglevel', 'error', '-y', '-ss', str(t0), '-to', str(t1), '-i', str(src), '-an', '-vf', vf,
                     '-fps_mode', 'passthrough', '-c:v', 'libx264', '-crf', '18', '-preset', 'slow',
                     '-g', '30', '-pix_fmt', 'yuv420p', '-color_primaries', 'bt709', '-color_trc', 'bt709',
                     '-colorspace', 'bt709', '-movflags', '+faststart', str(dst)], check=True)
@@ -192,10 +238,11 @@ def encode_video(src, dst, meta, box, tilt):
 
 # --- audio -----------------------------------------------------------------
 
-def read_audio(path):
-    """Mono float32 at FS, zero-padded so sample 0 is the container's time zero."""
+def read_audio(path, slow=1.0, span=None):
+    """Mono float32 at FS, zero-padded so sample 0 is the container's time zero. `slow` and `span` cut out a
+    slow-motion clip's slowed stretch and undo the stretching of its sound track."""
     with av.open(str(path)) as c:
-        rs = av.AudioResampler(format='flt', layout='mono', rate=FS)
+        rs = av.AudioResampler(format='flt', layout='mono', rate=int(round(FS / slow)))
         chunks, start = [], None
         for f in c.decode(audio=0):
             for r in rs.resample(f):
@@ -204,7 +251,8 @@ def read_audio(path):
         for r in rs.resample(None):
             chunks.append(r.to_ndarray().ravel())
     x = np.concatenate(chunks).astype(np.float32)
-    return np.r_[np.zeros(int(round(max(0.0, start or 0.0) * FS)), np.float32), x]
+    x = np.r_[np.zeros(int(round(max(0.0, start or 0.0) / slow * FS)), np.float32), x]
+    return x[int(span[0] / slow * FS):int(span[1] / slow * FS)] if span else x
 
 
 def envelope(x, lp=300):
@@ -240,17 +288,12 @@ def clean(x):
 
 
 def gate_to_sound(drops, heard_t):
-    """Delay from gate to sound, and which drops made one. The fall below the gate can take most of a drip
-    period, so take the delay all drops share (the histogram peak) rather than pairing nearest sounds."""
-    d = (heard_t[None, :] - drops[:, None]).ravel()
-    d = d[(d > -MAX_LAG) & (d < MAX_LAG)]
-    if not len(d):
-        return None, [False] * len(drops)
-    counts, edges = np.histogram(d, bins=np.arange(-MAX_LAG, MAX_LAG + LAG_BIN, LAG_BIN))
-    k = int(np.argmax(counts))
-    near = d[(d >= edges[k] - LAG_BIN) & (d < edges[k + 1] + LAG_BIN)]
-    lag = float(np.median(near))
-    return lag, [bool(np.min(np.abs(heard_t - t - lag)) < HEARD_TOL) for t in drops]
+    """Which drops made a sound, and the usual delay from gate to sound. The bubble that rings forms a varying
+    time after the impact, so any sound before the next drop and within HEARD_WITHIN belongs to this one."""
+    until = np.minimum(np.r_[drops[1:], np.inf], drops + HEARD_WITHIN)
+    first = [heard_t[(heard_t >= t - HEARD_TOL) & (heard_t < u)][:1] - t for t, u in zip(drops, until)]
+    heard = [bool(len(f)) for f in first]
+    return (float(np.median(np.concatenate(first))) if any(heard) else None), heard
 
 
 def onsets(x):
@@ -290,7 +333,7 @@ def spectrogram_png(x, path, duration):
 
 
 def write_check(path, meta, geo, gate_box, box):
-    g = next(gray_frames(path, 1, 1))[1]
+    g = next(frames(path, meta, 1, 1))[1]
     im = Image.fromarray(g).convert('RGB')
     d = ImageDraw.Draw(im)
     W = meta['w']
@@ -304,28 +347,33 @@ def write_check(path, meta, geo, gate_box, box):
 
 
 def write_index(out_root):
-    names = sorted(p.parent.name for p in out_root.glob('*/data.js'))
-    (out_root / 'index.js').write_text(f'window.RECORDING_LIST = {json.dumps(names)};\n')
+    """Names for the picker, and each recording's headline numbers for the side-by-side table."""
+    recs = {}
+    for p in sorted(out_root.glob('*/data.js')):
+        d = json.loads(p.read_text().partition(' = window.RECORDINGS || {})[')[2].partition('] = ')[2].rstrip(';\n'))
+        recs[d['name']] = dict(d['stats'], unsure=d['offset_unsure'])
+    (out_root / 'index.js').write_text(f'window.RECORDING_LIST = {json.dumps(list(recs))};\n'
+                                       f'window.RECORDING_STATS = {json.dumps(recs)};\n')
 
 
 def process(video, audio=None, name=None, channel='microphone', impact=None, tilt=None,
-            gate=None, out_root=OUT, quiet=False):
+            gate=None, capture_fps=None, slow_span=None, detect_only=False, out_root=OUT, quiet=False):
     say = (lambda *a: None) if quiet else print
     video = pathlib.Path(video)
     name = name or video.stem
     out = out_root / name
     out.mkdir(parents=True, exist_ok=True)
-    meta = probe(video)
+    meta = probe(video, capture_fps, slow_span)
     say(f'{video.name}: {meta["w"]}x{meta["h"]} {meta["fps"]:.2f} fps {meta["duration"]:.1f} s'
         f'{" HDR" if meta["hdr"] else ""}')
 
     geo = find_geometry(video, meta)
     if impact:
-        geo['x'], geo['y'] = impact
+        geo.update(x=impact[0], y=impact[1], top=0)   # the streak's top was measured on the column it replaces
     if tilt is not None:
         geo['tilt'] = tilt
     box = crop_box(meta, geo)
-    ts, M = column_motion(video, meta, geo['x'])
+    ts, M = column_change(video, meta, geo['x'])
     if gate:
         drops = detect_drops(ts, M[:, gate[0]:gate[1]].mean(1))
     else:
@@ -340,13 +388,13 @@ def process(video, audio=None, name=None, channel='microphone', impact=None, til
     if audio:
         if not meta['has_audio']:
             sys.exit('the video has no audio track to align the external audio against')
-        offset, confidence = align(read_audio(video), ext := read_audio(audio))
+        offset, confidence = align(read_audio(video, meta['slow'], meta['span']), ext := read_audio(audio))
         raw = on_timeline(ext, offset, n)
         say(f'audio offset {offset:+.3f} s (peak {confidence:.1f}x the next best'
             f'{", LOW - check by ear" if confidence < ALIGN_OK else ""})')
     elif meta['has_audio']:
         offset, confidence = 0.0, None
-        raw = on_timeline(read_audio(video), 0.0, n)
+        raw = on_timeline(read_audio(video, meta['slow'], meta['span']), 0.0, n)
     else:
         sys.exit('no audio: the video has no track and --audio was not given')
 
@@ -357,6 +405,16 @@ def process(video, audio=None, name=None, channel='microphone', impact=None, til
     # Sounds from audio that may belong to another take say nothing about these drops.
     lag, heard = (None, [False] * len(drops)) if unsure else gate_to_sound(drops, heard_t)
     av_ms = lag * 1e3 if lag is not None else None
+
+    stats = dict(drops=len(drops), rate=round(1 / float(np.median(iv)), 2) if len(iv) else None,
+                 mean_ms=round(float(iv.mean()) * 1e3, 1) if len(iv) else None,
+                 sd_ms=round(float(iv.std()) * 1e3, 1) if len(iv) else None,
+                 heard=int(sum(heard)), av_ms=av_ms and round(av_ms, 1),
+                 sounds=None if unsure else len(heard_t))
+    say(f'{stats["drops"]} drops, {stats["rate"]} Hz, {stats["sounds"]} sounds, {stats["heard"]} heard, a/v {stats["av_ms"]} ms')
+    if detect_only:   # for placing the gate: the encode below takes far longer than the detection above
+        say('intervals ms:', np.round(iv * 1e3).astype(int).tolist())
+        return dict(drops=drops.tolist(), stats=stats)
 
     wavfile.write(out / 'clean.wav', FS, (cl * 32767).astype(np.int16))
     wavfile.write(out / 'raw.wav', FS, (raw / (np.abs(raw).max() or 1) * 0.9 * 32767).astype(np.int16))
@@ -372,15 +430,11 @@ def process(video, audio=None, name=None, channel='microphone', impact=None, til
         wave=dict(clean=minmax(cl), raw=minmax(raw)),
         loud=dict(clean=loudness(cl), raw=loudness(raw)),
         drops=np.round(drops, 4).tolist(), heard=heard,
-        stats=dict(drops=len(drops), rate=round(1 / float(np.median(iv)), 2) if len(iv) else None,
-                   mean_ms=round(float(iv.mean()) * 1e3, 1) if len(iv) else None,
-                   sd_ms=round(float(iv.std()) * 1e3, 1) if len(iv) else None,
-                   heard=int(sum(heard)), av_ms=av_ms and round(av_ms, 1)))
+        stats=stats)
     (out / 'data.js').write_text(
         f'(window.RECORDINGS = window.RECORDINGS || {{}})[{json.dumps(name)}] = {json.dumps(data)};\n')
     write_index(out_root)
-    s = data['stats']
-    say(f'{s["drops"]} drops, {s["rate"]} Hz, {s["heard"]} heard, a/v {s["av_ms"]} ms -> {out}')
+    say(f'-> {out}')
     return data
 
 
@@ -453,10 +507,13 @@ def selftest():
             check('audio offset recovered', abs(d['offset'] + 0.4) < 0.003, f'{d["offset"]:+.4f} s')
             check('and trusted', not d['offset_unsure'], f'{d["confidence"]}x')
         check('every drop heard', d['stats']['heard'] == len(truth), f'{d["stats"]["heard"]}')
+        check('and no other sound counted', d['stats']['sounds'] == len(truth), f'{d["stats"]["sounds"]}')
         out = tmp / 'out' / 't'
         check('outputs written', all((out / f).exists() for f in
               ['video.mp4', 'clean.wav', 'raw.wav', 'spec-clean.png', 'data.js', 'check.jpg']))
-        check('index lists it', 'window.RECORDING_LIST = ["t"]' in (tmp / 'out' / 'index.js').read_text())
+        index = (tmp / 'out' / 'index.js').read_text()
+        check('index lists it with its numbers', 'window.RECORDING_LIST = ["t"]' in index
+              and f'"t": {{"drops": {len(got)},' in index)
         lvl = probe(out / 'video.mp4')
         check('output is SDR', not lvl['hdr'])
         geo = find_geometry(out / 'video.mp4', lvl)
@@ -472,7 +529,8 @@ def selftest():
     wavfile.write(tmp / 'other.wav', FS, (other * 32767).astype(np.int16))
     d = process(tmp / 'clip.mov', tmp / 'other.wav', name='t', out_root=tmp / 'out', quiet=True)
     check('flagged unsure', d['offset_unsure'], f'{d["confidence"]}x')
-    check('claims no sounds and no delay', d['stats']['heard'] == 0 and d['stats']['av_ms'] is None)
+    check('claims no sounds and no delay', d['stats']['heard'] == 0 and d['stats']['av_ms'] is None
+          and d['stats']['sounds'] is None)
 
     print('\nwaveform encoding')
     n = FS // WAVE_RATE
@@ -502,13 +560,20 @@ def main():
     ap.add_argument('--tilt', type=float, help='water-line tilt in degrees (positive: right side lower)')
     ap.add_argument('--gate', nargs=2, type=int, metavar=('Y0', 'Y1'),
                     help='pixel rows the falling drop crosses, between the nozzle and the jet')
+    ap.add_argument('--capture-fps', type=float, metavar='FPS',
+                    help='rate a slow-motion clip was shot at; times become real seconds')
+    ap.add_argument('--slow', nargs=2, type=float, metavar=('START', 'END'),
+                    help='clip seconds between which it plays slowed; only that stretch is used')
+    ap.add_argument('--detect-only', action='store_true',
+                    help='find and count the drops, write check.jpg, and stop before the slow encode')
     ap.add_argument('--selftest', action='store_true', help='run the pipeline on synthetic clips and check it')
     a = ap.parse_args()
     if a.selftest:
         return selftest()
     if not a.video:
         ap.error('give a video, or --selftest')
-    process(a.video, a.audio, a.name, a.channel, a.impact, a.tilt, a.gate and tuple(a.gate))
+    process(a.video, a.audio, a.name, a.channel, a.impact, a.tilt, a.gate and tuple(a.gate), a.capture_fps, a.slow and tuple(a.slow),
+            a.detect_only)
     return 0
 
 
