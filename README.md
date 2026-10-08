@@ -43,11 +43,17 @@ Each recording is prepared once by the pipeline, which needs only [uv](https://d
 
 ```bash
 uv run analysis/recording.py exp/1.MOV --audio "exp/WhatsApp Audio.mp4" --name exp1
+uv run analysis/recording.py slowmo.mov --audio audio.mp4 --capture-fps 120 --slow 10 179    # phone slow motion
 uv run analysis/recording.py --selftest    # synthetic clips with known drops, run by CI
 ```
 
 It finds the drop column and the water line, levels and crops the video (tone-mapping iPhone HDR), aligns the separately recorded audio by cross-correlation, cleans it, and times every drop.
-Everything it found is drawn on `site/recordings/<name>/check.jpg`; `--impact`, `--tilt` and `--gate` override it when a scene fools it.
+Drops are counted from the video alone: a pixel band on the drop's path is compared with its own background colour, after the lamp flicker each pixel follows has been fitted and removed.
+The count is then set against the sound onsets in the audio, which is the check on the microphone as a drop counter.
+Everything it found is drawn on `site/recordings/<name>/check.jpg`; `--impact`, `--tilt` and `--gate` override it when a scene fools it, and `--detect-only` skips the slow video encode while placing them.
+
+A phone slow-motion clip is stored at 30 fps with both ends at normal speed.
+`--capture-fps` is the rate it was shot at and `--slow` the clip seconds between which it plays slowed; only that stretch is used, timed in real seconds.
 
 ## The site
 

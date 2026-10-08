@@ -11,3 +11,6 @@ __pycache__/
 
 # Raw experiment footage; the processed copies under site/recordings/ are what gets published.
 /exp*/
+/simple drop*/
+/both glycerine/
+/drop glycerine*/
