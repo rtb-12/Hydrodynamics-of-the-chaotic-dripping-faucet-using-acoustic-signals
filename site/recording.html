@@ -22,7 +22,7 @@
       <select id="pick" aria-label="Recording"></select>
       <span class="vmeta" id="meta"></span>
     </div>
-    <p class="lede">Each recording pairs a 60 fps video of the drip with sound from a separate phone microphone, lined up to one clock.
+    <p class="lede">Each recording pairs a video of the drip with sound from a separate phone microphone, lined up to one clock. Drops are counted from the video alone, so the count checks what the microphone heard.
     The video and sound load fully before playback, so seeking and slow motion stay smooth. Click any graph to enlarge it, and use the <b>i</b> buttons to see how each quantity is measured.</p>
   </div>
 
@@ -76,6 +76,15 @@
         <div class="plot card" tabindex="0" data-kind="series"><span class="cap">Interval per drop <span>ms</span><button class="info" type="button" data-info="series" aria-label="About the interval series">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
       </div>
     </section>
+
+    <section class="intervals">
+      <h2>All recordings side by side</h2>
+      <div class="counts card">
+        <span class="cap">Drops counted by eye against drops counted by ear <span>one point per recording</span><button class="info" type="button" data-info="counts" aria-label="About the two counts">i</button></span>
+        <div id="counts"></div>
+      </div>
+      <div class="tablewrap"><table id="cmp"></table></div>
+    </section>
   </div>
 
   <audio id="aud" preload="auto"></audio>
@@ -108,16 +117,19 @@
       'Cleaned has an 800 Hz high-pass filter to remove room rumble, then spectral noise reduction that uses the quietest 40% of the recording as its noise profile. The graphs follow whichever track is selected.',
       'At slower speeds the sound drops in pitch like tape, so a 5 kHz plink stays audible when slowed. Firefox mutes sound below 0.25×.'],
     drops: ['How drops are counted', 'Drops are counted from the video, not the audio. The pipeline finds the thin vertical streak the falling drops draw, then watches a band of pixels on that path, the gate.',
-      'Each drop crossing the gate makes a short pulse of pixel change. A pulse above 3 robust standard deviations of the background counts as one drop, timed at the centre of the pulse, finer than one frame.',
-      'Changes in a strip beside the drop path are subtracted first, which cancels flicker and camera shake. The gate position is chosen automatically as the band giving the most regular drip rate.'],
+      'Each gate pixel has a background colour: the median of its red, green and blue values over the surrounding second. A drop in front of the background pushes the pixels away from that colour for a few frames. A pulse above 3 robust standard deviations counts as one drop, timed at the centre of the pulse, finer than one frame. The same frames always give the same drops.',
+      'Lamp flicker dims whole rows of the picture at once, so each row is first rescaled by how the rest of that row changed, and camera shake measured the same way is subtracted. The gate position is chosen automatically as the band giving the most regular drip rate.'],
+    counts: ['Two independent counts', 'Across is how many drops the video saw. Up is how many sound onsets the microphone recorded over the same stretch of time, counted without looking at the video.',
+      'A point on the dashed line means the microphone would have counted the drops correctly on its own. Below the line it missed drops; above it there were extra sounds such as splashes, bubbles or room noise.',
+      'Only recordings with both counts are plotted: one whose audio could not be lined up with its video has no sound count.'],
     rate: ['Rate', 'One over the median interval between drops. The median ignores a few missed or doubled drops, so this stays close to the true drip rate even when the mean interval does not.'],
     mean: ['Mean interval', 'Average time between consecutive drops, with one standard deviation. A perfectly periodic faucet would show a deviation near zero.',
       'Unlike the rate, the mean includes every gap, so a stretch where the video missed drops pulls it far up and widens the deviation. If it disagrees strongly with the rate, check the interval plot for long gaps.'],
     heard: ['How "heard" is decided', 'Sound onsets are peaks in the 2 to 15 kHz loudness that rise above 8 times its median, at least 50 ms apart.',
-      'Every drop makes its sound a fixed delay after crossing the gate, so the pipeline takes that delay as the most common gap between gate crossings and sound onsets.',
-      'A drop counts as heard if a sound onset lands within 15 ms of its crossing time plus that delay. Unheard drops trapped no ringing bubble, or were too quiet for the phone.'],
-    lag: ['Gate to sound', 'The delay found while matching drops to sounds. With the gate above the water it is the time a drop takes to fall from the gate to the surface.',
-      'It is negative when the automatically chosen gate sits at or just below the water line: the video then sees the splash a little after the sound.'],
+      'A drop counts as heard if a sound starts within 0.4 s after it crosses the gate and before the next drop does. The window is that wide because the loud part of a drop is a trapped bubble ringing, and the bubble forms a varying time after the impact.',
+      'Unheard drops trapped no ringing bubble, or were too quiet for the phone.'],
+    lag: ['Gate to sound', 'The usual delay between a drop crossing the gate and its first sound: the median over the drops that were heard.',
+      'It is the time the drop takes to fall from the gate to the surface, plus however long the bubble takes to form.'],
     offset: ['Audio offset', 'The sound was recorded on a separate phone. It is lined up with the video by cross-correlating the loudness of the video’s own soundtrack with the phone recording, and this is the shift applied.',
       'The confidence says how much stronger the best match was than the next best. Below 1.5× the alignment is flagged as unsure and drops are not matched to sounds.'],
     map: ['Return map', 'Each dot is one pair of consecutive intervals: this interval across, the next one up. It is the standard test for chaos in the dripping faucet.',
@@ -125,6 +137,12 @@
       'The ringed dot is the latest drop at the playhead.'],
     series: ['Interval per drop', 'The time between each drop and the one before it, in order through the recording.',
       'A flat line is periodic dripping, a line flipping between two levels is period 2, and irregular jumps are chaos or noise; the return map tells those two apart. The blue line marks the latest drop at the playhead.']
+  };
+
+  var LABELS = {
+    'water-20cm': 'Water into water, 20 cm fall', 'water-25cm': 'Water into water, 25 cm fall', 'water-30cm': 'Water into water, 30 cm fall',
+    'glycerine-on-water': 'Glycerine into water', 'glycerine-both': 'Glycerine into glycerine',
+    exp1: 'Faucet run 1', exp2: 'Faucet run 2', exp3: 'Faucet run 3'
   };
 
   function $(id) { return document.getElementById(id); }
@@ -167,7 +185,8 @@
     var list = window.RECORDING_LIST || [];
     if (!list.length) return showEmpty();
     var want = new URLSearchParams(location.search).get('r'), name = list.indexOf(want) >= 0 ? want : list[0], pick = $('pick');
-    list.forEach(function (n) { pick.add(new Option(n, n, false, n === name)); });
+    list.forEach(function (n) { pick.add(new Option(LABELS[n] || n, n, false, n === name)); });
+    fillCounts(list, name); fillCompare(list, name);
     pick.onchange = function () { location.search = '?r=' + encodeURIComponent(pick.value); };
     script('recordings/' + name + '/data.js', function () {
       if (window.RECORDINGS && window.RECORDINGS[name]) init(window.RECORDINGS[name]); else showEmpty();
@@ -187,7 +206,7 @@
       $('loadBar').style.width = (t ? Math.min(100, g / t * 100) : 0) + '%';
       $('loadText').textContent = (g / 1e6).toFixed(1) + (t ? ' of ' + (t / 1e6).toFixed(1) : '') + ' MB';
     }
-    $('loadHead').textContent = 'Loading ' + D.name;
+    $('loadHead').textContent = 'Loading ' + (LABELS[D.name] || D.name);
     Promise.all(files.map(function (f, i) { return fetchBlob(dir + f, function (g, t) { got[i] = g; tot[i] = t; progress(); }); }))
       .then(function (u) {
         R.urls = { video: u[0], clean: u[1], raw: u[2] };
@@ -202,6 +221,43 @@
         $('loadHead').textContent = 'Could not load ' + D.name;
         $('loadText').textContent = 'Check the connection, then reload the page.';
       });
+  }
+
+  function fillCompare(list, current) {
+    var S = window.RECORDING_STATS || {};
+    $('cmp').innerHTML = '<tr><th>Recording</th><th>Drops seen</th><th>Sounds</th><th>Rate, Hz</th><th>Interval, ms</th><th>Heard by microphone</th><th>Gate to sound, ms</th></tr>' +
+      list.map(function (n) {
+        var s = S[n] || {}, name = LABELS[n] || n, dash = function (v) { return v == null ? '-' : v; };
+        return '<tr><td>' + (n === current ? '<b>' + name + '</b>' : '<a href="?r=' + encodeURIComponent(n) + '">' + name + '</a>') + '</td><td>' + dash(s.drops) + '</td><td>' + dash(s.sounds) +
+          '</td><td>' + dash(s.rate) + '</td><td>' + (s.mean_ms == null ? '-' : s.mean_ms + ' &plusmn; ' + s.sd_ms) +
+          '</td><td>' + (s.unsure ? 'audio not aligned' : s.drops ? s.heard + ' of ' + s.drops + ' (' + Math.round(100 * s.heard / s.drops) + '%)' : '-') +
+          '</td><td>' + dash(s.av_ms) + '</td></tr>';
+      }).join('');
+  }
+
+  function fillCounts(list, current) {
+    var S = window.RECORDING_STATS || {}, pts = list.filter(function (n) { return S[n] && S[n].drops != null && S[n].sounds != null; });
+    var W = 560, H = 400, L = 58, B = 52, T = 14, Rt = 150, pw = W - L - Rt, ph = H - T - B;
+    var top = Math.max.apply(null, pts.map(function (n) { return Math.max(S[n].drops, S[n].sounds); }).concat(10)), step = top > 60 ? 20 : top > 30 ? 10 : 5;
+    top = Math.ceil(top / step) * step;
+    function X(v) { return L + pw * v / top; }
+    function Y(v) { return T + ph * (1 - v / top); }
+    var g = '';
+    for (var v = 0; v <= top; v += step) {
+      g += '<line class="grid" x1="' + X(v) + '" y1="' + T + '" x2="' + X(v) + '" y2="' + (T + ph) + '"/><line class="grid" x1="' + L + '" y1="' + Y(v) + '" x2="' + (L + pw) + '" y2="' + Y(v) + '"/>' +
+           '<text x="' + X(v) + '" y="' + (T + ph + 18) + '" text-anchor="middle">' + v + '</text><text x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + v + '</text>';
+    }
+    g += '<line class="axis" x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + (T + ph) + '"/><line class="axis" x1="' + L + '" y1="' + (T + ph) + '" x2="' + (L + pw) + '" y2="' + (T + ph) + '"/>' +
+         '<line class="same" x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(top) + '" y2="' + Y(top) + '"/>' +
+         '<text class="note" x="' + (X(top) - 6) + '" y="' + (Y(top) + 16) + '" text-anchor="end">equal counts</text>' +
+         '<text class="name" x="' + (L + pw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">Drops seen in the video</text>' +
+         '<text class="name" transform="translate(16 ' + (T + ph / 2) + ') rotate(-90)" text-anchor="middle">Sounds in the audio</text>';
+    pts.forEach(function (n) {
+      var s = S[n], now = n === current ? ' now' : '';
+      g += '<circle class="pt' + now + '" cx="' + X(s.drops) + '" cy="' + Y(s.sounds) + '" r="6"/>' +
+           '<text class="lab' + now + '" x="' + (X(s.drops) + 11) + '" y="' + (Y(s.sounds) + 4) + '">' + (LABELS[n] || n) + ' (' + s.drops + ', ' + s.sounds + ')</text>';
+    });
+    $('counts').innerHTML = '<svg class="xy" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Sounds in the audio against drops seen in the video">' + g + '</svg>';
   }
 
   function fillHeader(D) {
