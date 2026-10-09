@@ -53,6 +53,10 @@ HIGHPASS = 800              # cleaning high-pass, Hz
 ONSET_K = 8.0               # onset threshold as a multiple of the median envelope
 HEARD_WITHIN = 0.4          # a drop is "heard" if a sound starts within this long after it crosses the gate
 HEARD_TOL = 0.015           # ...or this little before, for a gate that sits on the water line
+RING_BAND = (1500, 16000)   # a ringing bubble's pitch is looked for here; below it the room hums
+RING_N = 1024               # samples of sound the pitch is read from (21 ms), from RING_LEAD before the loudest moment
+RING_LEAD = 96
+RING_HALF = 150             # a ring is "sharp" by the share of its energy within this many Hz of its pitch
 WAVE_RATE = 4000            # waveform min/max pairs per second
 LOUD_RATE = 200             # loudness points per second
 SPEC_MAX_W = 16000          # spectrogram PNG width cap, browsers struggle beyond this
@@ -287,13 +291,54 @@ def clean(x):
     return (y / (np.abs(y).max() or 1) * 0.9).astype(np.float32)
 
 
+def sound_windows(drops):
+    """Where each drop's sound may start: from just before it crosses the gate until the next drop does."""
+    return zip(drops - HEARD_TOL, np.minimum(np.r_[drops[1:], np.inf], drops + HEARD_WITHIN))
+
+
 def gate_to_sound(drops, heard_t):
     """Which drops made a sound, and the usual delay from gate to sound. The bubble that rings forms a varying
     time after the impact, so any sound before the next drop and within HEARD_WITHIN belongs to this one."""
-    until = np.minimum(np.r_[drops[1:], np.inf], drops + HEARD_WITHIN)
-    first = [heard_t[(heard_t >= t - HEARD_TOL) & (heard_t < u)][:1] - t for t, u in zip(drops, until)]
+    first = [heard_t[(heard_t >= a) & (heard_t < b)][:1] - t for t, (a, b) in zip(drops, sound_windows(drops))]
     heard = [bool(len(f)) for f in first]
     return (float(np.median(np.concatenate(first))) if any(heard) else None), heard
+
+
+def drop_sounds(raw, cl, drops, heard):
+    """For each heard drop, its loudest moment: delay after the gate (ms), level over the usual background (dB),
+    pitch of the ring (Hz) and how much of the sound sits at that pitch (0 to 1). None for unheard drops."""
+    e = envelope(cl, 500)
+    floor = float(np.median(e)) or 1.0
+    hp = ss.sosfiltfilt(ss.butter(4, HIGHPASS, 'highpass', fs=FS, output='sos'), raw)   # uncleaned: denoising leaves tones
+    f = np.fft.rfftfreq(RING_N, 1 / FS)
+    band = (f >= RING_BAND[0]) & (f <= RING_BAND[1])
+    out = dict(delay=[], db=[], hz=[], sharp=[])
+    for t, ok, (a, b) in zip(drops, heard, sound_windows(drops)):
+        a, b = max(0, int(a * FS)), min(len(e), int(min(b, len(e) / FS) * FS))
+        k = a + int(np.argmax(e[a:b])) if ok and b > a else None
+        seg = hp[max(0, k - RING_LEAD):max(0, k - RING_LEAD) + RING_N] if k is not None else []
+        if len(seg) < RING_N:
+            for v in out.values():
+                v.append(None)
+            continue
+        p = np.where(band, np.abs(np.fft.rfft(seg * np.hanning(RING_N))) ** 2, 0)
+        j = int(np.argmax(p))
+        l, c, r = np.log(p[j - 1:j + 2] + 1e-30)
+        hz = f[j] + (f[1] - f[0]) * 0.5 * (l - r) / (l - 2 * c + r)   # parabola through the peak and its neighbours
+        out['delay'].append(round((k / FS - t) * 1e3, 1))
+        out['db'].append(round(20 * math.log10(e[k] / floor), 1))
+        out['hz'].append(round(float(hz)))
+        out['sharp'].append(round(float(p[np.abs(f - hz) <= RING_HALF].sum() / p.sum()), 3))
+    return out
+
+
+def pitch_stats(hz):
+    """Median pitch, and how well one drop's pitch predicts the next: correlation over consecutive heard pairs."""
+    got = [h for h in hz if h is not None]
+    pairs = np.array([(a, b) for a, b in zip(hz, hz[1:]) if a is not None and b is not None], float)
+    r = float(np.corrcoef(pairs.T)[0, 1]) if len(pairs) > 2 and pairs.std(0).all() else None
+    return dict(pitch_hz=round(float(np.median(got))) if got else None, pitch_pairs=len(pairs),
+                pitch_r=r and round(r, 2))
 
 
 def onsets(x):
@@ -405,12 +450,13 @@ def process(video, audio=None, name=None, channel='microphone', impact=None, til
     # Sounds from audio that may belong to another take say nothing about these drops.
     lag, heard = (None, [False] * len(drops)) if unsure else gate_to_sound(drops, heard_t)
     av_ms = lag * 1e3 if lag is not None else None
+    sound = drop_sounds(raw, cl, drops, heard)
 
     stats = dict(drops=len(drops), rate=round(1 / float(np.median(iv)), 2) if len(iv) else None,
                  mean_ms=round(float(iv.mean()) * 1e3, 1) if len(iv) else None,
                  sd_ms=round(float(iv.std()) * 1e3, 1) if len(iv) else None,
                  heard=int(sum(heard)), av_ms=av_ms and round(av_ms, 1),
-                 sounds=None if unsure else len(heard_t))
+                 sounds=None if unsure else len(heard_t), **pitch_stats(sound['hz']))
     say(f'{stats["drops"]} drops, {stats["rate"]} Hz, {stats["sounds"]} sounds, {stats["heard"]} heard, a/v {stats["av_ms"]} ms')
     if detect_only:   # for placing the gate: the encode below takes far longer than the detection above
         say('intervals ms:', np.round(iv * 1e3).astype(int).tolist())
@@ -429,7 +475,7 @@ def process(video, audio=None, name=None, channel='microphone', impact=None, til
         wave_rate=WAVE_RATE, loud_rate=LOUD_RATE, spec_cps=spec_cps, spec_fmax=SPEC_FMAX,
         wave=dict(clean=minmax(cl), raw=minmax(raw)),
         loud=dict(clean=loudness(cl), raw=loudness(raw)),
-        drops=np.round(drops, 4).tolist(), heard=heard,
+        drops=np.round(drops, 4).tolist(), heard=heard, sound=sound,
         stats=stats)
     (out / 'data.js').write_text(
         f'(window.RECORDINGS = window.RECORDINGS || {{}})[{json.dumps(name)}] = {json.dumps(data)};\n')
@@ -507,6 +553,9 @@ def selftest():
             check('audio offset recovered', abs(d['offset'] + 0.4) < 0.003, f'{d["offset"]:+.4f} s')
             check('and trusted', not d['offset_unsure'], f'{d["confidence"]}x')
         check('every drop heard', d['stats']['heard'] == len(truth), f'{d["stats"]["heard"]}')
+        pitch = [h for h in d['sound']['hz'] if h is not None]
+        check('each click read at its 5 kHz pitch', len(pitch) == len(truth) and max(abs(h - 5000) for h in pitch) < 100,
+              f'{min(pitch, default=0)} to {max(pitch, default=0)} Hz')
         check('and no other sound counted', d['stats']['sounds'] == len(truth), f'{d["stats"]["sounds"]}')
         out = tmp / 'out' / 't'
         check('outputs written', all((out / f).exists() for f in

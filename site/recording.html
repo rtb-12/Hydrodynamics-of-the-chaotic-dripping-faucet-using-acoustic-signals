@@ -22,8 +22,6 @@
       <select id="pick" aria-label="Recording"></select>
       <span class="vmeta" id="meta"></span>
     </div>
-    <p class="lede">Each recording pairs a video of the drip with sound from a separate phone microphone, lined up to one clock. Drops are counted from the video alone, so the count checks what the microphone heard.
-    The video and sound load fully before playback, so seeking and slow motion stay smooth. Click any graph to enlarge it, and use the <b>i</b> buttons to see how each quantity is measured.</p>
   </div>
 
   <p class="empty" id="empty" hidden>No recordings yet. Run
@@ -31,6 +29,9 @@
 
   <div class="vbody" id="body">
     <div class="vgrid">
+      <div class="vleft">
+        <p class="lede">Each recording pairs a video of the drip with sound from a separate phone microphone, lined up to one clock. Drops are counted from the video alone, so the count checks what the microphone heard.
+        The video and sound load fully before playback, so seeking and slow motion stay smooth. Click any graph to enlarge it, and use the <b>i</b> buttons to see how each quantity is measured.</p>
       <div class="vidbox">
         <video id="vid" muted playsinline preload="auto"></video>
         <div class="loading" id="loading">
@@ -38,6 +39,7 @@
           <div class="loadbar"><i id="loadBar"></i></div>
           <small id="loadText">Starting</small>
         </div>
+      </div>
       </div>
       <div class="lanes">
         <div class="plot card" tabindex="0" data-kind="wave"><span class="cap">Waveform <span>% of loudest</span><button class="info" type="button" data-info="wave" aria-label="About the waveform">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
@@ -73,17 +75,26 @@
       <div class="dstats card" id="stats"></div>
       <div class="chaos">
         <div class="plot card" tabindex="0" data-kind="map"><span class="cap">Return map <span>next interval against this one, ms</span><button class="info" type="button" data-info="map" aria-label="About the return map">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
-        <div class="plot card" tabindex="0" data-kind="series"><span class="cap">Interval per drop <span>ms</span><button class="info" type="button" data-info="series" aria-label="About the interval series">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
+        <div class="plot card" tabindex="0" data-kind="series"><span class="cap">Interval per drop <span>time from each drop to the next, ms</span><button class="info" type="button" data-info="series" aria-label="About the interval series">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
+      </div>
+    </section>
+
+    <section class="intervals" id="soundSec" hidden>
+      <h2>Sound of each drop</h2>
+      <div class="dstats card" id="sstats"></div>
+      <div class="trio">
+        <div class="card xycard"><span class="xcap">Pitch return map <span>next drop's pitch against this one's</span><button class="info" type="button" data-info="pitchMap" aria-label="About the pitch return map">i</button></span><div id="pMap"></div></div>
+        <div class="card xycard"><span class="xcap">Pitch per drop <span>hollow marks are silent drops</span><button class="info" type="button" data-info="pitchSeries" aria-label="About pitch per drop">i</button></span><div id="pSeries"></div></div>
+        <div class="card xycard"><span class="xcap">Pitch against delay <span>when the sound came after the drop</span><button class="info" type="button" data-info="pitchDelay" aria-label="About pitch against delay">i</button></span><div id="pDelay"></div></div>
       </div>
     </section>
 
     <section class="intervals">
       <h2>All recordings side by side</h2>
-      <div class="counts card">
-        <span class="cap">Drops counted by eye against drops counted by ear <span>one point per recording</span><button class="info" type="button" data-info="counts" aria-label="About the two counts">i</button></span>
-        <div id="counts"></div>
+      <div class="sidebyside">
+        <div class="card xycard"><span class="xcap">Drops seen against sounds heard <span>one point per recording</span><button class="info" type="button" data-info="counts" aria-label="About the two counts">i</button></span><div id="counts"></div></div>
+        <div class="tablewrap"><table id="cmp"></table></div>
       </div>
-      <div class="tablewrap"><table id="cmp"></table></div>
     </section>
   </div>
 
@@ -122,6 +133,17 @@
     counts: ['Two independent counts', 'Across is how many drops the video saw. Up is how many sound onsets the microphone recorded over the same stretch of time, counted without looking at the video.',
       'A point on the dashed line means the microphone would have counted the drops correctly on its own. Below the line it missed drops; above it there were extra sounds such as splashes, bubbles or room noise.',
       'Only recordings with both counts are plotted: one whose audio could not be lined up with its video has no sound count.'],
+    pitch: ['Pitch of a drop', 'For each drop the microphone heard, the pipeline takes the loudest moment in the 0.4 s after it and reads the strongest frequency between 1.5 and 16 kHz from the 21 ms of sound around it.',
+      'If that tone is a trapped air bubble ringing, its radius follows from the pitch: about 3.26 mm divided by the pitch in kHz. A tone that keeps landing on the same few values from drop to drop is more likely the tank or the phone resonating.',
+      'Faint points are sounds with less than a fifth of their energy at the pitch: a broad splash, so the pitch is uncertain.'],
+    pitchR: ['Does one drop set the next', 'The correlation between each heard drop&rsquo;s pitch and the next one&rsquo;s, from -1 to 1. Near zero means the pitch of a drop tells nothing about the next.',
+      'With few pairs the number is loose: for N pairs, anything inside about &plusmn;2/&radic;N cannot be told from chance.'],
+    pitchMap: ['Pitch return map', 'Each point is two consecutive drops that were both heard: this drop&rsquo;s pitch across, the next drop&rsquo;s pitch up.',
+      'Points hugging the dashed diagonal mean the pitch carries over from drop to drop. A shapeless cloud means each drop&rsquo;s pitch is set afresh. A curve or a few tight clusters would mean a rule links one drop to the next.'],
+    pitchSeries: ['Pitch per drop', 'The pitch of each heard drop in order. Lines join consecutive heard drops. A hollow mark on the bottom edge is a drop the video saw and the microphone did not hear.',
+      'A flat line means every drop rings alike. Jumps between a few levels mean the sound switches between a few fixed tones.'],
+    pitchDelay: ['Pitch against delay', 'How long after crossing the gate the loudest sound came, against its pitch. The delay includes the fall from the gate to the surface, which is the same for every drop in one recording.',
+      'Separate clumps along the delay axis are separate ways of making a sound, for example a bubble pinched off as the crater collapses and a later one from the rebound jet falling back.'],
     rate: ['Rate', 'One over the median interval between drops. The median ignores a few missed or doubled drops, so this stays close to the true drip rate even when the mean interval does not.'],
     mean: ['Mean interval', 'Average time between consecutive drops, with one standard deviation. A perfectly periodic faucet would show a deviation near zero.',
       'Unlike the rate, the mean includes every gap, so a stretch where the video missed drops pulls it far up and widens the deviation. If it disagrees strongly with the rate, check the interval plot for long gaps.'],
@@ -198,7 +220,7 @@
     ['clean', 'raw'].forEach(function (k) { var im = new Image(); im.onload = function () { lastDrop = -2; }; im.src = dir + 'spec-' + k + '.png'; spec[k] = im; });
     R = { D: D, iv: D.drops.slice(1).map(function (t, i) { return t - D.drops[i]; }), hits: D.drops.map(function (t) { return t + lag; }),
           wave: { clean: unpack(D.wave.clean), raw: unpack(D.wave.raw) }, spec: spec, tint: {}, urls: {} };
-    fillHeader(D);
+    fillHeader(D); fillSound(D);
     requestAnimationFrame(tick);
     var files = ['video.mp4', 'clean.wav', 'raw.wav'], got = [0, 0, 0], tot = [0, 0, 0];
     function progress() {
@@ -235,29 +257,76 @@
       }).join('');
   }
 
-  function fillCounts(list, current) {
-    var S = window.RECORDING_STATS || {}, pts = list.filter(function (n) { return S[n] && S[n].drops != null && S[n].sounds != null; });
-    var W = 560, H = 400, L = 58, B = 52, T = 14, Rt = 150, pw = W - L - Rt, ph = H - T - B;
-    var top = Math.max.apply(null, pts.map(function (n) { return Math.max(S[n].drops, S[n].sounds); }).concat(10)), step = top > 60 ? 20 : top > 30 ? 10 : 5;
-    top = Math.ceil(top / step) * step;
-    function X(v) { return L + pw * v / top; }
-    function Y(v) { return T + ph * (1 - v / top); }
-    var g = '';
-    for (var v = 0; v <= top; v += step) {
-      g += '<line class="grid" x1="' + X(v) + '" y1="' + T + '" x2="' + X(v) + '" y2="' + (T + ph) + '"/><line class="grid" x1="' + L + '" y1="' + Y(v) + '" x2="' + (L + pw) + '" y2="' + Y(v) + '"/>' +
-           '<text x="' + X(v) + '" y="' + (T + ph + 18) + '" text-anchor="middle">' + v + '</text><text x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + v + '</text>';
-    }
-    g += '<line class="axis" x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + (T + ph) + '"/><line class="axis" x1="' + L + '" y1="' + (T + ph) + '" x2="' + (L + pw) + '" y2="' + (T + ph) + '"/>' +
-         '<line class="same" x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(top) + '" y2="' + Y(top) + '"/>' +
-         '<text class="note" x="' + (X(top) - 6) + '" y="' + (Y(top) + 16) + '" text-anchor="end">equal counts</text>' +
-         '<text class="name" x="' + (L + pw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">Drops seen in the video</text>' +
-         '<text class="name" transform="translate(16 ' + (T + ph / 2) + ') rotate(-90)" text-anchor="middle">Sounds in the audio</text>';
-    pts.forEach(function (n) {
-      var s = S[n], now = n === current ? ' now' : '';
-      g += '<circle class="pt' + now + '" cx="' + X(s.drops) + '" cy="' + Y(s.sounds) + '" r="6"/>' +
-           '<text class="lab' + now + '" x="' + (X(s.drops) + 11) + '" y="' + (Y(s.sounds) + 4) + '">' + (LABELS[n] || n) + ' (' + s.drops + ', ' + s.sounds + ')</text>';
+  // A static x-y plot as inline SVG. o: W, H, x and y as [lo, hi], xl and yl axis titles, pts [{x, y, label, now, faint, miss}],
+  // diag for the y = x line, join for a line through consecutive points that are not separated by a `cut`.
+  function xy(o) {
+    var W = o.W, H = o.H, L = 62, B = 52, T = 12, pw = W - L - (o.right || 18), ph = H - T - B, g = '';
+    function X(v) { return L + pw * (v - o.x[0]) / (o.x[1] - o.x[0]); }
+    function Y(v) { return T + ph * (1 - (v - o.y[0]) / (o.y[1] - o.y[0])); }
+    nice(o.x[0], o.x[1], o.nx || 6).v.forEach(function (v) {
+      g += '<line class="grid" x1="' + X(v) + '" y1="' + T + '" x2="' + X(v) + '" y2="' + (T + ph) + '"/><text x="' + X(v) + '" y="' + (T + ph + 18) + '" text-anchor="middle">' + v + '</text>';
     });
-    $('counts').innerHTML = '<svg class="xy" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Sounds in the audio against drops seen in the video">' + g + '</svg>';
+    nice(o.y[0], o.y[1], 6).v.forEach(function (v) {
+      g += '<line class="grid" x1="' + L + '" y1="' + Y(v) + '" x2="' + (L + pw) + '" y2="' + Y(v) + '"/><text x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + v + '</text>';
+    });
+    g += '<line class="axis" x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + (T + ph) + '"/><line class="axis" x1="' + L + '" y1="' + (T + ph) + '" x2="' + (L + pw) + '" y2="' + (T + ph) + '"/>' +
+         '<text class="name" x="' + (L + pw / 2) + '" y="' + (H - 10) + '" text-anchor="middle">' + o.xl + '</text>' +
+         '<text class="name" transform="translate(16 ' + (T + ph / 2) + ') rotate(-90)" text-anchor="middle">' + o.yl + '</text>';
+    if (o.diag) {
+      var a = Math.max(o.x[0], o.y[0]), b = Math.min(o.x[1], o.y[1]);
+      g += '<line class="same" x1="' + X(a) + '" y1="' + Y(a) + '" x2="' + X(b) + '" y2="' + Y(b) + '"/>';
+    }
+    if (o.join) o.pts.forEach(function (p, i) {
+      var q = o.pts[i + 1];
+      if (q && !p.miss && !q.miss && !p.cut) g += '<line class="join" x1="' + X(p.x) + '" y1="' + Y(p.y) + '" x2="' + X(q.x) + '" y2="' + Y(q.y) + '"/>';
+    });
+    o.pts.forEach(function (p) {
+      var cls = (p.miss ? 'miss' : 'pt') + (p.now ? ' now' : '') + (p.faint ? ' faint' : '');
+      g += '<circle class="' + cls + '" cx="' + X(p.x) + '" cy="' + Y(p.miss ? o.y[0] : p.y) + '" r="' + (p.miss ? 4 : 5.5) + '"><title>' + (p.tip || '') + '</title></circle>';
+      if (p.label) g += '<text class="lab' + (p.now ? ' now' : '') + '" x="' + (X(p.x) + 11) + '" y="' + (Y(p.y) + 4) + '">' + p.label + '</text>';
+    });
+    return '<svg class="xy" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + o.yl + ' against ' + o.xl + '">' + g + '</svg>';
+  }
+  function span(v, floor) {   // axis limits a little outside the data
+    var lo = Math.min.apply(null, v), hi = Math.max.apply(null, v), p = Math.max((hi - lo) * 0.1, floor);
+    return [lo - p, hi + p];
+  }
+
+  function fillCounts(list, current) {
+    var S = window.RECORDING_STATS || {}, names = list.filter(function (n) { return S[n] && S[n].drops != null && S[n].sounds != null; });
+    var top = Math.max.apply(null, names.map(function (n) { return Math.max(S[n].drops, S[n].sounds); }).concat(10));
+    top = Math.ceil(top / 5) * 5;
+    $('counts').innerHTML = xy({ W: 560, H: 400, right: 150, x: [0, top], y: [0, top], xl: 'Drops seen in the video', yl: 'Sounds in the audio', diag: true,
+      pts: names.map(function (n) { return { x: S[n].drops, y: S[n].sounds, now: n === current, label: (LABELS[n] || n) + ' (' + S[n].drops + ', ' + S[n].sounds + ')' }; }) });
+  }
+
+  function fillSound(D) {
+    var s = D.sound, st = D.stats, hz = s && s.hz.filter(function (v) { return v != null; });
+    if (!s || hz.length < 3) return;
+    $('soundSec').hidden = false;
+    var k = function (v) { return v / 1000; }, fr = span(hz.map(k), 0.3), dl = s.delay.filter(function (v) { return v != null; });
+    function pt(i) { return { faint: s.sharp[i] < 0.2, tip: 'Drop ' + (i + 1) + ': ' + (s.hz[i] / 1000).toFixed(2) + ' kHz, ' + Math.round(s.delay[i]) + ' ms after the gate, ' + Math.round(s.db[i]) + ' dB over background' }; }
+    function add(p, x, y) { p.x = x; p.y = y; return p; }
+    var pairs = [], series = [];
+    s.hz.forEach(function (v, i) {
+      if (v != null && s.hz[i + 1] != null) pairs.push(add(pt(i), k(v), k(s.hz[i + 1])));
+      series.push(v == null ? { x: i + 1, y: 0, miss: true, tip: 'Drop ' + (i + 1) + ': not heard' } : add(pt(i), i + 1, k(v)));
+    });
+    $('pMap').innerHTML = xy({ W: 520, H: 420, x: fr, y: fr, xl: 'Pitch of drop n, kHz', yl: 'Pitch of drop n + 1, kHz', diag: true, pts: pairs });
+    $('pSeries').innerHTML = xy({ W: 520, H: 420, x: [0, s.hz.length + 1], y: fr, xl: 'Drop number', yl: 'Pitch, kHz', join: true, pts: series });
+    $('pDelay').innerHTML = xy({ W: 520, H: 420, x: span(dl, 20), y: fr, xl: 'Delay after the gate, ms', yl: 'Pitch, kHz',
+      pts: s.hz.map(function (v, i) { return v == null ? null : add(pt(i), s.delay[i], k(v)); }).filter(Boolean) });
+    var sorted = hz.slice().sort(function (a, b) { return a - b; }), chance = st.pitch_pairs ? 2 / Math.sqrt(st.pitch_pairs) : null;
+    function cell(label, key, val) {
+      return '<div><span class="lbl">' + label + '<button class="info" type="button" data-info="' + key + '" aria-label="About ' + label.toLowerCase() + '">i</button></span><b>' + val + '</b></div>';
+    }
+    $('sstats').innerHTML = [
+      cell('Median pitch', 'pitch', (st.pitch_hz / 1000).toFixed(2) + ' <small>kHz</small>'),
+      cell('Pitch range', 'pitch', (sorted[0] / 1000).toFixed(1) + ' to ' + (sorted[sorted.length - 1] / 1000).toFixed(1) + ' <small>kHz</small>'),
+      cell('Bubble radius, if a bubble', 'pitch', (3260 / st.pitch_hz).toFixed(2) + ' <small>mm</small>'),
+      cell('Next-drop correlation', 'pitchR', st.pitch_r == null ? '-' : st.pitch_r + ' <small>' + st.pitch_pairs + ' pairs, chance &plusmn;' + chance.toFixed(2) + '</small>'),
+      cell('Silent drops', 'heard', (st.drops - st.heard) + ' <small>of ' + st.drops + '</small>')
+    ].join('');
   }
 
   function fillHeader(D) {
@@ -299,6 +368,7 @@
     return { v: out, st: st };
   }
   function text(g, k, s, x, y, align, base) { g.fillStyle = k.ink3; g.font = '11px ' + k.sans; g.textAlign = align || 'right'; g.textBaseline = base || 'middle'; g.fillText(s, x, y); }
+  function vtext(g, k, s, x, y) { g.save(); g.translate(x, y); g.rotate(-Math.PI / 2); text(g, k, s, 0, 0, 'center', 'middle'); g.restore(); }
   function pct(v) { v *= 100; return (v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toFixed(2)) + '%'; }
   function boxcar(a, n) {   // centred moving average over prefix sums, shrinking at the ends
     if (n < 2) return a;
@@ -430,7 +500,7 @@
     var iv = R.iv, g = fit(c), k = tokens(), Rg = range(), tk = nice(Rg[0] * 1e3, Rg[1] * 1e3, big ? 8 : 5), top = big ? 10 : 28;
     g.clearRect(0, 0, c.W, c.H); g.lineWidth = 1;
     if (kind === 'map') {
-      var Sz = Math.min(c.W - 70, c.H - top - 30), ox = 54 + (c.W - 70 - Sz) / 2;
+      var Sz = Math.min(c.W - 84, c.H - top - 46), ox = 68 + (c.W - 84 - Sz) / 2;
       var P = function (a, b) { return [ox + (a - Rg[0]) / (Rg[1] - Rg[0]) * Sz, top + Sz - (b - Rg[0]) / (Rg[1] - Rg[0]) * Sz]; };
       g.strokeStyle = k.rule; g.beginPath();
       tk.v.forEach(function (ms) {
@@ -439,6 +509,7 @@
         text(g, k, ms, q[0], top + Sz + 6, 'center', 'top'); text(g, k, ms, ox - 6, q[1]);
       });
       g.stroke(); g.strokeRect(ox, top, Sz, Sz);
+      text(g, k, 'This interval, ms', ox + Sz / 2, top + Sz + 24, 'center', 'top'); vtext(g, k, 'Next interval, ms', ox - 52, top + Sz / 2);
       g.save(); g.beginPath(); g.rect(ox, top, Sz, Sz); g.clip();
       g.setLineDash([2, 4]); g.beginPath(); g.moveTo(ox, top + Sz); g.lineTo(ox + Sz, top); g.stroke(); g.setLineDash([]);   // T(n+1) = T(n)
       g.fillStyle = k.ink2; g.globalAlpha = 0.55;
@@ -453,11 +524,12 @@
         return best;
       } };
     }
-    var L = 54, W = c.W - L - 14, H = c.H - top - 28;
+    var L = 68, W = c.W - L - 26, H = c.H - top - 44;
     var S = function (i, v) { return [L + i / Math.max(1, iv.length - 1) * W, top + (1 - (Math.min(Rg[1], Math.max(Rg[0], v)) - Rg[0]) / (Rg[1] - Rg[0])) * H]; };
     g.strokeStyle = k.rule; g.beginPath();
     tk.v.forEach(function (ms) { var y = Math.round(S(0, ms / 1e3)[1]) + 0.5; g.moveTo(L, y); g.lineTo(L + W, y); text(g, k, ms, L - 6, y); });
     g.stroke(); g.strokeRect(L + 0.5, top + 0.5, W, H);
+    text(g, k, 'Drop number', L + W / 2, top + H + 24, 'center', 'top'); vtext(g, k, 'Interval, ms', L - 52, top + H / 2);
     nice(1, Math.max(2, iv.length), big ? 12 : 6).v.forEach(function (q) { if (q >= 1) text(g, k, 'n = ' + q, S(q - 1, 0)[0], top + H + 6, 'center', 'top'); });
     g.strokeStyle = k.ink2; g.lineWidth = big ? 1.25 : 1; g.lineJoin = 'miter'; g.beginPath();
     iv.forEach(function (v, i) { var q = S(i, v); g.lineTo(q[0], q[1]); }); g.stroke();
@@ -520,7 +592,7 @@
     WIN = Math.max(0.05, Math.min(8, w));
     document.querySelectorAll('#wins button').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.w === WIN); });
   }
-  $('bPlay').onclick = $('zPlay').onclick = togglePlay;
+  $('bPlay').onclick = $('zPlay').onclick = vid.onclick = togglePlay;
   $('bBack').onclick = function () { step(-1); }; $('bFwd').onclick = function () { step(1); };
   $('bPrev').onclick = function () { jump(-1); }; $('bNext').onclick = function () { jump(1); };
   vid.onended = pause;
