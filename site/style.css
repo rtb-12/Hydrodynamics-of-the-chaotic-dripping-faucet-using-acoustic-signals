@@ -877,7 +877,8 @@ a:focus-visible, .sidenav a:focus-visible {
 .vtitle select { font-size: 0.86rem; padding: 0.35rem 0.6rem; color: var(--ink); background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); }
 .vmeta { font-size: 0.86rem; color: var(--ink-3); }
 .vmeta b { color: var(--ink-2); font-weight: 500; }
-.vhead .lede { font-size: 0.875rem; color: var(--ink-2); max-width: 80ch; }
+.vleft { display: grid; gap: 0.6rem; align-content: start; min-width: 0; }
+.vleft .lede { font-size: 0.875rem; color: var(--ink-2); text-align: justify; margin: 0; }
 .viewer .empty { color: var(--ink-2); }
 .vbody { display: grid; gap: 1rem; min-width: 0; }
 
@@ -885,7 +886,7 @@ a:focus-visible, .sidenav a:focus-visible {
 
 .vgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.75rem; }
 .vidbox { position: relative; align-self: start; border-radius: var(--radius); overflow: hidden; background: #000; aspect-ratio: 16 / 9; }
-.vidbox video { display: block; width: 100%; height: 100%; object-fit: contain; }
+.vidbox video { display: block; width: 100%; height: 100%; object-fit: contain; cursor: pointer; }
 /* Sits over the video, which is always dark, so it keeps one look in both themes. */
 .loading { position: absolute; inset: 0; background: rgba(12, 14, 17, 0.68); display: grid; place-content: center; justify-items: center; gap: 0.6rem; padding: 1rem; color: #fff; text-align: center; }
 .loading small { font-size: 0.78rem; opacity: 0.85; font-variant-numeric: tabular-nums; }
@@ -932,14 +933,23 @@ a:focus-visible, .sidenav a:focus-visible {
 .dstats b { font-size: 1.2rem; font-weight: 550; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .dstats b small { font-size: 0.8rem; color: var(--ink-3); font-weight: 400; }
 .dstats b.warn { color: var(--aero); }
-.counts { padding: 0.8rem 1rem 1rem; display: grid; gap: 0.7rem; }
-.xy { display: block; width: 100%; max-width: 620px; height: auto; }
+.xycard { padding: 0.7rem 0.9rem 0.6rem; display: grid; gap: 0.5rem; align-content: start; min-width: 0; }
+.xcap { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; font-size: 0.8rem; font-weight: 550; }
+.xcap span { color: var(--ink-3); font-weight: 400; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+.sidebyside { display: grid; grid-template-columns: minmax(0, 500px) minmax(0, 1fr); gap: 0.75rem; }
+.sidebyside .tablewrap { margin: 0; background: var(--surface); }
+.sidebyside table { height: 100%; }
+.xy { display: block; width: 100%; height: auto; }
 .xy text { font-size: 12px; fill: var(--ink-3); font-variant-numeric: tabular-nums; }
 .xy .name { font-size: 13px; fill: var(--ink-2); }
 .xy .grid { stroke: var(--rule); }
 .xy .axis { stroke: var(--ink-3); }
 .xy .same { stroke: var(--ink-3); stroke-dasharray: 5 4; }
+.xy .join { stroke: var(--ink-3); }
 .xy .pt { fill: var(--aero); }
+.xy .pt.faint { fill-opacity: 0.35; }
+.xy .miss { fill: var(--surface); stroke: var(--ink-3); stroke-width: 1.5; }
 .xy .lab { fill: var(--ink-2); }
 .xy .lab.now { font-weight: 600; }
 .xy .pt.now { stroke: var(--ink-2); stroke-width: 2; }
@@ -961,7 +971,7 @@ a:focus-visible, .sidenav a:focus-visible {
 .zfoot { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: center; padding: 0.6rem 1rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-3); }
 
 @media (max-width: 900px) {
-  .vgrid, .chaos { grid-template-columns: minmax(0, 1fr); }
+  .vgrid, .chaos, .trio, .sidebyside { grid-template-columns: minmax(0, 1fr); }
   .lanes { grid-template-rows: 170px 110px 110px 70px; min-height: 0; }
   .transport { flex-wrap: wrap; }
   .clock { width: 100%; flex-wrap: wrap; gap: 0.3rem 1rem; }
