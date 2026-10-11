@@ -96,6 +96,7 @@
     <section class="intervals" id="thisSec" hidden>
       <h2>What this recording shows</h2>
       <ul class="findings" id="thisNotes"></ul>
+      <div class="findings" id="thisMore"></div>
     </section>
 
     <section class="intervals">
@@ -221,6 +222,28 @@
     ]
   };
 
+  var MORE = {
+    'glycerine-both':
+      '<h3>Why a glycerine drop makes no sound</h3>' +
+      '<p class="note">The sound of a drop is not the smack of the impact, which is nearly silent in air. It is a small air bubble trapped under the surface that rings like a bell. A water drop makes one in three steps:</p>' +
+      '<ol><li>The drop punches a small crater into the surface.</li>' +
+      '<li>The crater collapses. If its walls close in faster than its floor rises, they pinch off an air bubble underwater.</li>' +
+      '<li>The bubble is squeezed and springs back thousands of times a second. That vibration is the plink.</li></ol>' +
+      '<p class="note">Glycerine is roughly a thousand times more viscous than water, while its density and surface tension are close to water&rsquo;s, so the difference is almost all thickness. It stops the plink at each step:</p>' +
+      '<ul><li><b>The crater barely forms.</b> Thick liquid resists being pushed aside, so the drop sinks in and merges slowly, like honey landing in honey.</li>' +
+      '<li><b>Nothing snaps shut.</b> Pinching off a bubble needs the crater walls to rush inward, and that motion is smothered before it can close around any air.</li>' +
+      '<li><b>A trapped bubble would not ring.</b> A bubble vibrating in thick liquid loses its energy to friction almost at once, like a bell struck under syrup.</li></ul>' +
+      '<p class="note">One number sums this up: the ratio of the drop&rsquo;s momentum to the liquid&rsquo;s friction, the Reynolds number. For a water drop a few millimetres across at these speeds it is in the thousands, so motion wins. For glycerine it is around ten, so friction wins.</p>' +
+      '<h3>What was measured: no peak in any frequency range</h3>' +
+      '<p class="note">The table gives the loudest moment in the half second after each drop, as a multiple of the usual level between drops, in three frequency ranges. The last column is how high the recording reaches between drops with nothing happening, so only values well above it are a sound.</p>' +
+      '<div class="tablewrap"><table><tr><th>Frequency range</th><th>After the 6 glycerine drops</th><th>After the 21 water drops, 25 cm</th><th>Between drops, with nothing happening</th></tr>' +
+      '<tr><td>High, 2 to 15 kHz, where the plink lives</td><td>1.4 to 1.7</td><td>up to 59</td><td>2.8 for glycerine, 1.5 for water</td></tr>' +
+      '<tr><td>Mid, 0.8 to 2 kHz</td><td>1.8 to 2.5</td><td>1.9 to 2.9</td><td>about 2</td></tr>' +
+      '<tr><td>Low, 100 to 800 Hz, a thud</td><td>2.6 to 4.5</td><td>2.0 to 3.2</td><td>about 2.5</td></tr></table></div>' +
+      '<p class="note">In the high range, water drops that ring stand 5 to 59 times above the background, while every glycerine drop stays below what the background reaches by itself. The low and mid ranges were checked in case glycerine made a dull thud below where the pipeline listens: glycerine and water look alike there, both at the level of ordinary background wobble. One glycerine drop reads 4.5 in the low range, but a single value that close to the noise is not a detection.</p>' +
+      '<p class="note"><b>What this does and does not show.</b> The recording shows that no glycerine drop made a sound a phone microphone in air could pick up. That no bubble formed is the explanation from the physics, not something this recording proves. It is one clip of 6 drops, and a hydrophone under the surface is far more sensitive and might still hear a faint impact.</p>'
+  };
+
   function $(id) { return document.getElementById(id); }
   var vid = $('vid'), aud = $('aud'), scrub = $('scrub'), zoom = $('zoom'), zc = $('zc'), zRead = $('zRead'), tip = $('tip');
   var inline = [].slice.call(document.querySelectorAll('#body .plot'));
@@ -275,7 +298,7 @@
     R = { D: D, iv: D.drops.slice(1).map(function (t, i) { return t - D.drops[i]; }), hits: D.drops.map(function (t) { return t + lag; }),
           wave: { clean: unpack(D.wave.clean), raw: unpack(D.wave.raw) }, spec: spec, tint: {}, urls: {} };
     fillHeader(D); fillSound(D);
-    if (NOTES[D.name]) { $('thisSec').hidden = false; $('thisNotes').innerHTML = NOTES[D.name].map(function (t) { return '<li>' + t + '</li>'; }).join(''); }
+    if (NOTES[D.name]) { $('thisSec').hidden = false; $('thisNotes').innerHTML = NOTES[D.name].map(function (t) { return '<li>' + t + '</li>'; }).join(''); $('thisMore').innerHTML = MORE[D.name] || ''; }
     requestAnimationFrame(tick);
     var files = ['video.mp4', 'clean.wav', 'raw.wav'], got = [0, 0, 0], tot = [0, 0, 0];
     function progress() {
