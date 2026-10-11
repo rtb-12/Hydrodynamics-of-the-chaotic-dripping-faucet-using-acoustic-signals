@@ -26,6 +26,7 @@ OUT = ROOT / 'site' / 'recordings'
 FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
 
 FS = 48000                  # audio rate everything is resampled to
+ALIGN_NEAR = 1.0            # with --audio-offset, the alignment is searched this far either side of it, seconds
 ALIGN_OK = 1.5              # audio alignment peak must beat the runner-up by this factor to be trusted
 SCOUT_FRAMES = 600          # frames used to locate the impact point and water line
 SCOUT_SCALE = 4             # downscale factor for that scouting pass
@@ -264,13 +265,17 @@ def envelope(x, lp=300):
     return ss.sosfiltfilt(ss.butter(2, lp, fs=FS, output='sos'), np.abs(ss.hilbert(y)))
 
 
-def align(ref, other):
-    """Seconds to add to a video time to find the same moment in `other`, and how clearly it won."""
+def align(ref, other, near=None):
+    """Seconds to add to a video time to find the same moment in `other`, and how clearly it won. `near` keeps
+    the search within ALIGN_NEAR of a known rough offset, for audio whose few loud moments match in several places."""
     a, b = ss.resample_poly(envelope(ref), 1, 48), ss.resample_poly(envelope(other), 1, 48)
     c = ss.correlate(b - b.mean(), a - a.mean(), 'full', method='fft')
+    lag = (np.arange(len(c)) - (len(a) - 1)) / 1000.0
+    if near is not None:
+        c, lag = c[np.abs(lag - near) <= ALIGN_NEAR], lag[np.abs(lag - near) <= ALIGN_NEAR]
     k = int(np.argmax(c))
     runner = np.delete(c, np.s_[max(0, k - 50):k + 50]).max()
-    return (k - (len(a) - 1)) / 1000.0, float(c[k] / runner) if runner > 0 else float('inf')
+    return float(lag[k]), float(c[k] / runner) if runner > 0 else float('inf')
 
 
 def on_timeline(x, offset, n):
@@ -402,7 +407,8 @@ def write_index(out_root):
 
 
 def process(video, audio=None, name=None, channel='microphone', impact=None, tilt=None,
-            gate=None, capture_fps=None, slow_span=None, detect_only=False, out_root=OUT, quiet=False):
+            gate=None, capture_fps=None, slow_span=None, detect_only=False, audio_offset=None,
+            out_root=OUT, quiet=False):
     say = (lambda *a: None) if quiet else print
     video = pathlib.Path(video)
     name = name or video.stem
@@ -433,7 +439,7 @@ def process(video, audio=None, name=None, channel='microphone', impact=None, til
     if audio:
         if not meta['has_audio']:
             sys.exit('the video has no audio track to align the external audio against')
-        offset, confidence = align(read_audio(video, meta['slow'], meta['span']), ext := read_audio(audio))
+        offset, confidence = align(read_audio(video, meta['slow'], meta['span']), ext := read_audio(audio), audio_offset)
         raw = on_timeline(ext, offset, n)
         say(f'audio offset {offset:+.3f} s (peak {confidence:.1f}x the next best'
             f'{", LOW - check by ear" if confidence < ALIGN_OK else ""})')
@@ -471,7 +477,7 @@ def process(video, audio=None, name=None, channel='microphone', impact=None, til
     data = dict(
         name=name, created=meta['created'], duration=round(meta['duration'], 3), fps=round(meta['fps'], 3),
         channel=channel, offset=round(offset, 4), confidence=confidence and round(confidence, 2),
-        offset_unsure=unsure,
+        offset_unsure=unsure, offset_hinted=audio_offset is not None,
         wave_rate=WAVE_RATE, loud_rate=LOUD_RATE, spec_cps=spec_cps, spec_fmax=SPEC_FMAX,
         wave=dict(clean=minmax(cl), raw=minmax(raw)),
         loud=dict(clean=loudness(cl), raw=loudness(raw)),
@@ -550,6 +556,9 @@ def selftest():
             check('intervals within one frame', np.abs(err).max() < 1 / 60,
                   f'worst {np.abs(err).max() * 1e3:.1f} ms, frame is 16.7 ms')
         if not hdr:
+            track, ext = read_audio(tmp / 'clip.mov'), read_audio(tmp / 'ext.wav')
+            check('a rough offset keeps the search beside it', abs(align(track, ext, near=1.0)[0] - 1.0) <= ALIGN_NEAR
+                  and abs(align(track, ext, near=-0.3)[0] + 0.4) < 0.003, f'{align(track, ext, near=1.0)[0]:+.3f} s')
             check('audio offset recovered', abs(d['offset'] + 0.4) < 0.003, f'{d["offset"]:+.4f} s')
             check('and trusted', not d['offset_unsure'], f'{d["confidence"]}x')
         check('every drop heard', d['stats']['heard'] == len(truth), f'{d["stats"]["heard"]}')
@@ -613,6 +622,8 @@ def main():
                     help='rate a slow-motion clip was shot at; times become real seconds')
     ap.add_argument('--slow', nargs=2, type=float, metavar=('START', 'END'),
                     help='clip seconds between which it plays slowed; only that stretch is used')
+    ap.add_argument('--audio-offset', type=float, metavar='S',
+                    help='rough audio time of the clip\'s start, when the automatic alignment picks the wrong match')
     ap.add_argument('--detect-only', action='store_true',
                     help='find and count the drops, write check.jpg, and stop before the slow encode')
     ap.add_argument('--selftest', action='store_true', help='run the pipeline on synthetic clips and check it')
@@ -622,7 +633,7 @@ def main():
     if not a.video:
         ap.error('give a video, or --selftest')
     process(a.video, a.audio, a.name, a.channel, a.impact, a.tilt, a.gate and tuple(a.gate), a.capture_fps, a.slow and tuple(a.slow),
-            a.detect_only)
+            a.detect_only, a.audio_offset)
     return 0
 
 

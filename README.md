@@ -55,6 +55,9 @@ Everything it found is drawn on `site/recordings/<name>/check.jpg`; `--impact`, 
 A phone slow-motion clip is stored at 30 fps with both ends at normal speed.
 `--capture-fps` is the rate it was shot at and `--slow` the clip seconds between which it plays slowed; only that stretch is used, timed in real seconds.
 
+Audio with only a few loud moments can match the video's sound track in more than one place.
+`--audio-offset` gives the rough audio time of the clip's start, and the alignment is then searched within a second of it.
+
 ## The site
 
 Twelve pages, about 300 KB before any recordings, zero external requests, no libraries.
