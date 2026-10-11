@@ -954,6 +954,17 @@ a:focus-visible, .sidenav a:focus-visible {
 .xy .lab.now { font-weight: 600; }
 .xy .pt.now { stroke: var(--ink-2); stroke-width: 2; }
 
+.viewer .note { color: var(--ink-2); max-width: 110ch; }
+.viewer .note b { font-weight: 600; color: var(--ink); }
+.findings { display: grid; gap: 0.6rem; margin: 0; max-width: 110ch; color: var(--ink-2); }
+.findings h3 { font-size: 0.95rem; margin: 0.6rem 0 0; color: var(--ink); }
+.findings ol, .findings ul, ul.findings { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.5rem; }
+.findings li b { font-weight: 600; color: var(--ink); }
+.tag { font-style: normal; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.08rem 0.4rem; border-radius: 3px; border: 1px solid var(--rule); white-space: nowrap; }
+.tag.solid { color: var(--hydro); border-color: var(--hydro); }
+.tag.fair { color: var(--ink-2); border-color: var(--ink-3); }
+.tag.hint { color: var(--ink-3); }
+
 .chaos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 0.75rem; }
 .chaos .plot { height: 380px; }
 

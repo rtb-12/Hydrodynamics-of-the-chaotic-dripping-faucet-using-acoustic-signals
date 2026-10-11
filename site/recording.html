@@ -72,6 +72,8 @@
 
     <section class="intervals">
       <h2>Drop intervals, whole recording</h2>
+      <p class="note">Both plots show the time gap between one drop and the next. <b>Interval per drop</b> is the plain view: gap number across, gap length up. A flat line is steady dripping, a line that climbs or falls is a drip that is slowing or speeding up, and a line that flips between two levels is period doubling.
+      The <b>return map</b> plots each gap against the gap that follows it. Identical gaps pile onto one spot on the dashed diagonal. Points marching along the diagonal are a slow drift. A curve or folded band, with gaps jumping up and down, is what chaos would look like.</p>
       <div class="dstats card" id="stats"></div>
       <div class="chaos">
         <div class="plot card" tabindex="0" data-kind="map"><span class="cap">Return map <span>next interval against this one, ms</span><button class="info" type="button" data-info="map" aria-label="About the return map">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>
@@ -81,6 +83,8 @@
 
     <section class="intervals" id="soundSec" hidden>
       <h2>Sound of each drop</h2>
+      <p class="note">For each drop the microphone heard, the <b>pitch</b> is the strongest tone at the loudest moment of its sound. A lower pitch means a bigger thing is ringing, like a bigger bell. The <b>pitch return map</b> asks whether one drop's pitch predicts the next: points on the diagonal mean it repeats, a shapeless cloud means it does not.
+      <b>Pitch per drop</b> shows the pitches in order, with a hollow mark for each drop that landed silently. <b>Pitch against delay</b> shows how long after the drop its sound came; separate clumps are separate ways of making a sound. A pale dot is a smeared sound whose pitch is uncertain.</p>
       <div class="dstats card" id="sstats"></div>
       <div class="trio">
         <div class="card xycard"><span class="xcap">Pitch return map <span>next drop's pitch against this one's</span><button class="info" type="button" data-info="pitchMap" aria-label="About the pitch return map">i</button></span><div id="pMap"></div></div>
@@ -89,11 +93,37 @@
       </div>
     </section>
 
+    <section class="intervals" id="thisSec" hidden>
+      <h2>What this recording shows</h2>
+      <ul class="findings" id="thisNotes"></ul>
+    </section>
+
     <section class="intervals">
       <h2>All recordings side by side</h2>
       <div class="sidebyside">
         <div class="card xycard"><span class="xcap">Drops seen against sounds heard <span>one point per recording</span><button class="info" type="button" data-info="counts" aria-label="About the two counts">i</button></span><div id="counts"></div></div>
         <div class="tablewrap"><table id="cmp"></table></div>
+      </div>
+      <div class="findings">
+        <h3>What the recordings show together</h3>
+        <ol>
+          <li><b>The dripping is regular, not chaotic.</b> In the water recordings the gaps vary by less than half a percent, so the return map is one tight spot. There is no period doubling to study in the timing at these flow rates. <i class="tag solid">solid</i></li>
+          <li><b>The microphone alone is not a reliable drop counter here.</b> It missed 24% of drops at 25 cm and 40% of the glycerine drops, and for glycerine it also recorded 28 sounds for 10 drops. The sound arrives at a varying time after the drop, so it cannot give precise timing either. <i class="tag solid">solid</i></li>
+          <li><b>The tone is probably the tank, not a free bubble.</b> In both water recordings the pitches keep returning to the same six values, near 3.29, 3.71, 4.62, 5.75, 5.86 and 7.27 kHz. 9 of 16 heard drops at 25 cm and 7 of 15 at 30 cm land within 15 Hz of another drop's pitch, where fewer than one would by chance, and two of the values appear in both recordings. The tones are absent between drops. A bubble's pitch follows its size and would not repeat this exactly, so the bubble radius shown above holds only if the tone is a bubble. <i class="tag solid">solid</i></li>
+          <li><b>A more viscous drop rings lower and is often silent.</b> Glycerine drops into water ring about an octave below water drops from 30 cm (2.65 against 5.74 kHz, p = 0.011; against 25 cm, p = 0.059), and 4 of 10 made no sound. Glycerine into glycerine made no sound the phone could pick up at all. <i class="tag fair">supported</i></li>
+          <li><b>There are two sound-making moments per impact.</b> Sounds come either early, about 90 ms after the gate, or late, about 215 ms. At 25 cm the split is 5 early to 11 late, at 30 cm it is 1 to 14, and glycerine is 5 early to 1 late. The late sound may be the rebound jet falling back; that is a reading, not a measurement. <i class="tag fair">supported</i></li>
+          <li><b>Pitch shows no memory from drop to drop.</b> The correlation between a drop's pitch and the next one's is +0.39 at 25 cm and +0.25 at 30 cm, and neither can be told from chance (p = 0.22 and 0.34). With 12 or 13 pairs only a strong link would show. <i class="tag hint">hint</i></li>
+          <li><b>Height may raise the pitch.</b> The 30 cm recording reads higher than the 25 cm one and was heard more often, but with one recording per height the difference is not significant (p = 0.33). <i class="tag hint">hint</i></li>
+        </ol>
+        <h3>Limits</h3>
+        <p class="note">Each condition is a single recording of 6 to 16 heard drops. The phone sets its own gain and the audio passed through WhatsApp compression, so loudness cannot be compared between recordings. The gate on the drop's path was placed by hand for each clip. The three faucet runs were counted with an earlier detector and have no sound measurements.</p>
+        <h3>What would settle the open questions</h3>
+        <ul>
+          <li><b>Bubble or tank:</b> repeat one height with a different water depth. Tank tones should move with the depth, bubble tones should not.</li>
+          <li><b>Height:</b> three or more recordings per height, including 20 cm.</li>
+          <li><b>Drop-to-drop memory:</b> one recording of 100 or more drops. A correlation of 0.3 becomes detectable at about 45 pairs.</li>
+          <li><b>Chaos:</b> raise the flow rate until the gaps stop being regular, since that is where the question starts.</li>
+        </ul>
       </div>
     </section>
   </div>
@@ -167,6 +197,35 @@
     exp1: 'Faucet run 1', exp2: 'Faucet run 2', exp3: 'Faucet run 3'
   };
 
+  var NOTES = {
+    'water-25cm': [
+      'The drip is steady: 21 drops, one every 2.06 s, with the gaps varying by only 9 ms. The gaps lengthen slightly towards the end, most likely as the syringe empties.',
+      'The microphone heard 16 of the 21 drops. Five landed with almost no sound.',
+      'Sounds come at two moments: 5 about 90 ms after the gate and 11 about 215 ms after it.',
+      'The pitches are not spread evenly. 9 of the 16 sit within 15 Hz of another drop&rsquo;s pitch, near 3.29, 3.71, 5.86 and 7.27 kHz, which points to the tank ringing.',
+      'One drop&rsquo;s pitch does not predict the next: the correlation of +0.39 over 12 pairs is within what chance gives.'
+    ],
+    'water-30cm': [
+      'The drip is steady: 16 drops, one every 2.66 s, with the gaps varying by 13 ms.',
+      'The microphone heard 15 of the 16 drops, the best of the four recordings.',
+      'Nearly every sound is the late one: 14 of the 15 come 230 to 275 ms after the gate, and one comes at 81 ms.',
+      'The pitches cluster again: 7 of the 15 sit within 15 Hz of another drop&rsquo;s, near 4.62 and 5.75 kHz. Louder sounds are also sharper in tone here (correlation 0.58, p = 0.02).',
+      'The median pitch of 5.74 kHz is higher than at 25 cm, but one recording per height cannot show that this is the height and not chance.'
+    ],
+    'glycerine-on-water': [
+      'Glycerine drips slowly, one drop every 4.2 s, and the gaps grow steadily from about 4.03 s to 4.32 s. That is a drift, most likely the syringe emptying, and not chaos.',
+      'The microphone heard 6 of the 10 drops, and it recorded 28 sounds in all, so most of what it picked up was not an impact.',
+      'The drops that ring do so at 2.65 kHz, about an octave below the water drops.',
+      'Five of the six sounds come 70 to 115 ms after the drop. One comes much later, at about 385 ms.',
+      'Six heard drops are too few to say anything about how one drop&rsquo;s sound relates to the next.'
+    ],
+    'glycerine-both': [
+      'The video sees 6 drops, one every 6.0 s, with the gaps varying by only 20 ms: the slowest and one of the steadiest drips recorded.',
+      'The phone recording has no sounds at that 6 s spacing. It is quiet apart from one burst and some handling noise at the end, so the impacts were too quiet for the phone.',
+      'With nothing to match, the audio could not be lined up with the video, which is why no drop is marked as heard and there are no sound plots.'
+    ]
+  };
+
   function $(id) { return document.getElementById(id); }
   var vid = $('vid'), aud = $('aud'), scrub = $('scrub'), zoom = $('zoom'), zc = $('zc'), zRead = $('zRead'), tip = $('tip');
   var inline = [].slice.call(document.querySelectorAll('#body .plot'));
@@ -221,6 +280,7 @@
     R = { D: D, iv: D.drops.slice(1).map(function (t, i) { return t - D.drops[i]; }), hits: D.drops.map(function (t) { return t + lag; }),
           wave: { clean: unpack(D.wave.clean), raw: unpack(D.wave.raw) }, spec: spec, tint: {}, urls: {} };
     fillHeader(D); fillSound(D);
+    if (NOTES[D.name]) { $('thisSec').hidden = false; $('thisNotes').innerHTML = NOTES[D.name].map(function (t) { return '<li>' + t + '</li>'; }).join(''); }
     requestAnimationFrame(tick);
     var files = ['video.mp4', 'clean.wav', 'raw.wav'], got = [0, 0, 0], tot = [0, 0, 0];
     function progress() {
