@@ -960,6 +960,8 @@ a:focus-visible, .sidenav a:focus-visible {
 .findings h3 { font-size: 0.95rem; margin: 0.6rem 0 0; color: var(--ink); }
 .findings ol, .findings ul, ul.findings { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.5rem; }
 .findings li b { font-weight: 600; color: var(--ink); }
+.findings .tablewrap { margin: 0; }
+.findings td, .findings th { color: var(--ink-2); }
 .tag { font-style: normal; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.08rem 0.4rem; border-radius: 3px; border: 1px solid var(--rule); white-space: nowrap; }
 .tag.solid { color: var(--hydro); border-color: var(--hydro); }
 .tag.fair { color: var(--ink-2); border-color: var(--ink-3); }
