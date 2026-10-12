@@ -93,39 +93,9 @@
       </div>
     </section>
 
-    <section class="intervals" id="thisSec" hidden>
-      <h2>What this recording shows</h2>
-      <ul class="findings" id="thisNotes"></ul>
-      <div class="findings" id="thisMore"></div>
-    </section>
-
     <section class="intervals">
       <h2>All recordings side by side</h2>
-      <div class="sidebyside">
-        <div class="card xycard"><span class="xcap">Drops seen against sounds heard <span>one point per recording</span><button class="info" type="button" data-info="counts" aria-label="About the two counts">i</button></span><div id="counts"></div></div>
-        <div class="tablewrap"><table id="cmp"></table></div>
-      </div>
-      <div class="findings">
-        <h3>What the recordings show together</h3>
-        <ol>
-          <li><b>The dripping is regular, not chaotic.</b> In the water recordings the gaps vary by less than half a percent, so the return map is one tight spot. There is no period doubling to study in the timing at these flow rates. <i class="tag solid">solid</i></li>
-          <li><b>The microphone alone is not a reliable drop counter here.</b> It missed 24% of the water drops at 25 cm and every one of the glycerine drops. The sound arrives at a varying time after the drop, so it cannot give precise timing either. <i class="tag solid">solid</i></li>
-          <li><b>The tone is probably the tank, not a free bubble.</b> In both water recordings the pitches keep returning to the same six values, near 3.29, 3.71, 4.62, 5.75, 5.86 and 7.27 kHz. 9 of 16 heard drops at 25 cm and 7 of 15 at 30 cm land within 15 Hz of another drop's pitch, where fewer than one would by chance, and two of the values appear in both recordings. The tones are absent between drops. A bubble's pitch follows its size and would not repeat this exactly, so the bubble radius shown above holds only if the tone is a bubble. <i class="tag solid">solid</i></li>
-          <li><b>A viscous drop into a viscous pool is silent.</b> The video saw 6 glycerine drops land in glycerine and the phone heard none of them, against 76% and 94% heard for water. It is one recording of 6 drops, so the size of the effect is not pinned down. <i class="tag fair">supported</i></li>
-          <li><b>There are two sound-making moments per impact.</b> Sounds come either early, about 90 ms after the gate, or late, about 215 ms. At 25 cm the split is 5 early to 11 late, and at 30 cm it is 1 to 14. The late sound may be the rebound jet falling back; that is a reading, not a measurement. <i class="tag fair">supported</i></li>
-          <li><b>Pitch shows no memory from drop to drop.</b> The correlation between a drop's pitch and the next one's is +0.39 at 25 cm and +0.25 at 30 cm, and neither can be told from chance (p = 0.22 and 0.34). With 12 or 13 pairs only a strong link would show. <i class="tag hint">hint</i></li>
-          <li><b>Height may raise the pitch.</b> The 30 cm recording reads higher than the 25 cm one and was heard more often, but with one recording per height the difference is not significant (p = 0.33). <i class="tag hint">hint</i></li>
-        </ol>
-        <h3>Limits</h3>
-        <p class="note">Each condition is a single recording of 6 to 21 drops. The phone sets its own gain and the audio passed through WhatsApp compression, so loudness cannot be compared between recordings. The gate on the drop's path was placed by hand for each clip. The three faucet runs were counted with an earlier detector and have no sound measurements.</p>
-        <h3>What would settle the open questions</h3>
-        <ul>
-          <li><b>Bubble or tank:</b> repeat one height with a different water depth. Tank tones should move with the depth, bubble tones should not.</li>
-          <li><b>Height:</b> three or more recordings per height, including 20 cm.</li>
-          <li><b>Drop-to-drop memory:</b> one recording of 100 or more drops. A correlation of 0.3 becomes detectable at about 45 pairs.</li>
-          <li><b>Chaos:</b> raise the flow rate until the gaps stop being regular, since that is where the question starts.</li>
-        </ul>
-      </div>
+      <div class="card xycard solo"><span class="xcap">Drops seen against sounds heard <span>one point per recording</span><button class="info" type="button" data-info="counts" aria-label="About the two counts">i</button></span><div id="counts"></div></div>
     </section>
   </div>
 
@@ -199,51 +169,6 @@
     exp1: 'Faucet run 1', exp2: 'Faucet run 2', exp3: 'Faucet run 3'
   };
 
-  var NOTES = {
-    'water-25cm': [
-      'The drip is steady: 21 drops, one every 2.06 s, with the gaps varying by only 9 ms. The gaps lengthen slightly towards the end, most likely as the syringe empties.',
-      'The microphone heard 16 of the 21 drops. Five landed with almost no sound.',
-      'Sounds come at two moments: 5 about 90 ms after the gate and 11 about 215 ms after it.',
-      'The pitches are not spread evenly. 9 of the 16 sit within 15 Hz of another drop&rsquo;s pitch, near 3.29, 3.71, 5.86 and 7.27 kHz, which points to the tank ringing.',
-      'One drop&rsquo;s pitch does not predict the next: the correlation of +0.39 over 12 pairs is within what chance gives.'
-    ],
-    'water-30cm': [
-      'The drip is steady: 16 drops, one every 2.66 s, with the gaps varying by 13 ms.',
-      'The microphone heard 15 of the 16 drops, the best of the four recordings.',
-      'Nearly every sound is the late one: 14 of the 15 come 230 to 275 ms after the gate, and one comes at 81 ms.',
-      'The pitches cluster again: 7 of the 15 sit within 15 Hz of another drop&rsquo;s, near 4.62 and 5.75 kHz. Louder sounds are also sharper in tone here (correlation 0.58, p = 0.02).',
-      'The median pitch of 5.74 kHz is higher than at 25 cm, but one recording per height cannot show that this is the height and not chance.'
-    ],
-    'glycerine-both': [
-      'The video sees 6 drops, one every 6.0 s, with the gaps varying by only 20 ms: the slowest and one of the steadiest drips recorded.',
-      'None of the 6 was heard. The phone recorded no sound within 0.4 s of any impact, so a glycerine drop landing in glycerine is silent to a phone microphone.',
-      'The 3 sounds the audio does contain are one short burst about 1.6 s after the fourth drop, which is too late to be that drop.',
-      'With no impact sounds to match, the audio was lined up on that one burst, which both phones recorded. The search was pointed at the right match by hand, because the burst also resembles the handling noise at the end of the recording.'
-    ]
-  };
-
-  var MORE = {
-    'glycerine-both':
-      '<h3>Why a glycerine drop makes no sound</h3>' +
-      '<p class="note">The sound of a drop is not the smack of the impact, which is nearly silent in air. It is a small air bubble trapped under the surface that rings like a bell. A water drop makes one in three steps:</p>' +
-      '<ol><li>The drop punches a small crater into the surface.</li>' +
-      '<li>The crater collapses. If its walls close in faster than its floor rises, they pinch off an air bubble underwater.</li>' +
-      '<li>The bubble is squeezed and springs back thousands of times a second. That vibration is the plink.</li></ol>' +
-      '<p class="note">Glycerine is roughly a thousand times more viscous than water, while its density and surface tension are close to water&rsquo;s, so the difference is almost all thickness. It stops the plink at each step:</p>' +
-      '<ul><li><b>The crater barely forms.</b> Thick liquid resists being pushed aside, so the drop sinks in and merges slowly, like honey landing in honey.</li>' +
-      '<li><b>Nothing snaps shut.</b> Pinching off a bubble needs the crater walls to rush inward, and that motion is smothered before it can close around any air.</li>' +
-      '<li><b>A trapped bubble would not ring.</b> A bubble vibrating in thick liquid loses its energy to friction almost at once, like a bell struck under syrup.</li></ul>' +
-      '<p class="note">One number sums this up: the ratio of the drop&rsquo;s momentum to the liquid&rsquo;s friction, the Reynolds number. For a water drop a few millimetres across at these speeds it is in the thousands, so motion wins. For glycerine it is around ten, so friction wins.</p>' +
-      '<h3>What was measured: no peak in any frequency range</h3>' +
-      '<p class="note">The table gives the loudest moment in the half second after each drop, as a multiple of the usual level between drops, in three frequency ranges. The last column is how high the recording reaches between drops with nothing happening, so only values well above it are a sound.</p>' +
-      '<div class="tablewrap"><table><tr><th>Frequency range</th><th>After the 6 glycerine drops</th><th>After the 21 water drops, 25 cm</th><th>Between drops, with nothing happening</th></tr>' +
-      '<tr><td>High, 2 to 15 kHz, where the plink lives</td><td>1.4 to 1.7</td><td>up to 59</td><td>2.8 for glycerine, 1.5 for water</td></tr>' +
-      '<tr><td>Mid, 0.8 to 2 kHz</td><td>1.8 to 2.5</td><td>1.9 to 2.9</td><td>about 2</td></tr>' +
-      '<tr><td>Low, 100 to 800 Hz, a thud</td><td>2.6 to 4.5</td><td>2.0 to 3.2</td><td>about 2.5</td></tr></table></div>' +
-      '<p class="note">In the high range, water drops that ring stand 5 to 59 times above the background, while every glycerine drop stays below what the background reaches by itself. The low and mid ranges were checked in case glycerine made a dull thud below where the pipeline listens: glycerine and water look alike there, both at the level of ordinary background wobble. One glycerine drop reads 4.5 in the low range, but a single value that close to the noise is not a detection.</p>' +
-      '<p class="note"><b>What this does and does not show.</b> The recording shows that no glycerine drop made a sound a phone microphone in air could pick up. That no bubble formed is the explanation from the physics, not something this recording proves. It is one clip of 6 drops, and a hydrophone under the surface is far more sensitive and might still hear a faint impact.</p>'
-  };
-
   function $(id) { return document.getElementById(id); }
   var vid = $('vid'), aud = $('aud'), scrub = $('scrub'), zoom = $('zoom'), zc = $('zc'), zRead = $('zRead'), tip = $('tip');
   var inline = [].slice.call(document.querySelectorAll('#body .plot'));
@@ -285,7 +210,7 @@
     if (!list.length) return showEmpty();
     var want = new URLSearchParams(location.search).get('r'), name = list.indexOf(want) >= 0 ? want : list[0], pick = $('pick');
     list.forEach(function (n) { pick.add(new Option(LABELS[n] || n, n, false, n === name)); });
-    fillCounts(list, name); fillCompare(list, name);
+    fillCounts(list, name);
     pick.onchange = function () { location.search = '?r=' + encodeURIComponent(pick.value); };
     script('recordings/' + name + '/data.js', function () {
       if (window.RECORDINGS && window.RECORDINGS[name]) init(window.RECORDINGS[name]); else showEmpty();
@@ -298,7 +223,7 @@
     R = { D: D, iv: D.drops.slice(1).map(function (t, i) { return t - D.drops[i]; }), hits: D.drops.map(function (t) { return t + lag; }),
           wave: { clean: unpack(D.wave.clean), raw: unpack(D.wave.raw) }, spec: spec, tint: {}, urls: {} };
     fillHeader(D); fillSound(D);
-    if (NOTES[D.name]) { $('thisSec').hidden = false; $('thisNotes').innerHTML = NOTES[D.name].map(function (t) { return '<li>' + t + '</li>'; }).join(''); $('thisMore').innerHTML = MORE[D.name] || ''; }
+
     requestAnimationFrame(tick);
     var files = ['video.mp4', 'clean.wav', 'raw.wav'], got = [0, 0, 0], tot = [0, 0, 0];
     function progress() {
@@ -321,18 +246,6 @@
         $('loadHead').textContent = 'Could not load ' + D.name;
         $('loadText').textContent = 'Check the connection, then reload the page.';
       });
-  }
-
-  function fillCompare(list, current) {
-    var S = window.RECORDING_STATS || {};
-    $('cmp').innerHTML = '<tr><th>Recording</th><th>Drops seen</th><th>Sounds</th><th>Rate, Hz</th><th>Interval, ms</th><th>Heard by microphone</th><th>Gate to sound, ms</th></tr>' +
-      list.map(function (n) {
-        var s = S[n] || {}, name = LABELS[n] || n, dash = function (v) { return v == null ? '-' : v; };
-        return '<tr><td>' + (n === current ? '<b>' + name + '</b>' : '<a href="?r=' + encodeURIComponent(n) + '">' + name + '</a>') + '</td><td>' + dash(s.drops) + '</td><td>' + dash(s.sounds) +
-          '</td><td>' + dash(s.rate) + '</td><td>' + (s.mean_ms == null ? '-' : s.mean_ms + ' &plusmn; ' + s.sd_ms) +
-          '</td><td>' + (s.unsure ? 'audio not aligned' : s.drops ? s.heard + ' of ' + s.drops + ' (' + Math.round(100 * s.heard / s.drops) + '%)' : '-') +
-          '</td><td>' + dash(s.av_ms) + '</td></tr>';
-      }).join('');
   }
 
   // A static x-y plot as inline SVG. o: W, H, x and y as [lo, hi], xl and yl axis titles, pts [{x, y, label, now, faint, miss}],

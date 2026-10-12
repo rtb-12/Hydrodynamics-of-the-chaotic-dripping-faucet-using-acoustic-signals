@@ -937,9 +937,7 @@ a:focus-visible, .sidenav a:focus-visible {
 .xcap { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem; font-size: 0.8rem; font-weight: 550; }
 .xcap span { color: var(--ink-3); font-weight: 400; }
 .trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
-.sidebyside { display: grid; grid-template-columns: minmax(0, 500px) minmax(0, 1fr); gap: 0.75rem; }
-.sidebyside .tablewrap { margin: 0; background: var(--surface); }
-.sidebyside table { height: 100%; }
+.xycard.solo { max-width: 560px; }
 .xy { display: block; width: 100%; height: auto; }
 .xy text { font-size: 12px; fill: var(--ink-3); font-variant-numeric: tabular-nums; }
 .xy .name { font-size: 13px; fill: var(--ink-2); }
@@ -956,16 +954,6 @@ a:focus-visible, .sidenav a:focus-visible {
 
 .viewer .note { color: var(--ink-2); max-width: 110ch; }
 .viewer .note b { font-weight: 600; color: var(--ink); }
-.findings { display: grid; gap: 0.6rem; margin: 0; max-width: 110ch; color: var(--ink-2); }
-.findings h3 { font-size: 0.95rem; margin: 0.6rem 0 0; color: var(--ink); }
-.findings ol, .findings ul, ul.findings { margin: 0; padding-left: 1.3rem; display: grid; gap: 0.5rem; }
-.findings li b { font-weight: 600; color: var(--ink); }
-.findings .tablewrap { margin: 0; }
-.findings td, .findings th { color: var(--ink-2); }
-.tag { font-style: normal; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.08rem 0.4rem; border-radius: 3px; border: 1px solid var(--rule); white-space: nowrap; }
-.tag.solid { color: var(--hydro); border-color: var(--hydro); }
-.tag.fair { color: var(--ink-2); border-color: var(--ink-3); }
-.tag.hint { color: var(--ink-3); }
 
 .chaos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 0.75rem; }
 .chaos .plot { height: 380px; }
@@ -984,7 +972,7 @@ a:focus-visible, .sidenav a:focus-visible {
 .zfoot { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: center; padding: 0.6rem 1rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-3); }
 
 @media (max-width: 900px) {
-  .vgrid, .chaos, .trio, .sidebyside { grid-template-columns: minmax(0, 1fr); }
+  .vgrid, .chaos, .trio { grid-template-columns: minmax(0, 1fr); }
   .lanes { grid-template-rows: 170px 110px 110px 70px; min-height: 0; }
   .transport { flex-wrap: wrap; }
   .clock { width: 100%; flex-wrap: wrap; gap: 0.3rem 1rem; }
