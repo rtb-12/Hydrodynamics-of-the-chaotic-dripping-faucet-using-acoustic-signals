@@ -980,7 +980,7 @@ a:focus-visible, .sidenav a:focus-visible {
 .hread { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .hplots, .duo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.75rem; }
 .hcol { display: grid; grid-template-rows: 1.6fr 1fr; gap: 0.5rem; height: 300px; min-width: 0; }
-.duo .plot { height: 340px; cursor: default; }
+.duo .plot { height: 340px; }
 .xy .mark { stroke: var(--ink); stroke-width: 2.5; }
 .xy .pt.c1 { fill: var(--h1); }
 .xy .pt.c2 { fill: var(--h2); }
