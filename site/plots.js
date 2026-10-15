@@ -25,14 +25,14 @@ function xy(o) {
     var q = o.pts[i + 1];
     if (q && !p.miss && !q.miss && !p.cut) g += '<line class="join" x1="' + X(p.x) + '" y1="' + Y(p.y) + '" x2="' + X(q.x) + '" y2="' + Y(q.y) + '"/>';
   });
-  (o.marks || []).forEach(function (m) {
-    g += '<line class="mark" x1="' + (X(m.x) - 16) + '" y1="' + Y(m.y) + '" x2="' + (X(m.x) + 16) + '" y2="' + Y(m.y) + '"/>';
-  });
   o.pts.forEach(function (p) {
     var cls = (p.miss ? 'miss' : 'pt') + (p.now ? ' now' : '') + (p.faint ? ' faint' : '') + (p.cls ? ' ' + p.cls : '');
     g += '<circle class="' + cls + '" cx="' + X(p.x) + '" cy="' + Y(p.miss ? o.y[0] : p.y) + '" r="' + (p.miss ? 4 : 5.5) + '"><title>' + (p.tip || '') + '</title></circle>';
     var flip = X(p.x) > L + pw * 0.6;   // a label past here would run off the right edge
     if (p.label) g += '<text class="lab' + (p.now ? ' now' : '') + '" x="' + (X(p.x) + (flip ? -11 : 11)) + '" y="' + (Y(p.y) + 4) + '"' + (flip ? ' text-anchor="end"' : '') + '>' + p.label + '</text>';
+  });
+  (o.marks || []).forEach(function (m) {   // after the dots, so a median is never hidden
+    g += '<line class="mark" x1="' + (X(m.x) - 16) + '" y1="' + Y(m.y) + '" x2="' + (X(m.x) + 16) + '" y2="' + Y(m.y) + '"/>';
   });
   return '<svg class="xy" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + o.yl + ' against ' + o.xl + '">' + g + '</svg>';
 }
@@ -202,4 +202,27 @@ function infoTips(INFO, tip, host) {
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !tip.hidden) hideTip(); });
   addEventListener('scroll', function () { if (pinned) showTip(pinned); else tip.hidden = true; }, { passive: true });
   return hideTip;
+}
+
+// Media streams from the network so playback starts at once; a full copy goes into the browser's Cache Storage once the
+// file can play through, and later visits play that copy. A copy is kept while the server's file has the same size.
+var MEDIA_CACHE = 'recordings-v1';
+function mediaUrl(url) {   // resolves to the cached copy as a blob URL, or to the network URL
+  if (!window.caches) return Promise.resolve(url);   // opened from the filesystem, or an old browser
+  return caches.open(MEDIA_CACHE).then(function (c) {
+    return c.match(url).then(function (hit) {
+      if (!hit) return url;
+      var copy = function () { return hit.blob().then(function (b) { return URL.createObjectURL(b); }); };
+      return fetch(url, { method: 'HEAD', cache: 'no-store' }).then(function (h) {
+        if (h.ok && h.headers.get('Content-Length') !== hit.headers.get('Content-Length')) { c.delete(url); return url; }
+        return copy();
+      }, copy);   // offline: the copy is all there is
+    });
+  }).catch(function () { return url; });
+}
+function keepMedia(el, url) {   // copy url into the cache once el can play through, unless it is already there
+  if (!window.caches || /^blob:/.test(el.src)) return;
+  el.addEventListener('canplaythrough', function () {
+    caches.open(MEDIA_CACHE).then(function (c) { return c.match(url).then(function (hit) { if (!hit) return c.add(url); }); }).catch(function () {});
+  }, { once: true });
 }

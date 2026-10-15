@@ -14,7 +14,7 @@ Each recording is cut to its steadiest stretch of --span seconds, so every heigh
 
 import argparse, base64, json, pathlib, subprocess, sys, tempfile
 import numpy as np, imageio_ffmpeg
-import scipy.ndimage as nd, scipy.signal as ss, scipy.stats as st
+import scipy.ndimage as nd, scipy.signal as ss
 from scipy.io import wavfile
 from lanes import FS, lanes, scale
 
@@ -49,7 +49,6 @@ RING_SNR = 10.0             # ...and that peak is this many times its own freque
 RING_FRAMES = 3             # a ring is this many tonal frames in a row, each within RING_DF of the last
 RING_DF = 250
 RING_START_MS = 20          # only a ring starting this soon after the impact belongs to it; later ones follow a rebound
-FLAT_MS = 30                # flatness is read from this much sound after the onset
 VIEW_RATE = 24000           # stored sound rate; still above twice the 9 kHz the codec keeps
 AUDIO_KBPS = '96k'          # page audio bitrate
 SPAN_S = 60.0               # each recording is cut to its steadiest stretch this long
@@ -132,7 +131,7 @@ def onset(y, t):
 
 
 def measure(yb, t):
-    """Loudness over the drop's own floor, how long it lasts, its ring (pitch, decay) and spectral flatness."""
+    """Loudness over the drop's own floor, how long it lasts, and its ring (pitch, decay)."""
     s, m = int(t * FS), FS * ENV_MS // 1000
     blocks = lambda a, b: np.sqrt((yb[a:b][:(b - a) // m * m].reshape(-1, m) ** 2).mean(1))
     floor = np.median(blocks(s - FLOOR_MS[0] * FS // 1000, s - FLOOR_MS[1] * FS // 1000))
@@ -145,10 +144,7 @@ def measure(yb, t):
     if rings and end - pk >= 5:
         tail = np.log(env[pk:end])
         tau = round(-1 / np.polyfit(np.arange(len(tail)) * ENV_MS, tail, 1)[0], 2)
-    Pf = np.abs(np.fft.rfft(yb[s:s + FLAT_MS * FS // 1000])) ** 2
-    Pf = Pf[(np.fft.rfftfreq(FLAT_MS * FS // 1000, 1 / FS) >= BAND[0]) & (np.fft.rfftfreq(FLAT_MS * FS // 1000, 1 / FS) <= BAND[1])] + 1e-30
-    return dict(db=round(20 * np.log10(env[pk]), 2), dur=dur, ring=rings, hz=hz, tau=tau if tau and 0 < tau < POST_MS else None,
-                flat=round(float(np.exp(np.log(Pf).mean()) / Pf.mean()), 4)), env
+    return dict(db=round(20 * np.log10(env[pk]), 2), dur=dur, ring=rings, hz=hz, tau=tau if tau and 0 < tau < POST_MS else None), env
 
 
 def ring(seg, pre):
@@ -220,11 +216,6 @@ def steadiest(times, span, duration):
     return best[1]
 
 
-def spearman(pairs):
-    r = st.spearmanr([a for a, _ in pairs], [b for _, b in pairs])
-    return dict(rho=round(float(r.statistic), 3), p=float(f'{r.pvalue:.2g}'), n=len(pairs))
-
-
 def process(clips, out=OUT, span=SPAN_S):
     """Every clip's steadiest stretch: audio, lanes and drops into out, scaled alike so the heights compare by eye."""
     hs = [float(h) for h, _ in clips]
@@ -248,14 +239,8 @@ def process(clips, out=OUT, span=SPAN_S):
                  typical=typical(rows), drops=rows, snip=[w for w, _ in snips], snip_scale=[round(v, 6) for _, v in snips],
                  env=[[round(float(v), 1) for v in row] for row in q], **lanes(y, x, d, len(x) / FS, ref))
         print(f'{r["slug"]}: {len(rows)} drops, period {r["period_ms"]} ms, {sum(w["ring"] for w in rows)} ring')
-    every = [(c['h'], r) for c in recs for r in c['drops']]
-    rings = [(h, r) for h, r in every if r['ring']]
-    stats = dict(ring=spearman([(h, r['ring']) for h, r in every]), db=spearman([(h, r['db']) for h, r in every]),
-                 dur=spearman([(h, r['dur']) for h, r in every]), flat=spearman([(h, r['flat']) for h, r in every]),
-                 hz=spearman([(h, r['hz']) for h, r in rings]),
-                 tau=spearman([(h, r['tau']) for h, r in rings if r['tau'] is not None]))
     data = dict(rate=VIEW_RATE, pre_ms=PRE_MS, post_ms=POST_MS, env_ms=ENV_MS, band=BAND,
-                amax=max(max(c['snip_scale']) for c in recs), stats=stats, clips=recs)
+                amax=max(max(c['snip_scale']) for c in recs), clips=recs)
     (out / 'data.js').write_text('window.HEIGHTS = ' + json.dumps(data, separators=(',', ':')) + ';\n')
     return data
 
@@ -302,7 +287,6 @@ def selftest():
             assert 8 < r['tau'] < 16, f'12 ms decay read as {r["tau"]} ms'
     rr = [r for r in rows if r['ring']]
     assert np.median([r['db'] for r in rr]) > np.median([r['db'] for r in rows if not r['ring']]) + 10
-    assert np.median([r['flat'] for r in rr]) < np.median([r['flat'] for r in rows if not r['ring']])
 
     x, truth = synth(n=12, ring_every=1)
     s = int((truth[6][0] - 0.1) * FS)   # talking over one drop

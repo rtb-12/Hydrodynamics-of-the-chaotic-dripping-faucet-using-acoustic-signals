@@ -58,9 +58,9 @@
 
     <section class="intervals">
       <h2>What changes with height</h2>
-      <p class="note">A drop <b>rings</b> when it traps a small air bubble that keeps sounding a clear tone for a few milliseconds; without one it only clicks. In the plots each dot is one drop, spread a little sideways around its height so dots do not hide each other, and a bar marks the median. Faint dots are drops that did not ring. &rho; is the rank correlation with height: near &plusmn;1 is a steady trend, near 0 none.</p>
+      <p class="note">A drop <b>rings</b> when it traps a small air bubble that keeps sounding a clear tone for a few milliseconds; without one it only clicks. Below, the share of drops that ring at each height, and the pitch of each drop that rang, spread a little sideways around its height so dots do not hide each other, with a bar at the median.</p>
       <div class="tablewrap"><table id="tbl"></table></div>
-      <div class="trio" id="feats"></div>
+      <div class="duo" id="feats"></div>
     </section>
   </div>
 </main>
@@ -293,7 +293,11 @@
       var r = { c: c, n: n, i: -1, lanes: [].slice.call(el.querySelectorAll('canvas')), audio: new Audio(), read: el.querySelector('.hread'), scrub: el.querySelector('.scrub'),
                 play: el.querySelector('.primary'), wave: { clean: unpack(c.wave.clean), raw: unpack(c.wave.raw) }, spec: spec, dir: dir,
                 hits: c.drops.map(function (d) { return d.t; }), heard: c.drops.map(function (d) { return d.ring; }), beats: beats(c) };
-      r.audio.preload = 'auto'; r.audio.src = dir + src + '.m4a'; setRate(r.audio);
+      r.audio.preload = 'auto';
+      mediaUrl(dir + src + '.m4a').then(function (u) {   // the local copy if this browser has one
+        var t = r.audio.currentTime;
+        r.audio.src = u; setRate(r.audio); keepMedia(r.audio, dir + src + '.m4a'); seek(r, t);
+      });
       r.audio.addEventListener('play', function () { if (!all) { r.audio.muted = false; rows.forEach(function (o) { if (o !== r) o.audio.pause(); }); } r.play.textContent = 'Pause'; $('playAll').textContent = all ? 'Pause all' : 'Play all'; if (zRow === r) $('zPlay').textContent = 'Pause'; });
       r.audio.addEventListener('pause', function () { if (all) { all = false; rows.forEach(function (o) { o.audio.pause(); }); } $('playAll').textContent = 'Play all'; r.play.textContent = 'Play'; if (zRow === r) $('zPlay').textContent = 'Play'; draw(r); });
       r.audio.addEventListener('seeked', function () { draw(r); });
@@ -386,36 +390,24 @@
 
   function fillFeatures() {
     var hs = H.clips.map(function (c) { return c.h; }), xr = [Math.min.apply(null, hs) - 5, Math.max.apply(null, hs) + 5];
-    function rho(key) { var s = H.stats[key]; return '&rho; = ' + s.rho.toFixed(2) + ' over ' + s.n + ' drops'; }
     function card(title, sub, plot) { return '<div class="card xycard"><span class="xcap">' + title + ' <span>' + sub + '</span></span>' + plot + '</div>'; }
-    function drops(key, yl, f, ringOnly) {
-      var pts = [], marks = [], all = [];
-      H.clips.forEach(function (c, n) {
-        var v = [];
-        c.drops.forEach(function (d, i) {
-          if (ringOnly && !d.ring || d[key] == null) return;
-          var y = f(d[key]); v.push(y); all.push(y);
-          pts.push({ x: c.h + ((i * 0.618034) % 1 - 0.5) * 2.4, y: y, faint: !d.ring, cls: 'c' + (n + 1),
-                     tip: label(c) + ', drop ' + (i + 1) + ': ' + (+y.toFixed(2)) + (d.ring ? '' : ', no ring') });
-        });
-        if (v.length) marks.push({ x: c.h, y: median(v) });
-      });
-      return xy({ W: 520, H: 400, x: xr, y: span(all, 0.5), xl: 'Fall height, cm', yl: yl, pts: pts, marks: marks });
-    }
     var share = xy({ W: 520, H: 400, x: xr, y: [0, 100], xl: 'Fall height, cm', yl: 'Drops that ring, %',
       pts: H.clips.map(function (c, n) {
         var k = c.drops.filter(function (d) { return d.ring; }).length, p = 100 * k / c.drops.length;
         return { x: c.h, y: p, cls: 'c' + (n + 1), label: Math.round(p) + '% of ' + c.drops.length, tip: label(c) };
       }) });
-    var id = function (v) { return v; };
-    $('feats').innerHTML = [
-      card('Drops that ring', rho('ring'), share),
-      card('Loudness', rho('db'), drops('db', 'Peak over the room, dB', id)),
-      card('How long the sound lasts', rho('dur'), drops('dur', 'Until within 6 dB of the room, ms', id)),
-      card('How hiss-like the sound is', rho('flat'), drops('flat', 'Spectral flatness, 0 tone to 1 hiss', id)),
-      card('Ring pitch', rho('hz') + ', ringing drops', drops('hz', 'Pitch, kHz', function (v) { return v / 1000; }, true)),
-      card('How fast the ring dies away', rho('tau') + ', ringing drops', drops('tau', 'Time to fall to 37%, ms', id, true))
-    ].join('');
+    var pts = [], marks = [], all = [];
+    H.clips.forEach(function (c, n) {
+      var v = [];
+      c.drops.forEach(function (d, i) {
+        if (!d.ring) return;
+        var y = d.hz / 1000; v.push(y); all.push(y);
+        pts.push({ x: c.h + ((i * 0.618034) % 1 - 0.5) * 2.4, y: y, cls: 'c' + (n + 1), tip: label(c) + ', drop ' + (i + 1) + ': ' + y.toFixed(2) + ' kHz' });
+      });
+      if (v.length) marks.push({ x: c.h, y: median(v) });
+    });
+    var pitch = xy({ W: 520, H: 400, x: xr, y: span(all, 0.5), xl: 'Fall height, cm', yl: 'Pitch, kHz', pts: pts, marks: marks });
+    $('feats').innerHTML = card('Drops that ring', 'one point per recording', share) + card('Ring pitch', 'one dot per drop that rang', pitch);
   }
 
   // --- wiring --------------------------------------------------------------------------
@@ -451,7 +443,7 @@
   seg('gains', 'g', function (v) { gain = v; redraw(); });
   seg('srcs', 's', function (v) {
     src = v;
-    rows.forEach(function (r) { var t = r.audio.currentTime, on = !r.audio.paused; r.audio.src = r.dir + src + '.m4a'; r.audio.currentTime = t; setRate(r.audio); if (on) r.audio.play(); draw(r); });
+    rows.forEach(function (r) { var t = r.audio.currentTime, on = !r.audio.paused; r.audio.src = r.dir + src + '.m4a'; keepMedia(r.audio, r.dir + src + '.m4a'); r.audio.currentTime = t; setRate(r.audio); if (on) r.audio.play(); draw(r); });
   });
   seg('speeds', 'r', function (v) { rate = +v; rows.forEach(function (r) { setRate(r.audio); }); });
   infoTips(INFO, $('tip'), function () { return zoom.open ? zoom : document.querySelector('.viewer'); });   // a modal dialog sits above the rest of the page

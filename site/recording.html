@@ -32,7 +32,7 @@
     <div class="vgrid">
       <div class="vleft">
         <p class="lede">Each recording pairs a video of the drip with sound from a separate phone microphone, lined up to one clock. Drops are counted from the video alone, so the count checks what the microphone heard.
-        The video and sound load fully before playback, so seeking and slow motion stay smooth. Click any graph to enlarge it, and use the <b>i</b> buttons to see how each quantity is measured.</p>
+        Playback starts while the video is still arriving, and a copy is kept in this browser so the next visit loads at once. Click any graph to enlarge it, and use the <b>i</b> buttons to see how each quantity is measured.</p>
       <div class="vidbox">
         <video id="vid" muted playsinline preload="auto"></video>
         <div class="loading" id="loading">
@@ -182,23 +182,9 @@
     var s = document.createElement('script');
     s.src = url; s.onload = done; s.onerror = done; document.head.appendChild(s);
   }
-  // Whole file into memory, so playback never waits on the network; plain streaming where fetch is unavailable (file://).
-  function fetchBlob(url, onBytes) {
-    return fetch(url).then(function (r) {
-      if (!r.ok || !r.body) throw new Error(r.status);
-      var total = +r.headers.get('Content-Length') || 0, rd = r.body.getReader(), parts = [], got = 0;
-      function pump() {
-        return rd.read().then(function (x) {
-          if (x.done) return URL.createObjectURL(new Blob(parts, { type: r.headers.get('Content-Type') || '' }));
-          parts.push(x.value); got += x.value.length; onBytes(got, total); return pump();
-        });
-      }
-      return pump();
-    }).catch(function () { return url; });
-  }
   function canPlay(el) {
     return new Promise(function (ok, fail) {
-      if (el.readyState >= 1) return ok();   // the file is already in memory; iOS never buffers further before a tap
+      if (el.readyState >= 1) return ok();   // iOS never buffers further before a tap
       el.addEventListener('loadedmetadata', ok, { once: true });
       el.addEventListener('error', function () { fail(new Error('media')); }, { once: true });
     });
@@ -225,17 +211,17 @@
     fillHeader(D); fillSound(D);
 
     requestAnimationFrame(tick);
-    var files = ['video.mp4', 'clean.wav', 'raw.wav'], got = [0, 0, 0], tot = [0, 0, 0];
-    function progress() {
-      var g = got.reduce(function (a, b) { return a + b; }), t = tot.reduce(function (a, b) { return a + b; });
-      $('loadBar').style.width = (t ? Math.min(100, g / t * 100) : 0) + '%';
-      $('loadText').textContent = (g / 1e6).toFixed(1) + (t ? ' of ' + (t / 1e6).toFixed(1) : '') + ' MB';
-    }
+    var files = { video: 'video.mp4', clean: 'clean.wav', raw: 'raw.wav' }, keys = Object.keys(files);
     $('loadHead').textContent = 'Loading ' + (LABELS[D.name] || D.name);
-    Promise.all(files.map(function (f, i) { return fetchBlob(dir + f, function (g, t) { got[i] = g; tot[i] = t; progress(); }); }))
+    vid.addEventListener('progress', function () {   // how much video has arrived, until it can play
+      if (!ready && vid.buffered.length && vid.duration) $('loadBar').style.width = Math.min(100, vid.buffered.end(vid.buffered.length - 1) / vid.duration * 100) + '%';
+    });
+    Promise.all(keys.map(function (k) { return mediaUrl(dir + files[k]); }))
       .then(function (u) {
-        R.urls = { video: u[0], clean: u[1], raw: u[2] };
+        keys.forEach(function (k, i) { R.urls[k] = u[i]; });
         vid.src = R.urls.video; aud.src = R.urls[src];
+        keepMedia(vid, dir + files.video); keepMedia(aud, dir + files[src]);
+        $('loadText').textContent = /^blob:/.test(vid.src) ? 'From this browser' : 'Streaming';
         return Promise.all([canPlay(vid), canPlay(aud)]);
       })
       .then(function () {
@@ -446,7 +432,7 @@
     src = s; press(this, e.target);
     if (!R || !R.urls[s]) return;
     var playing = !vid.paused;
-    aud.src = R.urls[s]; aud.currentTime = vid.currentTime; setRate(vid.playbackRate);
+    aud.src = R.urls[s]; keepMedia(aud, 'recordings/' + R.D.name + '/' + s + '.wav'); aud.currentTime = vid.currentTime; setRate(vid.playbackRate);
     if (playing) aud.play().catch(function () {});
   };
   addEventListener('keydown', function (e) {
@@ -462,6 +448,17 @@
     }
   });
   addEventListener('keyup', function (e) { if (e.key === ' ' && spaceHandled) { e.preventDefault(); spaceHandled = false; } });   // Firefox clicks on keyup
+
+  // While the video waits for data the sound waits with it, so the two never drift apart.
+  vid.addEventListener('waiting', function () {
+    if (!ready) return;
+    aud.pause(); $('loadHead').textContent = 'Buffering'; $('loadText').textContent = ''; $('loadBar').style.width = '0'; $('loading').hidden = false;
+  });
+  vid.addEventListener('canplay', function () { if (ready) $('loading').hidden = true; });
+  vid.addEventListener('playing', function () {
+    $('loading').hidden = true;
+    if (ready && aud.paused) { aud.currentTime = vid.currentTime; syncHold = performance.now() + SYNC_HOLD_MS; aud.play().catch(function () {}); }
+  });
 
   // --- zoom: the same plot redrawn at dialog size, live ------------------------------------
 
