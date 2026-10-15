@@ -113,6 +113,7 @@
 <script>
 (function () {
   var PH = 0.8;   // playhead position while playing
+  var AHEAD = 10, STUCK_MS = 3000;   // seconds of video and sound gathered before playing; start anyway if the browser stops fetching this long
   var HARD_SYNC = 0.2, NUDGE = 0.02, SYNC_HOLD_MS = 300;   // re-seek audio beyond this real-time drift (s); else trim its rate by up to 2%; settle time after a seek
   var TIME = ['wave', 'loud', 'spec', 'drops'];
   var INFO = {
@@ -175,6 +176,7 @@
   var inline = [].slice.call(document.querySelectorAll('#body .plot'));
   var R = null, ready = false, WIN = 2, smoothMs = 0, gain = 'auto', src = 'clean', heardOnly = false;
   var zoomKind = null, zView = null, zHover = null, lastDrop = -2, lastInk = '', syncHold = 0, spaceHandled = false;
+  var want = false, gathering = null;   // the viewer asked to play; the timer waiting for enough data
 
   // --- loading -------------------------------------------------------------------
 
@@ -395,12 +397,33 @@
     aud.preservesPitch = false;   // slowed audio drops in pitch like tape, so a 5 kHz plink stays audible
   }
   function press(group, btn) { group.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b === btn); }); }
-  function playLabel() { $('bPlay').textContent = $('zPlay').textContent = vid.paused ? 'Play' : 'Pause'; }
-  function pause() { vid.pause(); aud.pause(); playLabel(); }
+  function playLabel() { $('bPlay').textContent = $('zPlay').textContent = want ? 'Pause' : 'Play'; }
+  function pause() { want = false; clearTimeout(gathering); gathering = null; vid.pause(); aud.pause(); $('loading').hidden = true; playLabel(); }
   function togglePlay() {
     if (!ready) return;
-    if (vid.paused) { aud.currentTime = vid.currentTime; syncHold = performance.now() + SYNC_HOLD_MS; vid.play(); aud.play().catch(function () {}); } else { vid.pause(); aud.pause(); }
-    playLabel();
+    if (want) pause(); else { want = true; gather(); playLabel(); }
+  }
+  function ahead(el) {   // seconds of el already here from its playhead on
+    var b = el.buffered, t = el.currentTime;
+    for (var i = 0; i < b.length; i++) if (b.start(i) <= t + 0.05 && b.end(i) > t) return b.end(i) - t;
+    return 0;
+  }
+  // Plays only once AHEAD seconds of both video and sound are here (less near the end), so a slow connection gives one
+  // wait and then smooth play rather than a stall every few hundred milliseconds. Called again whenever the video runs dry.
+  function gather(last, since) {
+    var have = Math.min(ahead(vid), ahead(aud)), need = Math.min(AHEAD, R.D.duration - vid.currentTime - 0.1), now = performance.now();
+    if (have !== last) since = now;
+    clearTimeout(gathering); gathering = null;
+    if (have >= need || (have >= 1 && now - since > STUCK_MS)) {
+      $('loading').hidden = true;
+      aud.currentTime = vid.currentTime; syncHold = now + SYNC_HOLD_MS;
+      vid.play(); aud.play().catch(function () {});
+      return;
+    }
+    vid.pause(); aud.pause();
+    $('loadHead').textContent = 'Loading the next ' + Math.round(need) + ' s'; $('loadText').textContent = have.toFixed(1) + ' of ' + need.toFixed(0) + ' s';
+    $('loadBar').style.width = Math.min(100, have / need * 100) + '%'; $('loading').hidden = false;
+    gathering = setTimeout(function () { if (want) gather(have, since); }, 200);
   }
   function seek(t) { vid.currentTime = Math.max(0, Math.min(R.D.duration, t)); aud.currentTime = vid.currentTime; }
   function step(k) { if (ready) { pause(); seek(vid.currentTime + k / R.D.fps); } }
@@ -449,16 +472,9 @@
   });
   addEventListener('keyup', function (e) { if (e.key === ' ' && spaceHandled) { e.preventDefault(); spaceHandled = false; } });   // Firefox clicks on keyup
 
-  // While the video waits for data the sound waits with it, so the two never drift apart.
-  vid.addEventListener('waiting', function () {
-    if (!ready) return;
-    aud.pause(); $('loadHead').textContent = 'Buffering'; $('loadText').textContent = ''; $('loadBar').style.width = '0'; $('loading').hidden = false;
-  });
-  vid.addEventListener('canplay', function () { if (ready) $('loading').hidden = true; });
-  vid.addEventListener('playing', function () {
-    $('loading').hidden = true;
-    if (ready && aud.paused) { aud.currentTime = vid.currentTime; syncHold = performance.now() + SYNC_HOLD_MS; aud.play().catch(function () {}); }
-  });
+  // When the video runs dry, both stop and gather the next stretch again, so they never drift apart.
+  vid.addEventListener('waiting', function () { if (ready && want && !gathering) gather(); });
+  vid.addEventListener('ended', function () { want = false; aud.pause(); playLabel(); });
 
   // --- zoom: the same plot redrawn at dialog size, live ------------------------------------
 
