@@ -9,7 +9,7 @@ recording of background music, find every drop, measure its sound and write the 
     uv run analysis/heights.py --clip 20 "audios /water drop 20 cm.mp4" --clip 40 "audios /water drop 40 cm .mp4"
     uv run analysis/heights.py --selftest
 
-A second clip at the same height is shown as another take of it.
+Each recording is cut to its steadiest stretch of --span seconds, so every height is judged on its cleanest drops.
 """
 
 import argparse, base64, json, pathlib, subprocess, sys, tempfile
@@ -52,6 +52,8 @@ RING_START_MS = 20          # only a ring starting this soon after the impact be
 FLAT_MS = 30                # flatness is read from this much sound after the onset
 VIEW_RATE = 24000           # stored sound rate; still above twice the 9 kHz the codec keeps
 AUDIO_KBPS = '96k'          # page audio bitrate
+SPAN_S = 60.0               # each recording is cut to its steadiest stretch this long
+REGULAR = 0.15              # a gap within this fraction of the drip period is a clean one; any other is a missed or extra drop
 
 
 def load(path):
@@ -201,19 +203,39 @@ def analyse(x):
     return y, rows, np.array(envs)
 
 
+def steadiest(times, span, duration):
+    """Start of the stretch `span` long whose drops come most evenly: the most clean gaps, each missed or extra drop
+    costing two, ties to the least jitter."""
+    t = np.array(times)
+    if duration <= span or len(t) < 3:
+        return 0.0
+    iv, best = np.diff(t), None
+    p = np.median(iv)
+    for a in np.r_[np.clip(t - 0.5, 0, duration - span), duration - span]:
+        g = iv[(t[:-1] >= a) & (t[1:] <= a + span)]
+        ok = np.abs(g / p - 1) < REGULAR
+        score = (int(ok.sum()) - 2 * int((~ok).sum()), -float(np.std(g[ok])) if ok.any() else 0.0)
+        if best is None or score > best[0]:
+            best = (score, float(a))
+    return best[1]
+
+
 def spearman(pairs):
     r = st.spearmanr([a for a, _ in pairs], [b for _, b in pairs])
     return dict(rho=round(float(r.statistic), 3), p=float(f'{r.pvalue:.2g}'), n=len(pairs))
 
 
-def process(clips, out=OUT):
-    """Every clip's audio, lanes and drops into out, scaled alike so the heights compare by eye."""
-    seen, recs = {}, []
+def process(clips, out=OUT, span=SPAN_S):
+    """Every clip's steadiest stretch: audio, lanes and drops into out, scaled alike so the heights compare by eye."""
+    hs = [float(h) for h, _ in clips]
+    if len(set(hs)) != len(hs):
+        raise SystemExit('one clip per height: keep the take with the steadier drip')
+    recs = []
     for h, path in sorted(clips, key=lambda c: float(c[0])):
-        h = float(h)
-        seen[h] = seen.get(h, 0) + 1
-        x = load(path)
-        recs.append(dict(slug=f'{h:g}cm' + (f'-{seen[h]}' if seen[h] > 1 else ''), h=h, take=seen[h], x=x, a=analyse(x)))
+        h, x = float(h), load(path)
+        a = steadiest([r['t'] for r in analyse(x)[1]], span, len(x) / FS) if span else 0.0
+        x = x[int(a * FS):int((a + span) * FS)] if span else x
+        recs.append(dict(slug=f'{h:g}cm', h=h, start=round(a, 2), x=x, a=analyse(x)))
     ref = dict(clean=scale(*[r['a'][0] for r in recs]), raw=scale(*[r['x'] for r in recs]))
     for r in recs:
         x, (y, rows, envs) = r.pop('x'), r.pop('a')
@@ -289,6 +311,10 @@ def selftest():
     assert not [d for d in got if abs(d - truth[6][0]) < 0.2], 'speech counted as a drop'
     assert len(got) == 11, f'{len(got)} drops beside the talking, made 11'
 
+    times = list(np.r_[np.arange(0, 10), np.arange(15, 60), np.arange(60, 70) + 0.3 * np.sin(np.arange(10)), np.arange(70, 100)])
+    a = steadiest(times, 25, 100)   # a run of missed drops at 10-15 s and a jittery stretch at 60-70 s
+    assert 14.4 <= a and a + 25 <= 60.1 or 69.4 <= a, f'steadiest stretch starts at {a} s'
+
     x, truth = synth(n=12, ring_every=1, rebound=0.4)
     got = find_drops(clean(x))
     assert len(got) == 12 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), 'drops timed on their rebound'
@@ -296,26 +322,35 @@ def selftest():
     with tempfile.TemporaryDirectory() as tmp:
         p, q = pathlib.Path(tmp) / 'a.wav', pathlib.Path(tmp) / 'b.wav'
         wavfile.write(p, FS, (x * 20000).astype(np.int16)); wavfile.write(q, FS, (x * 5000).astype(np.int16))
-        d = process([('20', p), ('20', q), ('40', p)], pathlib.Path(tmp) / 'out')
-        assert [c['slug'] for c in d['clips']] == ['20cm', '20cm-2', '40cm']
+        d = process([('20', p), ('25', q), ('40', p)], pathlib.Path(tmp) / 'out')
+        assert [c['slug'] for c in d['clips']] == ['20cm', '25cm', '40cm']
         assert d['clips'][0]['drops'][d['clips'][0]['typical']]['ring']
         assert len(base64.b64decode(d['clips'][0]['snip'][0])) == (PRE_MS + POST_MS) * VIEW_RATE // 1000
-        assert all((pathlib.Path(tmp) / 'out' / '20cm-2' / f).stat().st_size > 0 for f in ('clean.m4a', 'raw.m4a', 'spec-clean.png'))
+        assert all((pathlib.Path(tmp) / 'out' / '25cm' / f).stat().st_size > 0 for f in ('clean.m4a', 'raw.m4a', 'spec-clean.png'))
         top = [np.abs(np.frombuffer(base64.b64decode(c['wave']['raw']), np.int8).astype(int)).max() for c in d['clips']]
         assert top[0] == 127 and abs(top[1] - 127 / 2) <= 4, f'a quarter as loud drawn at {top[1]}, the loud one at {top[0]} of 127: not one scale'
+        try:
+            process([('20', p), ('20', q)], pathlib.Path(tmp) / 'two')
+            raise AssertionError('two takes at one height were accepted')
+        except SystemExit:
+            pass
+        d = process([('20', p)], pathlib.Path(tmp) / 'cut', span=6.0)
+        c = d['clips'][0]
+        assert c['duration'] == 6.0 and len(c['drops']) >= 4, f'cut to {c["duration"]} s with {len(c["drops"])} drops'
     print('selftest ok')
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     ap.add_argument('--clip', nargs=2, action='append', metavar=('HEIGHT_CM', 'AUDIO'), default=[])
+    ap.add_argument('--span', type=float, default=SPAN_S, help='seconds of each recording to keep, its steadiest stretch; 0 keeps it all')
     ap.add_argument('--selftest', action='store_true')
     a = ap.parse_args()
     if a.selftest:
         return selftest()
     if not a.clip:
         ap.error('give at least one --clip')
-    process(a.clip)
+    process(a.clip, span=a.span)
 
 
 if __name__ == '__main__':

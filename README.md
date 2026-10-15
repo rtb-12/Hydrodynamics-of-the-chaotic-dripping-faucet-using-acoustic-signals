@@ -61,13 +61,14 @@ Audio with only a few loud moments can match the video's sound track in more tha
 ### Drop height
 
 `site/heights.html` sets the sound of one drop beside the same drip falling from other heights: waveform and spectrogram per recording, all of them overlaid, and how each measure of the sound moves with height.
-Each recording is a phone audio file of the same faucet at the same flow rate; a second file at one height becomes another take of it:
+Each recording is a phone audio file of the same faucet at the same flow rate, one per height:
 
 ```bash
 uv run analysis/heights.py --clip 20 "audios /water drop 20 cm.mp4" --clip 40 "audios /water drop 40 cm .mp4"
 uv run analysis/heights.py --selftest    # a synthetic recording with known drops, run by CI
 ```
 
+Each recording is cut to its steadiest minute (`--span`), the stretch with the most evenly spaced drops and no missed ones, so every height is judged on its cleanest drops.
 Background music below 1 kHz is filtered out and the steady hiss turned down for listening and for finding faint drops.
 Drops are placed one per drip period by dynamic programming, so a run of faint drops cannot lose the beat, and drops inside talking or handling noise are left out.
 Every measure is read from the raw 2 to 9 kHz band, since the phone's codec invents the sound above 9 kHz and the cleaning's gain opens around each drop.

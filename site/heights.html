@@ -96,7 +96,7 @@
   var LEAD = 0.3, QUIET = 0.15, SYNC = 0.01, all = false;   // Play all starts this long before the drops; no row is moved closer than QUIET to a drop, nor by less than SYNC, s
   var KINDS = ['wave', 'loud', 'spec', 'drops'], zoom = $('zoom'), zc = $('zc'), zRead = $('zRead'), zRow = null, zKind = null, zHover = null, zView = null, zSpan = 0;
 
-  function label(c) { return c.h + ' cm' + (c.take > 1 ? ', take ' + c.take : ''); }
+  function label(c) { return c.h + ' cm'; }
   function median(v) { v = v.slice().sort(function (a, b) { return a - b; }); return v.length ? (v[(v.length - 1) >> 1] + v[v.length >> 1]) / 2 : null; }
   function samples(c, i) {
     var a = unpack(c.snip[i]), k = c.snip_scale[i] / 127, out = new Float32Array(a.length);
@@ -105,7 +105,7 @@
   }
   function tokens(n) {
     var s = getComputedStyle(document.documentElement), g = function (v) { return s.getPropertyValue(v).trim(); };
-    var c = [g('--h1'), g('--h2'), g('--h3'), g('--h4')];
+    var c = [g('--h1'), g('--h2'), g('--h3')];
     return { ink: g('--ink'), ink2: g('--ink-2'), ink3: g('--ink-3'), rule: g('--rule'), surface: g('--surface'), hydro: g('--hydro'),
              sans: g('--display'), c: c, chan: c[n || 0] };
   }
@@ -149,35 +149,49 @@
     }
   }
   function seek(r, t) { r.audio.currentTime = Math.max(0, Math.min(r.c.duration, t)); draw(r); }
+  // Drop times with each missed drop filled in at its expected time, so lining rows up never skips one.
+  function beats(c) {
+    var P = c.period_ms / 1000, out = [];
+    c.drops.forEach(function (d, i) {
+      var prev = i ? c.drops[i - 1].t : null, n = prev == null ? 1 : Math.round((d.t - prev) / P);
+      for (var k = 1; k < n; k++) out.push(prev + (d.t - prev) * k / n);
+      out.push(d.t);
+    });
+    return out;
+  }
+  function beatAt(b, t) { var i = 0; while (i + 1 < b.length && b[i + 1] <= t + 0.02) i++; return i; }
+
   // While playing all, each row is moved in the quiet second half of the leader's gap so its next drop lands with the leader's.
   // A jump takes a moment to play again, so each row learns its own delay (lat) from how far off its last jump landed.
   function lockDrops() {
-    var L = rows[0], t = L.audio.currentTime, i = dropAt(L, t), d = L.c.drops;
-    if (i + 1 >= d.length || t < (d[i].t + d[i + 1].t) / 2 || d[i + 1].t - t < QUIET) return;
-    var left = d[i + 1].t - t;
+    var L = rows[0], t = L.audio.currentTime, b = L.beats, i = beatAt(b, t);
+    if (i + 1 >= b.length || t < (b[i] + b[i + 1]) / 2 || b[i + 1] - t < QUIET) return;
+    var left = b[i + 1] - t;
     rows.slice(1).forEach(function (r) {
       if (r.audio.seeking) return;
-      if (r.lockedAt !== i) { r.lockedAt = i; r.next = r.c.drops[dropAt(r, r.audio.currentTime + left - 0.5 * r.c.period_ms / 1000) + 1]; }
-      if (!r.next) return;
-      var err = r.audio.currentTime - (r.next.t - left);   // above zero: this row runs ahead
+      if (r.lockedAt !== i) { r.lockedAt = i; r.next = r.beats[beatAt(r.beats, r.audio.currentTime + left - 0.5 * r.c.period_ms / 1000) + 1]; }
+      if (r.next == null) return;
+      var err = r.audio.currentTime - (r.next - left);   // above zero: this row runs ahead
       if (Math.abs(err) < SYNC) return;
       if (r.sought === i) r.lat = (r.lat || 0) - err;
-      r.sought = i; r.audio.currentTime = r.next.t - left + (r.lat || 0);
+      r.sought = i; r.audio.currentTime = r.next - left + (r.lat || 0);
     });
   }
   function alignTo(t) {   // the first row to t, every other row to the drop as far through its recording, at the same moment of it
-    var L = rows[0], i = dropAt(L, Math.max(L.c.drops[0].t, t)), phase = t - L.c.drops[i].t, f = i / Math.max(1, L.c.drops.length - 1);
+    var b = rows[0].beats, i = beatAt(b, t);
+    if (i + 1 < b.length && b[i + 1] - t < t - b[i]) i++;
+    var phase = t - b[i], f = i / Math.max(1, b.length - 1);
     rows.forEach(function (r, n) {
-      var d = r.c.drops, j = n ? Math.round(f * (d.length - 1)) : i;
+      var j = n ? Math.round(f * (r.beats.length - 1)) : i;
       r.lockedAt = r.sought = -1;
-      seek(r, d[j].t + phase);
+      seek(r, r.beats[j] + phase);
     });
   }
   function hear(n, on) { rows[n].heard = on; if (all) rows[n].audio.muted = !on; }
   function playAll() {
     if (all) { all = false; rows.forEach(function (r) { r.audio.pause(); }); return; }
     all = true; rows.forEach(function (r) { r.lockedAt = r.sought = -1; });
-    rows.forEach(function (r) { r.audio.currentTime = Math.max(0, r.c.drops[dropAt(r, r.audio.currentTime)].t - LEAD); });
+    rows.forEach(function (r) { r.audio.currentTime = Math.max(0, r.beats[beatAt(r.beats, r.audio.currentTime)] - LEAD); });
     rows.forEach(function (r) { r.audio.muted = !r.heard; r.audio.play(); });
   }
   function tick() {
@@ -265,7 +279,8 @@
       var el = document.createElement('div'), ring = c.drops.filter(function (d) { return d.ring; }).length;
       el.className = 'hrow';
       el.innerHTML = '<div class="hhead"><b class="hname" style="--c: var(--h' + (n + 1) + ')">' + label(c) + '</b>' +
-        '<span class="vmeta">' + c.drops.length + ' drops, ' + Math.round(100 * ring / c.drops.length) + '% ring, one every ' + (c.period_ms / 1000).toFixed(2) + ' s</span></div>' +
+        '<span class="vmeta">' + c.drops.length + ' drops, ' + Math.round(100 * ring / c.drops.length) + '% ring, one every ' + (c.period_ms / 1000).toFixed(2) + ' s; ' +
+        'its steadiest ' + Math.round(c.duration) + ' s, from ' + Math.round(c.start) + ' s into the recording</span></div>' +
         '<div class="transport card"><button class="primary" type="button">Play</button>' +
         '<input type="range" class="scrub" min="0" max="' + c.duration + '" step="0.001" value="0" aria-label="Position in ' + label(c) + '">' +
         '<span class="seg"><button type="button" data-d="-1" aria-label="Previous drop">&lsaquo; Drop</button><button type="button" data-d="0">Typical</button><button type="button" data-d="1" aria-label="Next drop">Drop &rsaquo;</button></span>' +
@@ -277,7 +292,7 @@
       ['clean', 'raw'].forEach(function (s) { var im = new Image(); im.onload = function () { draw(r); }; im.src = dir + 'spec-' + s + '.png'; spec[s] = im; });
       var r = { c: c, n: n, i: -1, lanes: [].slice.call(el.querySelectorAll('canvas')), audio: new Audio(), read: el.querySelector('.hread'), scrub: el.querySelector('.scrub'),
                 play: el.querySelector('.primary'), wave: { clean: unpack(c.wave.clean), raw: unpack(c.wave.raw) }, spec: spec, dir: dir,
-                hits: c.drops.map(function (d) { return d.t; }), heard: c.drops.map(function (d) { return d.ring; }) };
+                hits: c.drops.map(function (d) { return d.t; }), heard: c.drops.map(function (d) { return d.ring; }), beats: beats(c) };
       r.audio.preload = 'auto'; r.audio.src = dir + src + '.m4a'; setRate(r.audio);
       r.audio.addEventListener('play', function () { if (!all) { r.audio.muted = false; rows.forEach(function (o) { if (o !== r) o.audio.pause(); }); } r.play.textContent = 'Pause'; $('playAll').textContent = all ? 'Pause all' : 'Play all'; if (zRow === r) $('zPlay').textContent = 'Pause'; });
       r.audio.addEventListener('pause', function () { if (all) { all = false; rows.forEach(function (o) { o.audio.pause(); }); } $('playAll').textContent = 'Play all'; r.play.textContent = 'Play'; if (zRow === r) $('zPlay').textContent = 'Play'; draw(r); });
