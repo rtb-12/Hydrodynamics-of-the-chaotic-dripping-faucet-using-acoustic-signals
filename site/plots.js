@@ -84,9 +84,10 @@ function grid(g, k, tk, X, yt, top, h, pw) {
 
 // One time lane of a recording, everything left of the playhead already heard. kind: wave, loud, spec or drops.
 // S: wave (square-root companded max/min int8 pairs), wave_rate, loud, loud_rate, spec (tinted canvas or null), spec_cps,
-// spec_fmax, hits (drop times) and heard. v: t (playhead), x0 (window start), win, big, hover, playing, gain, smoothMs, k (colours).
+// spec_fmax, hits (drop times) and heard. v: t (playhead), x0 (window start), win, big, hover, playing, gain, smoothMs, k (colours),
+// and ticks to label the time axis under a lane other than the drops lane.
 function drawLane(kind, c, S, v) {
-  var g = fit(c), k = v.k, top = v.big ? 8 : 24, axis = (v.big || kind === 'drops') ? 20 : 4, x0 = v.x0, WIN = v.win;
+  var g = fit(c), k = v.k, top = v.big ? 8 : 24, axis = (v.big || v.ticks || kind === 'drops') ? 20 : 4, x0 = v.x0, WIN = v.win;
   var pw = c.W - GUT - PAD, h = c.H - top - axis, yt = [];
   function X(tt) { return GUT + (tt - x0) / WIN * pw; }
   var tk = nice(x0, x0 + WIN, v.big ? 12 : 6);
@@ -170,4 +171,35 @@ function laneLoud(g, S, v, pw, top, h, X, tk, yt) {
   g.strokeStyle = k.chan; g.lineWidth = 1.25; g.lineJoin = 'miter'; g.stroke();
   g.lineTo(X((k1 - 1) / Lr), Y(-60)); g.lineTo(X(k0 / Lr), Y(-60));
   g.globalAlpha = 0.12; g.fillStyle = k.chan; g.fill(); g.globalAlpha = 1;
+}
+
+// The (i) buttons: hover or focus shows its text from INFO in the tip element, a click pins it (touch screens have no hover).
+// host() is where the tip is attached. Returns the function that hides it.
+function infoTips(INFO, tip, host) {
+  var pinned = null;
+  function showTip(btn) {
+    var d = INFO[btn.dataset.info];
+    tip.innerHTML = '<b>' + d[0] + '</b>' + d.slice(1).map(function (p) { return '<p>' + p + '</p>'; }).join('');
+    host().appendChild(tip);
+    tip.hidden = false;
+    var r = btn.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.max(16, Math.min(innerWidth - w - 16, r.left - 12)) + 'px';
+    tip.style.top = (r.bottom + 8 + h < innerHeight ? r.bottom + 8 : Math.max(8, r.top - 8 - h)) + 'px';
+  }
+  function hideTip() { tip.hidden = true; if (pinned) { pinned.setAttribute('aria-expanded', 'false'); pinned = null; } }
+  document.addEventListener('pointerover', function (e) { var b = e.target.closest('.info'); if (b && !pinned) showTip(b); });
+  document.addEventListener('pointerout', function (e) { if (e.target.closest('.info') && !pinned) tip.hidden = true; });
+  document.addEventListener('focusin', function (e) { var b = e.target.closest('.info'); if (b && !pinned) showTip(b); });
+  document.addEventListener('focusout', function (e) { if (e.target.closest('.info') && !pinned) tip.hidden = true; });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.info');
+    if (!b) { if (pinned && !e.target.closest('.tip')) hideTip(); return; }
+    e.stopPropagation();
+    var same = pinned === b;
+    hideTip();
+    if (!same) { pinned = b; b.setAttribute('aria-expanded', 'true'); showTip(b); }
+  }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !tip.hidden) hideTip(); });
+  addEventListener('scroll', function () { if (pinned) showTip(pinned); else tip.hidden = true; }, { passive: true });
+  return hideTip;
 }

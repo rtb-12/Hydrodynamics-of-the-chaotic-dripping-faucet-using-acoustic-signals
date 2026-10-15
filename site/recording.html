@@ -174,7 +174,7 @@
   var vid = $('vid'), aud = $('aud'), scrub = $('scrub'), zoom = $('zoom'), zc = $('zc'), zRead = $('zRead'), tip = $('tip');
   var inline = [].slice.call(document.querySelectorAll('#body .plot'));
   var R = null, ready = false, WIN = 2, smoothMs = 0, gain = 'auto', src = 'clean', heardOnly = false;
-  var zoomKind = null, zView = null, zHover = null, lastDrop = -2, lastInk = '', pinned = null, syncHold = 0, spaceHandled = false;
+  var zoomKind = null, zView = null, zHover = null, lastDrop = -2, lastInk = '', syncHold = 0, spaceHandled = false;
 
   // --- loading -------------------------------------------------------------------
 
@@ -517,30 +517,7 @@
 
   // --- info popovers: hover or focus shows one, a click pins it (touch screens have no hover) ---
 
-  function showTip(btn) {
-    var d = INFO[btn.dataset.info];
-    tip.innerHTML = '<b>' + d[0] + '</b>' + d.slice(1).map(function (p) { return '<p>' + p + '</p>'; }).join('');
-    (zoom.open ? zoom : document.querySelector('.viewer')).appendChild(tip);   // a modal dialog sits above the rest of the page
-    tip.hidden = false;
-    var r = btn.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
-    tip.style.left = Math.max(16, Math.min(innerWidth - w - 16, r.left - 12)) + 'px';
-    tip.style.top = (r.bottom + 8 + h < innerHeight ? r.bottom + 8 : Math.max(8, r.top - 8 - h)) + 'px';
-  }
-  function hideTip() { tip.hidden = true; if (pinned) { pinned.setAttribute('aria-expanded', 'false'); pinned = null; } }
-  document.addEventListener('pointerover', function (e) { var b = e.target.closest('.info'); if (b && !pinned) showTip(b); });
-  document.addEventListener('pointerout', function (e) { if (e.target.closest('.info') && !pinned) tip.hidden = true; });
-  document.addEventListener('focusin', function (e) { var b = e.target.closest('.info'); if (b && !pinned) showTip(b); });
-  document.addEventListener('focusout', function (e) { if (e.target.closest('.info') && !pinned) tip.hidden = true; });
-  document.addEventListener('click', function (e) {
-    var b = e.target.closest('.info');
-    if (!b) { if (pinned && !e.target.closest('.tip')) hideTip(); return; }
-    e.stopPropagation();
-    var same = pinned === b;
-    hideTip();
-    if (!same) { pinned = b; b.setAttribute('aria-expanded', 'true'); showTip(b); }
-  }, true);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !tip.hidden) hideTip(); });
-  addEventListener('scroll', function () { if (pinned) showTip(pinned); else tip.hidden = true; }, { passive: true });
+  var hideTip = infoTips(INFO, tip, function () { return zoom.open ? zoom : document.querySelector('.viewer'); });   // a modal dialog sits above the rest of the page
   var resized = new ResizeObserver(function () { lastDrop = -2; });
   resized.observe(document.body); resized.observe($('zBody'));
 })();

@@ -976,9 +976,10 @@ a:focus-visible, .sidenav a:focus-visible {
 .hhead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem 0.9rem; }
 .hname { font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.45rem; }
 .hname::before { content: ""; width: 10px; height: 10px; border-radius: 2px; background: var(--c); }
+.zhead h2 .hname { color: var(--ink); font-weight: 600; }
 .hread { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .hplots, .duo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.75rem; }
-.hplots .plot { height: 180px; cursor: crosshair; }
+.hcol { display: grid; grid-template-rows: 1.6fr 1fr; gap: 0.5rem; height: 300px; min-width: 0; }
 .duo .plot { height: 340px; cursor: default; }
 .xy .mark { stroke: var(--ink); stroke-width: 2.5; }
 .xy .pt.c1 { fill: var(--h1); }
