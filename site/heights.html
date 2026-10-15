@@ -36,6 +36,7 @@
       <div class="optgroup"><span>Speed</span><span class="seg" id="speeds"><button type="button" data-r="1" aria-pressed="true">1&times;</button><button type="button" data-r="0.5">0.5&times;</button><button type="button" data-r="0.25">0.25&times;</button><button type="button" data-r="0.1">0.1&times;</button></span><button class="info" type="button" data-info="speed" aria-label="About slow motion">i</button></div>
       <div class="optgroup"><span>Audio</span><span class="seg" id="srcs"><button type="button" data-s="clean" aria-pressed="true">Cleaned</button><button type="button" data-s="raw">Raw</button></span><button class="info" type="button" data-info="audio" aria-label="About the audio tracks">i</button></div>
     </div>
+    <div class="transport card"><button class="primary" id="playAll" type="button">Play all</button><span class="vmeta">All rows at once, each drop lined up with the others</span><button class="info" type="button" data-info="all" aria-label="About playing all">i</button></div>
     <div class="hrows" id="rows"></div>
     <div class="tip" id="tip" role="tooltip" hidden></div>
     <dialog class="zoom" id="zoom" aria-labelledby="zTitle">
@@ -79,12 +80,15 @@
       'The blue line is now. While playing it sits near the right, so what is to its left has already been heard.'],
     audio: ['Audio tracks', 'Raw is the phone recording as captured.',
       'Cleaned has the music and hum below 1 kHz filtered out and the steady hiss turned down by at most 10 dB. It is deliberately gentle, so the drops themselves are unchanged and faint ones survive; louder noise reduction halved the drops&rsquo; peaks. The graphs follow whichever track is selected.'],
+    all: ['Play all', 'Plays every row at once from the drop each row is showing, with those drops lined up so they land together.',
+      'The drips do not run at quite the same rate (the 25 cm one about 10% faster), so the rows would drift apart by about a tenth of a second a drop. Halfway between drops, where every row is quiet, each row is moved so its next drop lands with the first row&rsquo;s. The sound is never sped up or slowed, so pitches stay true.'],
     speed: ['Slow motion', 'Plays the sound slower so one drop can be heard as it happens. The sound drops in pitch like a slowed tape: at 0.25&times; a 4 kHz ring sounds at 1 kHz, still easy to hear.',
       'Firefox mutes sound below 0.25&times;.']
   };
 
   function $(id) { return document.getElementById(id); }
   var H = window.HEIGHTS, rows = [], WIN = 0.5, gain = 'full', src = 'clean', rate = 1;
+  var LEAD = 0.3, QUIET = 0.15, SYNC = 0.01, all = false;   // Play all starts this long before the drops; no row is moved closer than QUIET to a drop, nor by less than SYNC, s
   var KINDS = ['wave', 'loud', 'spec', 'drops'], zoom = $('zoom'), zc = $('zc'), zRead = $('zRead'), zRow = null, zKind = null, zHover = null, zView = null;
 
   function label(c) { return c.h + ' cm' + (c.take > 1 ? ', take ' + c.take : ''); }
@@ -139,7 +143,30 @@
     }
   }
   function seek(r, t) { r.audio.currentTime = Math.max(0, Math.min(r.c.duration, t)); draw(r); }
+  // While playing all, each row is moved in the quiet second half of the leader's gap so its next drop lands with the leader's.
+  // A jump takes a moment to play again, so each row learns its own delay (lat) from how far off its last jump landed.
+  function lockDrops() {
+    var L = rows[0], t = L.audio.currentTime, i = dropAt(L, t), d = L.c.drops;
+    if (i + 1 >= d.length || t < (d[i].t + d[i + 1].t) / 2 || d[i + 1].t - t < QUIET) return;
+    var left = d[i + 1].t - t;
+    rows.slice(1).forEach(function (r) {
+      if (r.audio.seeking) return;
+      if (r.lockedAt !== i) { r.lockedAt = i; r.next = r.c.drops[dropAt(r, r.audio.currentTime + left - 0.5 * r.c.period_ms / 1000) + 1]; }
+      if (!r.next) return;
+      var err = r.audio.currentTime - (r.next.t - left);   // above zero: this row runs ahead
+      if (Math.abs(err) < SYNC) return;
+      if (r.sought === i) r.lat = (r.lat || 0) - err;
+      r.sought = i; r.audio.currentTime = r.next.t - left + (r.lat || 0);
+    });
+  }
+  function playAll() {
+    if (all) { all = false; rows.forEach(function (r) { r.audio.pause(); }); return; }
+    all = true; rows.forEach(function (r) { r.lockedAt = r.sought = -1; });
+    rows.forEach(function (r) { r.audio.currentTime = Math.max(0, r.c.drops[dropAt(r, r.audio.currentTime)].t - LEAD); });
+    rows.forEach(function (r) { r.audio.play(); });
+  }
   function tick() {
+    if (all && !rows[0].audio.paused) lockDrops();
     rows.forEach(function (r) { if (!r.audio.paused) draw(r); });
     requestAnimationFrame(tick);
   }
@@ -215,8 +242,8 @@
                 play: el.querySelector('.primary'), wave: { clean: unpack(c.wave.clean), raw: unpack(c.wave.raw) }, spec: spec, dir: dir,
                 hits: c.drops.map(function (d) { return d.t; }), heard: c.drops.map(function (d) { return d.ring; }) };
       r.audio.preload = 'auto'; r.audio.src = dir + src + '.m4a'; setRate(r.audio);
-      r.audio.addEventListener('play', function () { rows.forEach(function (o) { if (o !== r) o.audio.pause(); }); r.play.textContent = 'Pause'; if (zRow === r) $('zPlay').textContent = 'Pause'; });
-      r.audio.addEventListener('pause', function () { r.play.textContent = 'Play'; if (zRow === r) $('zPlay').textContent = 'Play'; draw(r); });
+      r.audio.addEventListener('play', function () { if (!all) rows.forEach(function (o) { if (o !== r) o.audio.pause(); }); r.play.textContent = 'Pause'; $('playAll').textContent = all ? 'Pause all' : 'Play all'; if (zRow === r) $('zPlay').textContent = 'Pause'; });
+      r.audio.addEventListener('pause', function () { if (all) { all = false; rows.forEach(function (o) { o.audio.pause(); }); } $('playAll').textContent = 'Play all'; r.play.textContent = 'Play'; if (zRow === r) $('zPlay').textContent = 'Play'; draw(r); });
       r.audio.addEventListener('seeked', function () { draw(r); });
       r.play.onclick = function () { toggle(r); };
       r.scrub.oninput = function () { seek(r, +r.scrub.value); };
@@ -284,10 +311,11 @@
   // --- what changes ------------------------------------------------------------------
 
   function fillTable() {
-    var head = ['Recording', 'Drops', 'One drop every', 'Ringing', 'Loudness, median', 'Sound lasts, median', 'Ring pitch, median', 'Ring dies away in, median'];
+    var head = ['Recording', 'Drops', 'One drop every, middle half within', 'Ringing', 'Loudness, median', 'Sound lasts, median', 'Ring pitch, median', 'Ring dies away in, median'];
     var body = H.clips.map(function (c) {
       var d = c.drops, rg = d.filter(function (x) { return x.ring; }), m = function (v, f) { return v == null ? '-' : f(v); };
-      return [label(c), d.length, (c.period_ms / 1000).toFixed(3) + ' s', Math.round(100 * rg.length / d.length) + '%',
+      var iv = d.slice(1).map(function (x, i) { return x.t - d[i].t; }).filter(function (v) { return Math.abs(v * 1000 / c.period_ms - 1) < 0.3; }).sort(function (a, b) { return a - b; });
+      return [label(c), d.length, (c.period_ms / 1000).toFixed(3) + ' s &plusmn; ' + Math.round((iv[Math.floor(iv.length * 0.75)] - iv[Math.floor(iv.length * 0.25)]) * 500) + ' ms', Math.round(100 * rg.length / d.length) + '%',
         m(median(d.map(function (x) { return x.db; })), function (v) { return v.toFixed(1) + ' dB'; }),
         m(median(d.map(function (x) { return x.dur; })), function (v) { return Math.round(v) + ' ms'; }),
         m(median(rg.map(function (x) { return x.hz; })), function (v) { return (v / 1000).toFixed(2) + ' kHz'; }),
@@ -349,6 +377,7 @@
   buildRows(); fillTable(); fillFeatures(); drawEnv();
   seg('wins', 'w', function (v) { WIN = +v; redraw(); });
   wireZoom();
+  $('playAll').onclick = playAll;
   seg('gains', 'g', function (v) { gain = v; redraw(); });
   seg('srcs', 's', function (v) {
     src = v;
