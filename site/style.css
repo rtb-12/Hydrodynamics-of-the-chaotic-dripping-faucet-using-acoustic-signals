@@ -16,6 +16,9 @@
   --hydro:   #0a6a8a;
   --aero:    #b4521a;
   --water:   rgba(10, 106, 138, 0.10);
+  --h1:      #0a6a8a;
+  --h2:      #b4521a;
+  --h3:      #4f7d1f;
 
   --display: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
   --body:    "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif Pro", "Palatino Linotype", Georgia, serif;
@@ -38,6 +41,9 @@
     --hydro:   #4fb3d6;
     --aero:    #e39058;
     --water:   rgba(79, 179, 214, 0.14);
+    --h1:      #4fb3d6;
+    --h2:      #e39058;
+    --h3:      #9ccc65;
   }
 }
 
@@ -52,6 +58,9 @@
   --hydro:   #4fb3d6;
   --aero:    #e39058;
   --water:   rgba(79, 179, 214, 0.14);
+  --h1:      #4fb3d6;
+  --h2:      #e39058;
+  --h3:      #9ccc65;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -958,6 +967,22 @@ a:focus-visible, .sidenav a:focus-visible {
 .chaos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 0.75rem; }
 .chaos .plot { height: 380px; }
 
+/* Heights page: one row per recording, its waveform and spectrogram lanes side by side on its own playhead. */
+.hrows { display: grid; gap: 1.1rem; }
+.hrow { display: grid; gap: 0.5rem; }
+.hhead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem 0.9rem; }
+.hname { font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.45rem; }
+.hname::before { content: ""; width: 10px; height: 10px; border-radius: 2px; background: var(--c); }
+.zhead h2 .hname { color: var(--ink); font-weight: 600; }
+.hread { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.hplots, .duo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.75rem; }
+.hcol { display: grid; grid-template-rows: 1.6fr 1fr; gap: 0.5rem; height: 300px; min-width: 0; }
+.duo .plot { height: 340px; }
+.xy .mark { stroke: var(--ink); stroke-width: 2.5; }
+.xy .pt.c1 { fill: var(--h1); }
+.xy .pt.c2 { fill: var(--h2); }
+.xy .pt.c3 { fill: var(--h3); }
+
 /* Enlarged plot: the same drawing at dialog size, so it gains real detail. */
 .zoom { width: min(1400px, calc(100vw - 32px)); height: min(860px, calc(100vh - 32px)); max-width: none; max-height: none; padding: 0;
   border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3); }
@@ -972,7 +997,7 @@ a:focus-visible, .sidenav a:focus-visible {
 .zfoot { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: center; padding: 0.6rem 1rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-3); }
 
 @media (max-width: 900px) {
-  .vgrid, .chaos, .trio { grid-template-columns: minmax(0, 1fr); }
+  .vgrid, .chaos, .trio, .hplots, .duo { grid-template-columns: minmax(0, 1fr); }
   .lanes { grid-template-rows: 170px 110px 110px 70px; min-height: 0; }
   .transport { flex-wrap: wrap; }
   .clock { width: 100%; flex-wrap: wrap; gap: 0.3rem 1rem; }

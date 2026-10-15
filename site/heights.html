@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drop Height</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script src="plots.js"></script>
+<script src="recordings/heights/data.js"></script>
+</head>
+<body>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.Tech project, 2026&ndash;27</span>
+  <button id="themeBtn" class="themetoggle" type="button">System</button>
+</header>
+
+<main class="viewer">
+  <div class="vhead">
+    <div class="vtitle">
+      <h1>Drop sound and fall height</h1>
+      <span class="vmeta" id="meta"></span>
+    </div>
+    <p class="note">The same faucet at the same flow rate, about one drop a second; only the height the drops fall into the water changes. Each row is one phone recording, its waveform and spectrogram scrolling with its own sound. Play a row, click a graph to move there, or step from drop to drop; each row starts on a typical drop.</p>
+  </div>
+
+  <p class="empty" id="empty" hidden>No data yet. Run
+  <code>uv run analysis/heights.py --clip HEIGHT AUDIO</code> for each recording, then reload.</p>
+
+  <div class="vbody" id="body">
+    <div class="options">
+      <div class="optgroup"><span>Window</span><span class="seg" id="wins"><button type="button" data-w="4">4 s</button><button type="button" data-w="2">2 s</button><button type="button" data-w="0.5" aria-pressed="true">0.5 s</button><button type="button" data-w="0.1">0.1 s</button></span></div>
+      <div class="optgroup"><span>Gain</span><span class="seg" id="gains"><button type="button" data-g="full" aria-pressed="true">Same for all</button><button type="button" data-g="auto">Fit to window</button></span></div>
+      <div class="optgroup"><span>Speed</span><span class="seg" id="speeds"><button type="button" data-r="1" aria-pressed="true">1&times;</button><button type="button" data-r="0.5">0.5&times;</button><button type="button" data-r="0.25">0.25&times;</button><button type="button" data-r="0.1">0.1&times;</button></span><button class="info" type="button" data-info="speed" aria-label="About slow motion">i</button></div>
+      <div class="optgroup"><span>Audio</span><span class="seg" id="srcs"><button type="button" data-s="clean" aria-pressed="true">Cleaned</button><button type="button" data-s="raw">Raw</button></span><button class="info" type="button" data-info="audio" aria-label="About the audio tracks">i</button></div>
+    </div>
+    <div class="transport card"><button class="primary" id="playAll" type="button">Play all</button>
+      <input type="range" class="scrub" id="allScrub" min="0" max="1" step="0.001" value="0" aria-label="Position of all rows">
+      <span class="optgroup"><span class="vmeta">Hear</span><span class="seg" id="hear"></span></span><button class="info" type="button" data-info="all" aria-label="About playing all">i</button></div>
+    <div class="hrows" id="rows"></div>
+    <div class="tip" id="tip" role="tooltip" hidden></div>
+    <dialog class="zoom" id="zoom" aria-labelledby="zTitle">
+      <div class="zhead"><h2 id="zTitle"></h2><span class="zread" id="zRead"></span><button id="zPlay" type="button">Play</button><button id="zClose" type="button" autofocus>Close</button></div>
+      <div class="zbody" id="zBody"><canvas id="zc"></canvas></div>
+      <div class="zfoot" id="zFoot"></div>
+    </dialog>
+
+    <section class="intervals">
+      <h2>All heights on top of each other</h2>
+      <p class="note">Left, the drop at each row&rsquo;s playhead, lined up at the moment of impact, over the first 40 ms. Right, how loud a drop is in the 2 to 9 kHz band after it hits, as the median of every drop at that height with the middle half shaded. 0 dB is the room&rsquo;s own noise just before the drop.</p>
+      <div class="duo">
+        <div class="plot card" tabindex="0" data-ov="wave"><span class="cap">Shown drops, overlaid <span>after impact</span></span><span class="expand">Click to enlarge</span><canvas id="ovWave"></canvas></div>
+        <div class="plot card" tabindex="0" data-ov="env"><span class="cap">Typical loudness after impact <span>dB over the room</span></span><span class="expand">Click to enlarge</span><canvas id="ovEnv"></canvas></div>
+      </div>
+    </section>
+
+    <section class="intervals">
+      <h2>What changes with height</h2>
+      <p class="note">A drop <b>rings</b> when it traps a small air bubble that keeps sounding a clear tone for a few milliseconds; without one it only clicks. In the plots each dot is one drop, spread a little sideways around its height so dots do not hide each other, and a bar marks the median. Faint dots are drops that did not ring. &rho; is the rank correlation with height: near &plusmn;1 is a steady trend, near 0 none.</p>
+      <div class="tablewrap"><table id="tbl"></table></div>
+      <div class="trio" id="feats"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  var PH = 0.8, OV_MS = 40;   // playhead position while playing; span of the overlaid drops, ms
+  var LANE_FOOT = '<span>Click to jump there</span><span>Scroll to widen or narrow the window</span><span><kbd>Space</kbd> play or pause</span><span><kbd>[</kbd> <kbd>]</kbd> previous or next drop</span><span><kbd>Esc</kbd> close</span>';
+  var OV_FOOT = '<span>Hover to read every height at one moment</span><span>Scroll to widen or narrow the time span</span><span><kbd>Esc</kbd> close</span>';
+  var INFO = {
+    wave: ['Waveform', 'The microphone signal. Each pixel column is drawn from the highest to the lowest sample in that slice of time, so nothing is averaged away.',
+      'Height uses a square-root scale so quiet drops stay visible next to loud ones; the labels give the true percentage of the loudest sample of all the recordings, since every row is drawn on that one scale unless the gain is set to fit the window.',
+      'Dashed lines mark drops, in the row&rsquo;s colour where the drop rings.'],
+    loud: ['Loudness', 'How loud the 2 to 15 kHz band is over time; drop impacts and bubble rings live in that band, the music and room noise mostly below it.',
+      '0 dB is the loudest moment of all the recordings, so -20 dB is a tenth as loud and -40 dB a hundredth. The rows share this scale.'],
+    spec: ['Spectrogram', 'Which frequencies are present over time, from 0 to 16 kHz. Stronger colour means more energy, on one colour scale for every row. Each column is a 10.7 ms slice (512 samples at 48 kHz).',
+      'A drop impact shows as a thin vertical streak across many frequencies. A ringing bubble shows as a short horizontal mark at its pitch.',
+      'Above about 9 kHz the phone&rsquo;s audio compression makes up the sound rather than recording it, so read nothing into that part.'],
+    drops: ['Drops lane', 'Every drop found in this recording. A dot above a tick means the drop rang: it trapped a bubble that sounded a clear tone for at least 6 ms.',
+      'Drops are found one per drip period, so faint ones are looked for where the drip says they must be, and drops inside talking or handling noise are left out.',
+      'The blue line is now. While playing it sits near the right, so what is to its left has already been heard.'],
+    audio: ['Audio tracks', 'Raw is the phone recording as captured.',
+      'Cleaned has the music and hum below 1 kHz filtered out and the steady hiss turned down by at most 10 dB. It is deliberately gentle, so the drops themselves are unchanged and faint ones survive; louder noise reduction halved the drops&rsquo; peaks. The graphs follow whichever track is selected.'],
+    all: ['Play all', 'Plays every row at once from the drop each row is showing, with those drops lined up so they land together. The slider moves all rows through their recordings together, still lined up.',
+      'Hear picks which rows you listen to while all of them play; the rest play silently so their graphs still move. A row played on its own is always heard.',
+      'The drips do not run at quite the same rate (the 25 cm one about 10% faster), so the rows would drift apart by about a tenth of a second a drop. Halfway between drops, where every row is quiet, each row is moved so its next drop lands with the first row&rsquo;s. The sound is never sped up or slowed, so pitches stay true.'],
+    speed: ['Slow motion', 'Plays the sound slower so one drop can be heard as it happens. The sound drops in pitch like a slowed tape: at 0.25&times; a 4 kHz ring sounds at 1 kHz, still easy to hear.',
+      'Firefox mutes sound below 0.25&times;.']
+  };
+
+  function $(id) { return document.getElementById(id); }
+  var H = window.HEIGHTS, rows = [], WIN = 0.5, gain = 'full', src = 'clean', rate = 1;
+  var LEAD = 0.3, QUIET = 0.15, SYNC = 0.01, all = false;   // Play all starts this long before the drops; no row is moved closer than QUIET to a drop, nor by less than SYNC, s
+  var KINDS = ['wave', 'loud', 'spec', 'drops'], zoom = $('zoom'), zc = $('zc'), zRead = $('zRead'), zRow = null, zKind = null, zHover = null, zView = null, zSpan = 0;
+
+  function label(c) { return c.h + ' cm'; }
+  function median(v) { v = v.slice().sort(function (a, b) { return a - b; }); return v.length ? (v[(v.length - 1) >> 1] + v[v.length >> 1]) / 2 : null; }
+  function samples(c, i) {
+    var a = unpack(c.snip[i]), k = c.snip_scale[i] / 127, out = new Float32Array(a.length);
+    for (var j = 0; j < a.length; j++) out[j] = a[j] * k;
+    return out;
+  }
+  function tokens(n) {
+    var s = getComputedStyle(document.documentElement), g = function (v) { return s.getPropertyValue(v).trim(); };
+    var c = [g('--h1'), g('--h2'), g('--h3')];
+    return { ink: g('--ink'), ink2: g('--ink-2'), ink3: g('--ink-3'), rule: g('--rule'), surface: g('--surface'), hydro: g('--hydro'),
+             sans: g('--display'), c: c, chan: c[n || 0] };
+  }
+  function timeAxis(g, k, x0, x1, X, top, bottom, W) {
+    nice(x0, x1, Math.max(3, Math.min(7, Math.floor(W / 80)))).v.forEach(function (v) {
+      g.strokeStyle = k.rule; g.beginPath(); g.moveTo(X(v), top); g.lineTo(X(v), bottom); g.stroke();
+      text(g, k, v + (v === 0 ? '' : ' ms'), X(v), bottom + 4, X(v) > W - 30 ? 'right' : 'center', 'top');
+    });
+  }
+
+  // --- rows: one recording each, its lanes following its own sound ---------------------
+
+  function dropAt(r, t) {   // the latest drop at or just after t, so a drop stepped to is the one shown
+    var d = r.c.drops, i = 0;
+    while (i + 1 < d.length && d[i + 1].t <= t + 0.02) i++;
+    return i;
+  }
+  function lanes(r, kinds, cv, big, hover) {   // the lanes named in kinds onto the canvases cv; returns the first one's view
+    var t = r.audio.currentTime, playing = !r.audio.paused, k = tokens(r.n), view = null;
+    var S = { wave: r.wave[src], wave_rate: r.c.wave_rate, loud: r.c.loud[src], loud_rate: r.c.loud_rate, spec: tint(r.spec[src], k.chan),
+              spec_cps: r.c.spec_cps, spec_fmax: r.c.spec_fmax, hits: r.hits, heard: r.heard };
+    kinds.forEach(function (kind, j) {
+      var vw = drawLane(kind, cv[j], S, { t: t, x0: t - WIN * (playing ? PH : 0.5), win: WIN, big: big, hover: hover, playing: playing, gain: gain,
+                                         smoothMs: 0, k: k, ticks: kind === 'loud' });
+      view = view || vw;
+    });
+    return view;
+  }
+  function draw(r) {
+    var t = r.audio.currentTime;
+    lanes(r, KINDS, r.lanes, false);
+    if (zoom.open && zRow === r) zView = lanes(r, [zKind], [zc], true, zHover);
+    var i = dropAt(r, t), d = r.c.drops[i];
+    r.scrub.value = t;
+    if (i !== r.i) {
+      r.i = i;
+      r.read.textContent = 'Drop ' + (i + 1) + ' of ' + r.c.drops.length + ' at ' + d.t.toFixed(2) + ' s, ' + (i === r.c.typical ? 'typical, ' : '') +
+        (d.ring ? 'rings at ' + (d.hz / 1000).toFixed(2) + ' kHz' : 'no ring') + ', ' + Math.round(d.db) + ' dB over the room';
+      drawOverlay();
+      if (zoom.open && zKind === 'wave' && !zRow) drawZoom();
+    }
+  }
+  function seek(r, t) { r.audio.currentTime = Math.max(0, Math.min(r.c.duration, t)); draw(r); }
+  // Drop times with each missed drop filled in at its expected time, so lining rows up never skips one.
+  function beats(c) {
+    var P = c.period_ms / 1000, out = [];
+    c.drops.forEach(function (d, i) {
+      var prev = i ? c.drops[i - 1].t : null, n = prev == null ? 1 : Math.round((d.t - prev) / P);
+      for (var k = 1; k < n; k++) out.push(prev + (d.t - prev) * k / n);
+      out.push(d.t);
+    });
+    return out;
+  }
+  function beatAt(b, t) { var i = 0; while (i + 1 < b.length && b[i + 1] <= t + 0.02) i++; return i; }
+
+  // While playing all, each row is moved in the quiet second half of the leader's gap so its next drop lands with the leader's.
+  // A jump takes a moment to play again, so each row learns its own delay (lat) from how far off its last jump landed.
+  function lockDrops() {
+    var L = rows[0], t = L.audio.currentTime, b = L.beats, i = beatAt(b, t);
+    if (i + 1 >= b.length || t < (b[i] + b[i + 1]) / 2 || b[i + 1] - t < QUIET) return;
+    var left = b[i + 1] - t;
+    rows.slice(1).forEach(function (r) {
+      if (r.audio.seeking) return;
+      if (r.lockedAt !== i) { r.lockedAt = i; r.next = r.beats[beatAt(r.beats, r.audio.currentTime + left - 0.5 * r.c.period_ms / 1000) + 1]; }
+      if (r.next == null) return;
+      var err = r.audio.currentTime - (r.next - left);   // above zero: this row runs ahead
+      if (Math.abs(err) < SYNC) return;
+      if (r.sought === i) r.lat = (r.lat || 0) - err;
+      r.sought = i; r.audio.currentTime = r.next - left + (r.lat || 0);
+    });
+  }
+  function alignTo(t) {   // the first row to t, every other row to the drop as far through its recording, at the same moment of it
+    var b = rows[0].beats, i = beatAt(b, t);
+    if (i + 1 < b.length && b[i + 1] - t < t - b[i]) i++;
+    var phase = t - b[i], f = i / Math.max(1, b.length - 1);
+    rows.forEach(function (r, n) {
+      var j = n ? Math.round(f * (r.beats.length - 1)) : i;
+      r.lockedAt = r.sought = -1;
+      seek(r, r.beats[j] + phase);
+    });
+  }
+  function hear(n, on) { rows[n].heard = on; if (all) rows[n].audio.muted = !on; }
+  function playAll() {
+    if (all) { all = false; rows.forEach(function (r) { r.audio.pause(); }); return; }
+    all = true; rows.forEach(function (r) { r.lockedAt = r.sought = -1; });
+    rows.forEach(function (r) { r.audio.currentTime = Math.max(0, r.beats[beatAt(r.beats, r.audio.currentTime)] - LEAD); });
+    rows.forEach(function (r) { r.audio.muted = !r.heard; r.audio.play(); });
+  }
+  function tick() {
+    if (all && !rows[0].audio.paused) lockDrops();
+    rows.forEach(function (r) { if (!r.audio.paused) draw(r); });
+    $('allScrub').value = rows[0].audio.currentTime;
+    requestAnimationFrame(tick);
+  }
+
+  function lane(name, unit, info) {
+    return '<div class="plot card" tabindex="0"><span class="cap">' + name + ' <span>' + unit + '</span><button class="info" type="button" data-info="' + info +
+      '" aria-label="About the ' + name.toLowerCase() + '">i</button></span><span class="expand">Click to enlarge</span><canvas></canvas></div>';
+  }
+  function toggle(r) { if (r.audio.paused) r.audio.play(); else r.audio.pause(); }
+  function step(r, d) {   // d of 0 goes to the typical drop
+    var n = r.c.drops.length, j = d ? Math.max(0, Math.min(n - 1, dropAt(r, r.audio.currentTime) + d)) : r.c.typical;
+    r.audio.pause(); seek(r, r.c.drops[j].t);
+  }
+
+  // --- zoom: one lane redrawn at dialog size, live --------------------------------------
+
+  function openZoom(r, kind, pl) {   // r is null for the two overlays, which have no playhead
+    zRow = r; zKind = kind; zHover = null; zSpan = kind === 'wave' ? OV_MS : H.post_ms;
+    $('zTitle').innerHTML = (r ? '<span class="hname" style="--c: var(--h' + (r.n + 1) + ')">' + label(r.c) + '</span> ' : '') + pl.querySelector('.cap').innerHTML;
+    $('zFoot').innerHTML = r ? LANE_FOOT : OV_FOOT;
+    $('zPlay').hidden = !r; if (r) $('zPlay').textContent = r.audio.paused ? 'Play' : 'Pause';
+    zRead.textContent = ''; zoom.showModal(); drawZoom();
+  }
+  function drawZoom() {
+    if (zRow) draw(zRow);
+    else zView = (zKind === 'wave' ? drawOverlay : drawEnv)(zc, zSpan, zHover);
+  }
+  function overlayRead(t) {   // every height's value at t ms in the enlarged overlay
+    if (zKind === 'wave') return t.toFixed(2) + ' ms after impact';
+    var j = Math.round(t / H.env_ms);
+    return t.toFixed(0) + ' ms   ' + H.clips.map(function (c) { var v = c.env[1][j]; return label(c) + ' ' + (v == null ? '-' : v.toFixed(1) + ' dB'); }).join('   ');
+  }
+  function zTime(x) { return zView.x0 + (x - GUT) / zView.pw * WIN; }
+  function setWin(w) {
+    WIN = Math.max(0.02, Math.min(8, w));
+    $('wins').querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.w === WIN); });
+    rows.forEach(draw);
+  }
+  function wireZoom() {
+    $('zClose').onclick = function () { zoom.close(); };
+    $('zPlay').onclick = function () { toggle(zRow); };
+    zoom.addEventListener('click', function (e) { if (e.target === zoom) zoom.close(); });
+    zoom.addEventListener('close', function () { zHover = null; zRow = null; });
+    zc.addEventListener('pointermove', function (e) {
+      if (!zView) return;
+      var x = e.clientX - zc.getBoundingClientRect().left, r = zRow;
+      if (!r) {
+        zHover = x >= GUT && x <= GUT + zView.pw ? zView.t0 + (x - GUT) / zView.pw * (zView.t1 - zView.t0) : null;
+        zRead.textContent = zHover == null ? '' : overlayRead(zHover); drawZoom(); return;
+      }
+      var c = r.c;
+      if (x < GUT || x > GUT + zView.pw) { zHover = null; zRead.textContent = ''; draw(r); return; }
+      var t = zHover = zTime(x), w = r.wave[src], q = Math.floor(t * c.wave_rate), dB = c.loud[src][Math.round(t * c.loud_rate)];
+      var amp = q >= 0 && 2 * q + 1 < w.length ? pct(Math.pow(Math.max(w[2 * q], -w[2 * q + 1]) / 127, 2)) + ' of loudest   ' : '';
+      var i = dropAt(r, t), near = [i, i + 1].filter(function (j) { return j < c.drops.length; })
+        .sort(function (a, b) { return Math.abs(c.drops[a].t - t) - Math.abs(c.drops[b].t - t); })[0];
+      zRead.textContent = t.toFixed(3) + ' s   ' + amp + (dB == null ? '' : dB + ' dB') +
+        '   drop ' + (near + 1) + ' ' + (t >= c.drops[near].t ? '+' : '') + Math.round((t - c.drops[near].t) * 1e3) + ' ms';
+      draw(r);
+    });
+    zc.addEventListener('pointerleave', function () { zHover = null; zRead.textContent = ''; if (zoom.open) drawZoom(); });
+    zc.addEventListener('click', function (e) { var x = e.clientX - zc.getBoundingClientRect().left; if (zRow && zView && x >= GUT) seek(zRow, zTime(x)); });
+    zc.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      var f = e.deltaY > 0 ? 1.25 : 0.8;
+      if (zRow) setWin(WIN * f);
+      else { zSpan = Math.max(2, Math.min(H.post_ms, zSpan * f)); drawZoom(); }
+    }, { passive: false });
+    zoom.addEventListener('keydown', function (e) {
+      if (!zRow) return;
+      if (e.key === ' ' && e.target.tagName !== 'BUTTON') { e.preventDefault(); toggle(zRow); }
+      else if (e.key === '[' || e.key === ']') step(zRow, e.key === ']' ? 1 : -1);
+    });
+    new ResizeObserver(function () { if (zoom.open) drawZoom(); }).observe($('zBody'));
+  }
+  function setRate(a) { a.preservesPitch = false; a.playbackRate = rate; }   // slowed sound drops in pitch like tape, so a 4 kHz ring stays audible
+
+  function buildRows() {
+    H.clips.forEach(function (c, n) {
+      var el = document.createElement('div'), ring = c.drops.filter(function (d) { return d.ring; }).length;
+      el.className = 'hrow';
+      el.innerHTML = '<div class="hhead"><b class="hname" style="--c: var(--h' + (n + 1) + ')">' + label(c) + '</b>' +
+        '<span class="vmeta">' + c.drops.length + ' drops, ' + Math.round(100 * ring / c.drops.length) + '% ring, one every ' + (c.period_ms / 1000).toFixed(2) + ' s; ' +
+        'its steadiest ' + Math.round(c.duration) + ' s, from ' + Math.round(c.start) + ' s into the recording</span></div>' +
+        '<div class="transport card"><button class="primary" type="button">Play</button>' +
+        '<input type="range" class="scrub" min="0" max="' + c.duration + '" step="0.001" value="0" aria-label="Position in ' + label(c) + '">' +
+        '<span class="seg"><button type="button" data-d="-1" aria-label="Previous drop">&lsaquo; Drop</button><button type="button" data-d="0">Typical</button><button type="button" data-d="1" aria-label="Next drop">Drop &rsaquo;</button></span>' +
+        '<span class="hread"></span></div>' +
+        '<div class="hplots"><div class="hcol">' + lane('Waveform', '% of loudest', 'wave') + lane('Loudness', 'dB below the loudest moment', 'loud') + '</div>' +
+        '<div class="hcol">' + lane('Spectrogram', 'kHz', 'spec') + lane('Drops', 'dot means it rang', 'drops') + '</div></div>';
+      $('rows').appendChild(el);
+      var dir = 'recordings/heights/' + c.slug + '/', spec = {};
+      ['clean', 'raw'].forEach(function (s) { var im = new Image(); im.onload = function () { draw(r); }; im.src = dir + 'spec-' + s + '.png'; spec[s] = im; });
+      var r = { c: c, n: n, i: -1, lanes: [].slice.call(el.querySelectorAll('canvas')), audio: new Audio(), read: el.querySelector('.hread'), scrub: el.querySelector('.scrub'),
+                play: el.querySelector('.primary'), wave: { clean: unpack(c.wave.clean), raw: unpack(c.wave.raw) }, spec: spec, dir: dir,
+                hits: c.drops.map(function (d) { return d.t; }), heard: c.drops.map(function (d) { return d.ring; }), beats: beats(c) };
+      r.audio.preload = 'auto'; r.audio.src = dir + src + '.m4a'; setRate(r.audio);
+      r.audio.addEventListener('play', function () { if (!all) { r.audio.muted = false; rows.forEach(function (o) { if (o !== r) o.audio.pause(); }); } r.play.textContent = 'Pause'; $('playAll').textContent = all ? 'Pause all' : 'Play all'; if (zRow === r) $('zPlay').textContent = 'Pause'; });
+      r.audio.addEventListener('pause', function () { if (all) { all = false; rows.forEach(function (o) { o.audio.pause(); }); } $('playAll').textContent = 'Play all'; r.play.textContent = 'Play'; if (zRow === r) $('zPlay').textContent = 'Play'; draw(r); });
+      r.audio.addEventListener('seeked', function () { draw(r); });
+      r.play.onclick = function () { toggle(r); };
+      r.scrub.oninput = function () { seek(r, +r.scrub.value); };
+      el.querySelectorAll('[data-d]').forEach(function (b) { b.onclick = function () { step(r, +b.dataset.d); }; });
+      r.lanes.forEach(function (cv, j) {
+        var pl = cv.parentNode;
+        pl.addEventListener('click', function (e) { if (!e.target.closest('.info')) openZoom(r, KINDS[j], pl); });
+        pl.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target === pl) openZoom(r, KINDS[j], pl); });
+      });
+      rows.push(r);
+      seek(r, c.drops[c.typical].t);
+    });
+  }
+
+  // --- overlays ----------------------------------------------------------------------
+
+  function hoverLine(g, k, X, hover, top, bot) { if (hover != null) { g.fillStyle = k.ink2; g.fillRect(X(hover) - 0.5, top, 1, bot - top); } }
+  function drawOverlay(c, span, hover) {
+    c = c || $('ovWave'); span = span || OV_MS;
+    var g = fit(c), k = tokens(), W = c.W, Hh = c.H, top = 48, bot = Hh - 22, mid = (top + bot) / 2, half = (bot - top) / 2;
+    var t0 = -Math.min(H.pre_ms, span / 20), X = function (t) { return GUT + (W - GUT - 10) * (t - t0) / (span - t0); };
+    g.clearRect(0, 0, W, Hh);
+    timeAxis(g, k, t0, span, X, top, bot, W);
+    rows.forEach(function (r) {
+      if (r.i < 0) return;
+      var y = samples(r.c, r.i), amp = gain === 'full' ? H.amax : r.c.snip_scale[r.i];
+      g.strokeStyle = k.c[r.n]; g.globalAlpha = 0.85; g.lineWidth = 1.2; g.beginPath();
+      for (var j = 0; j < y.length; j++) {
+        var t = j / H.rate * 1000 - H.pre_ms;
+        if (t < t0 || t > span) continue;
+        g[t <= t0 + 1e-9 || j === 0 ? 'moveTo' : 'lineTo'](X(t), mid - y[j] / amp * half);
+      }
+      g.stroke(); g.globalAlpha = 1;
+    });
+    hoverLine(g, k, X, hover, top, bot);
+    legend(g, k);
+    return { t0: t0, t1: span, pw: W - GUT - 10 };
+  }
+
+  function legend(g, k) {   // on its own line under the caption, so it never runs into it
+    var x = GUT;
+    rows.forEach(function (r, n) {
+      var s = label(r.c);
+      g.fillStyle = k.c[n]; g.fillRect(x, 26, 8, 8); text(g, k, s, x + 12, 30, 'left');
+      g.font = '11px ' + k.sans; x += g.measureText(s).width + 28;
+    });
+  }
+
+  function drawEnv(c, span, hover) {
+    c = c || $('ovEnv'); span = span || H.post_ms;
+    var g = fit(c), k = tokens(), W = c.W, Hh = c.H, top = 48, bot = Hh - 22, upto = Math.min(H.clips[0].env[1].length, Math.floor(span / H.env_ms) + 1);
+    var top_db = Math.ceil(Math.max.apply(null, H.clips.map(function (cl) { return Math.max.apply(null, cl.env[2]); })) / 10) * 10;
+    var X = function (t) { return GUT + (W - GUT - 10) * t / span; }, Y = function (v) { return bot - (bot - top) * Math.max(0, v) / top_db; };
+    g.clearRect(0, 0, W, Hh);
+    timeAxis(g, k, 0, span, X, top, bot, W);
+    nice(0, top_db, 5).v.forEach(function (v) { g.strokeStyle = k.rule; g.beginPath(); g.moveTo(GUT, Y(v)); g.lineTo(W - 10, Y(v)); g.stroke(); text(g, k, v + ' dB', GUT - 6, Y(v)); });
+    H.clips.forEach(function (cl, n) {
+      var q = cl.env.map(function (a) { return a.slice(0, upto); }), t = function (j) { return X(j * H.env_ms); };
+      g.fillStyle = k.c[n]; g.globalAlpha = 0.14; g.beginPath();
+      q[2].forEach(function (v, j) { g[j ? 'lineTo' : 'moveTo'](t(j), Y(v)); });
+      for (var j = q[0].length - 1; j >= 0; j--) g.lineTo(t(j), Y(q[0][j]));
+      g.fill(); g.globalAlpha = 1;
+      g.strokeStyle = k.c[n]; g.lineWidth = 1.6; g.beginPath();
+      q[1].forEach(function (v, j) { g[j ? 'lineTo' : 'moveTo'](t(j), Y(v)); });
+      g.stroke();
+    });
+    hoverLine(g, k, X, hover, top, bot);
+    legend(g, k);
+    return { t0: 0, t1: span, pw: W - GUT - 10 };
+  }
+
+  // --- what changes ------------------------------------------------------------------
+
+  function fillTable() {
+    var head = ['Recording', 'Drops', 'One drop every, middle half within', 'Ringing', 'Loudness, median', 'Sound lasts, median', 'Ring pitch, median', 'Ring dies away in, median'];
+    var body = H.clips.map(function (c) {
+      var d = c.drops, rg = d.filter(function (x) { return x.ring; }), m = function (v, f) { return v == null ? '-' : f(v); };
+      var iv = d.slice(1).map(function (x, i) { return x.t - d[i].t; }).filter(function (v) { return Math.abs(v * 1000 / c.period_ms - 1) < 0.3; }).sort(function (a, b) { return a - b; });
+      return [label(c), d.length, (c.period_ms / 1000).toFixed(3) + ' s &plusmn; ' + Math.round((iv[Math.floor(iv.length * 0.75)] - iv[Math.floor(iv.length * 0.25)]) * 500) + ' ms', Math.round(100 * rg.length / d.length) + '%',
+        m(median(d.map(function (x) { return x.db; })), function (v) { return v.toFixed(1) + ' dB'; }),
+        m(median(d.map(function (x) { return x.dur; })), function (v) { return Math.round(v) + ' ms'; }),
+        m(median(rg.map(function (x) { return x.hz; })), function (v) { return (v / 1000).toFixed(2) + ' kHz'; }),
+        m(median(rg.filter(function (x) { return x.tau != null; }).map(function (x) { return x.tau; })), function (v) { return v.toFixed(1) + ' ms'; })];
+    });
+    $('tbl').innerHTML = '<thead><tr>' + head.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      body.map(function (r) { return '<tr>' + r.map(function (v) { return '<td>' + v + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody>';
+  }
+
+  function fillFeatures() {
+    var hs = H.clips.map(function (c) { return c.h; }), xr = [Math.min.apply(null, hs) - 5, Math.max.apply(null, hs) + 5];
+    function rho(key) { var s = H.stats[key]; return '&rho; = ' + s.rho.toFixed(2) + ' over ' + s.n + ' drops'; }
+    function card(title, sub, plot) { return '<div class="card xycard"><span class="xcap">' + title + ' <span>' + sub + '</span></span>' + plot + '</div>'; }
+    function drops(key, yl, f, ringOnly) {
+      var pts = [], marks = [], all = [];
+      H.clips.forEach(function (c, n) {
+        var v = [];
+        c.drops.forEach(function (d, i) {
+          if (ringOnly && !d.ring || d[key] == null) return;
+          var y = f(d[key]); v.push(y); all.push(y);
+          pts.push({ x: c.h + ((i * 0.618034) % 1 - 0.5) * 2.4, y: y, faint: !d.ring, cls: 'c' + (n + 1),
+                     tip: label(c) + ', drop ' + (i + 1) + ': ' + (+y.toFixed(2)) + (d.ring ? '' : ', no ring') });
+        });
+        if (v.length) marks.push({ x: c.h, y: median(v) });
+      });
+      return xy({ W: 520, H: 400, x: xr, y: span(all, 0.5), xl: 'Fall height, cm', yl: yl, pts: pts, marks: marks });
+    }
+    var share = xy({ W: 520, H: 400, x: xr, y: [0, 100], xl: 'Fall height, cm', yl: 'Drops that ring, %',
+      pts: H.clips.map(function (c, n) {
+        var k = c.drops.filter(function (d) { return d.ring; }).length, p = 100 * k / c.drops.length;
+        return { x: c.h, y: p, cls: 'c' + (n + 1), label: Math.round(p) + '% of ' + c.drops.length, tip: label(c) };
+      }) });
+    var id = function (v) { return v; };
+    $('feats').innerHTML = [
+      card('Drops that ring', rho('ring'), share),
+      card('Loudness', rho('db'), drops('db', 'Peak over the room, dB', id)),
+      card('How long the sound lasts', rho('dur'), drops('dur', 'Until within 6 dB of the room, ms', id)),
+      card('How hiss-like the sound is', rho('flat'), drops('flat', 'Spectral flatness, 0 tone to 1 hiss', id)),
+      card('Ring pitch', rho('hz') + ', ringing drops', drops('hz', 'Pitch, kHz', function (v) { return v / 1000; }, true)),
+      card('How fast the ring dies away', rho('tau') + ', ringing drops', drops('tau', 'Time to fall to 37%, ms', id, true))
+    ].join('');
+  }
+
+  // --- wiring --------------------------------------------------------------------------
+
+  function seg(id, attr, set) {
+    $(id).querySelectorAll('button').forEach(function (b) {
+      b.onclick = function () {
+        $(id).querySelectorAll('button').forEach(function (o) { o.setAttribute('aria-pressed', o === b); });
+        set(b.dataset[attr]);
+      };
+    });
+  }
+  function redraw() { rows.forEach(draw); drawOverlay(); drawEnv(); if (zoom.open) drawZoom(); }
+
+  if (!H) { $('empty').hidden = false; $('body').hidden = true; return; }
+  var n = H.clips.reduce(function (s, c) { return s + c.drops.length; }, 0);
+  $('meta').innerHTML = '<b>' + n + '</b> drops from <b>' + H.clips.length + '</b> recordings';
+  buildRows(); fillTable(); fillFeatures(); drawEnv();
+  seg('wins', 'w', function (v) { WIN = +v; redraw(); });
+  wireZoom();
+  document.querySelectorAll('[data-ov]').forEach(function (pl) {
+    pl.addEventListener('click', function () { openZoom(null, pl.dataset.ov, pl); });
+    pl.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target === pl) openZoom(null, pl.dataset.ov, pl); });
+  });
+  $('playAll').onclick = playAll;
+  $('allScrub').max = rows[0].c.duration;
+  $('allScrub').oninput = function () { alignTo(+this.value); };
+  $('hear').innerHTML = rows.map(function (r, n) { return '<button type="button" data-n="' + n + '" aria-pressed="' + !n + '">' + label(r.c) + '</button>'; }).join('');
+  $('hear').querySelectorAll('button').forEach(function (b, n) {
+    hear(n, !n);
+    b.onclick = function () { var on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on); hear(n, on); };
+  });
+  seg('gains', 'g', function (v) { gain = v; redraw(); });
+  seg('srcs', 's', function (v) {
+    src = v;
+    rows.forEach(function (r) { var t = r.audio.currentTime, on = !r.audio.paused; r.audio.src = r.dir + src + '.m4a'; r.audio.currentTime = t; setRate(r.audio); if (on) r.audio.play(); draw(r); });
+  });
+  seg('speeds', 'r', function (v) { rate = +v; rows.forEach(function (r) { setRate(r.audio); }); });
+  infoTips(INFO, $('tip'), function () { return zoom.open ? zoom : document.querySelector('.viewer'); });   // a modal dialog sits above the rest of the page
+  requestAnimationFrame(tick);
+  var last = innerWidth;
+  addEventListener('resize', function () { if (innerWidth !== last) { last = innerWidth; redraw(); } });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw);
+  new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>
+</body>
+</html>
