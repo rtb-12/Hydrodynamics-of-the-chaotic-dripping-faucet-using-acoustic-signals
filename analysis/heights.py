@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["numpy", "scipy", "imageio-ffmpeg"]
+# dependencies = ["numpy", "scipy", "imageio-ffmpeg", "pillow"]
 # ///
 """Compare the sound of one drop across fall heights, for site/heights.html: clean each phone
 recording of background music, find every drop, measure its sound and write the page's data.
@@ -16,12 +16,12 @@ import argparse, base64, json, pathlib, subprocess, sys, tempfile
 import numpy as np, imageio_ffmpeg
 import scipy.ndimage as nd, scipy.signal as ss, scipy.stats as st
 from scipy.io import wavfile
+from lanes import FS, lanes, scale
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'site' / 'recordings' / 'heights'
 FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
 
-FS = 48000                  # audio rate everything is resampled to
 HP_HZ = 1000                # cleaning high-pass: music and hum sit below it, each drop keeps a 1.2-1.4 kHz burst above it
 HP_ORDER = 8                # ...steep enough to keep that burst within 0.3 dB
 NFFT, HOP = 1024, 256       # STFT used to subtract the steady noise left after the high-pass
@@ -207,23 +207,25 @@ def spearman(pairs):
 
 
 def process(clips, out=OUT):
-    out.mkdir(parents=True, exist_ok=True)
+    """Every clip's audio, lanes and drops into out, scaled alike so the heights compare by eye."""
     seen, recs = {}, []
     for h, path in sorted(clips, key=lambda c: float(c[0])):
         h = float(h)
         seen[h] = seen.get(h, 0) + 1
-        slug = f'{h:g}cm' + (f'-{seen[h]}' if seen[h] > 1 else '')
         x = load(path)
-        y, rows, envs = analyse(x)
-        encode(x, out / f'raw-{slug}.m4a'); encode(y, out / f'clean-{slug}.m4a')
-        snips = [snippet(y, r['t']) for r in rows]
-        iv = np.diff([r['t'] for r in rows])
+        recs.append(dict(slug=f'{h:g}cm' + (f'-{seen[h]}' if seen[h] > 1 else ''), h=h, take=seen[h], x=x, a=analyse(x)))
+    ref = dict(clean=scale(*[r['a'][0] for r in recs]), raw=scale(*[r['x'] for r in recs]))
+    for r in recs:
+        x, (y, rows, envs) = r.pop('x'), r.pop('a')
+        d = out / r['slug']
+        d.mkdir(parents=True, exist_ok=True)
+        encode(x, d / 'raw.m4a'); encode(y, d / 'clean.m4a')
+        snips = [snippet(y, row['t']) for row in rows]
         q = np.percentile(envs, [25, 50, 75], axis=0)
-        recs.append(dict(slug=slug, h=h, take=seen[h], source=pathlib.Path(path).name, duration=round(len(x) / FS, 2),
-                         period_ms=round(float(np.median(iv)) * 1000, 1), typical=typical(rows), drops=rows,
-                         wave=[w for w, _ in snips], scale=[round(s, 6) for _, s in snips],
-                         env=[[round(float(v), 1) for v in row] for row in q]))
-        print(f'{slug}: {len(rows)} drops, period {recs[-1]["period_ms"]} ms, {sum(r["ring"] for r in rows)} ring')
+        r.update(duration=round(len(x) / FS, 2), period_ms=round(float(np.median(np.diff([w['t'] for w in rows]))) * 1000, 1),
+                 typical=typical(rows), drops=rows, snip=[w for w, _ in snips], snip_scale=[round(v, 6) for _, v in snips],
+                 env=[[round(float(v), 1) for v in row] for row in q], **lanes(y, x, d, len(x) / FS, ref))
+        print(f'{r["slug"]}: {len(rows)} drops, period {r["period_ms"]} ms, {sum(w["ring"] for w in rows)} ring')
     every = [(c['h'], r) for c in recs for r in c['drops']]
     rings = [(h, r) for h, r in every if r['ring']]
     stats = dict(ring=spearman([(h, r['ring']) for h, r in every]), db=spearman([(h, r['db']) for h, r in every]),
@@ -231,7 +233,7 @@ def process(clips, out=OUT):
                  hz=spearman([(h, r['hz']) for h, r in rings]),
                  tau=spearman([(h, r['tau']) for h, r in rings if r['tau'] is not None]))
     data = dict(rate=VIEW_RATE, pre_ms=PRE_MS, post_ms=POST_MS, env_ms=ENV_MS, band=BAND,
-                amax=max(max(c['scale']) for c in recs), stats=stats, clips=recs)
+                amax=max(max(c['snip_scale']) for c in recs), stats=stats, clips=recs)
     (out / 'data.js').write_text('window.HEIGHTS = ' + json.dumps(data, separators=(',', ':')) + ';\n')
     return data
 
@@ -292,13 +294,15 @@ def selftest():
     assert len(got) == 12 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), 'drops timed on their rebound'
 
     with tempfile.TemporaryDirectory() as tmp:
-        p = pathlib.Path(tmp) / 'a.wav'
-        wavfile.write(p, FS, (x * 20000).astype(np.int16))
-        d = process([('20', p), ('20', p), ('40', p)], pathlib.Path(tmp) / 'out')
+        p, q = pathlib.Path(tmp) / 'a.wav', pathlib.Path(tmp) / 'b.wav'
+        wavfile.write(p, FS, (x * 20000).astype(np.int16)); wavfile.write(q, FS, (x * 5000).astype(np.int16))
+        d = process([('20', p), ('20', q), ('40', p)], pathlib.Path(tmp) / 'out')
         assert [c['slug'] for c in d['clips']] == ['20cm', '20cm-2', '40cm']
         assert d['clips'][0]['drops'][d['clips'][0]['typical']]['ring']
-        assert len(base64.b64decode(d['clips'][0]['wave'][0])) == (PRE_MS + POST_MS) * VIEW_RATE // 1000
-        assert (pathlib.Path(tmp) / 'out' / 'clean-20cm-2.m4a').stat().st_size > 0
+        assert len(base64.b64decode(d['clips'][0]['snip'][0])) == (PRE_MS + POST_MS) * VIEW_RATE // 1000
+        assert all((pathlib.Path(tmp) / 'out' / '20cm-2' / f).stat().st_size > 0 for f in ('clean.m4a', 'raw.m4a', 'spec-clean.png'))
+        top = [np.abs(np.frombuffer(base64.b64decode(c['wave']['raw']), np.int8).astype(int)).max() for c in d['clips']]
+        assert top[0] == 127 and abs(top[1] - 127 / 2) <= 4, f'a quarter as loud drawn at {top[1]}, the loud one at {top[0]} of 127: not one scale'
     print('selftest ok')
 
 

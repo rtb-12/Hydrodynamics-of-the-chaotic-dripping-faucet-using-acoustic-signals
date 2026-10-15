@@ -23,7 +23,7 @@
       <h1>Drop sound and fall height</h1>
       <span class="vmeta" id="meta"></span>
     </div>
-    <p class="note">The same faucet at the same flow rate, about one drop a second; only the height the drops fall into the water changes. Each row is one phone recording. Play it, or click a waveform to hear just that drop. The arrows step through its drops, and each row starts on a typical one.</p>
+    <p class="note">The same faucet at the same flow rate, about one drop a second; only the height the drops fall into the water changes. Each row is one phone recording, its waveform and spectrogram scrolling with its own sound. Play a row, click a graph to move there, or step from drop to drop; each row starts on a typical drop.</p>
   </div>
 
   <p class="empty" id="empty" hidden>No data yet. Run
@@ -31,15 +31,16 @@
 
   <div class="vbody" id="body">
     <div class="options">
-      <div class="optgroup"><span>Waveform scale</span><span class="seg" id="scales"><button type="button" data-k="same" aria-pressed="true">Same for all</button><button type="button" data-k="fit">Fit each</button></span></div>
+      <div class="optgroup"><span>Window</span><span class="seg" id="wins"><button type="button" data-w="4">4 s</button><button type="button" data-w="2">2 s</button><button type="button" data-w="0.5" aria-pressed="true">0.5 s</button><button type="button" data-w="0.1">0.1 s</button></span></div>
+      <div class="optgroup"><span>Gain</span><span class="seg" id="gains"><button type="button" data-g="full" aria-pressed="true">Same for all</button><button type="button" data-g="auto">Fit to window</button></span></div>
       <div class="optgroup"><span>Audio</span><span class="seg" id="srcs"><button type="button" data-s="clean" aria-pressed="true">Cleaned</button><button type="button" data-s="raw">Raw</button></span></div>
     </div>
     <div class="hrows" id="rows"></div>
-    <p class="note"><b>Cleaned</b> audio has the music and hum below 1 kHz filtered out and the steady hiss turned down; the drops themselves are untouched. The waveform is the cleaned sound. The spectrogram runs to 10 kHz on one colour scale for every row, so a fainter drop looks fainter; above 9 kHz the phone&rsquo;s compression makes up the sound, so ignore that strip.</p>
+    <p class="note">The graphs follow the selected audio. <b>Cleaned</b> has the music and hum below 1 kHz filtered out and the steady hiss turned down; the drops themselves are untouched. Every row is drawn on one scale, so a fainter drop looks fainter. Dashed lines mark drops, coloured where the drop rings. Above 9 kHz the phone&rsquo;s compression makes up the sound, so ignore that part of the spectrogram.</p>
 
     <section class="intervals">
       <h2>All heights on top of each other</h2>
-      <p class="note">Left, the drops shown above, lined up at the moment of impact, over the first 40 ms. Right, how loud a drop is in the 2 to 9 kHz band after it hits, as the median of every drop at that height with the middle half shaded. 0 dB is the room&rsquo;s own noise just before the drop.</p>
+      <p class="note">Left, the drop at each row&rsquo;s playhead, lined up at the moment of impact, over the first 40 ms. Right, how loud a drop is in the 2 to 9 kHz band after it hits, as the median of every drop at that height with the middle half shaded. 0 dB is the room&rsquo;s own noise just before the drop.</p>
       <div class="duo">
         <div class="plot card"><span class="cap">Shown drops, overlaid <span>first 40 ms after impact</span></span><canvas id="ovWave"></canvas></div>
         <div class="plot card"><span class="cap">Typical loudness after impact <span>dB over the room</span></span><canvas id="ovEnv"></canvas></div>
@@ -57,25 +58,24 @@
 
 <script>
 (function () {
-  var MAGMA = [[0, 0, 4], [59, 15, 112], [140, 41, 129], [222, 73, 104], [254, 159, 109], [252, 253, 191]];
-  var SPEC_N = 256, SPEC_HOP = 12, SPEC_FMAX = 10000, SPEC_RANGE = 72, SPEC_TOP = 6;   // spectrogram window and hop in samples, top frequency, dB shown, dB the loudest ring sits below the top colour
-  var OV_MS = 40, PLAY_PRE = 0.15, PLAY_S = 0.6, GUT = 46;               // overlay span; a clicked drop plays from this early for this long; left gutter
+  var PH = 0.8, OV_MS = 40;   // playhead position while playing; overlay span, ms
 
   function $(id) { return document.getElementById(id); }
-  var H = window.HEIGHTS, rows = [], scale = 'same', src = 'clean', stopAt = null;
+  var H = window.HEIGHTS, rows = [], WIN = 0.5, gain = 'full', src = 'clean';
 
   function label(c) { return c.h + ' cm' + (c.take > 1 ? ', take ' + c.take : ''); }
   function median(v) { v = v.slice().sort(function (a, b) { return a - b; }); return v.length ? (v[(v.length - 1) >> 1] + v[v.length >> 1]) / 2 : null; }
   function samples(c, i) {
-    var s = atob(c.wave[i]), k = c.scale[i] / 127, out = new Float32Array(s.length);
-    for (var j = 0; j < s.length; j++) out[j] = (s.charCodeAt(j) << 24 >> 24) * k;
+    var a = unpack(c.snip[i]), k = c.snip_scale[i] / 127, out = new Float32Array(a.length);
+    for (var j = 0; j < a.length; j++) out[j] = a[j] * k;
     return out;
   }
-  function tokens() {
-    var s = getComputedStyle(document.documentElement), g = function (n) { return s.getPropertyValue(n).trim(); };
-    return { ink2: g('--ink-2'), ink3: g('--ink-3'), rule: g('--rule'), sans: g('--display'), c: [g('--h1'), g('--h2'), g('--h3'), g('--h4')] };
+  function tokens(n) {
+    var s = getComputedStyle(document.documentElement), g = function (v) { return s.getPropertyValue(v).trim(); };
+    var c = [g('--h1'), g('--h2'), g('--h3'), g('--h4')];
+    return { ink: g('--ink'), ink2: g('--ink-2'), ink3: g('--ink-3'), rule: g('--rule'), surface: g('--surface'), hydro: g('--hydro'),
+             sans: g('--display'), c: c, chan: c[n || 0] };
   }
-  function text(g, k, s, x, y, align, base) { g.fillStyle = k.ink3; g.font = '11px ' + k.sans; g.textAlign = align || 'right'; g.textBaseline = base || 'middle'; g.fillText(s, x, y); }
   function timeAxis(g, k, x0, x1, X, top, bottom, W) {
     nice(x0, x1, Math.max(3, Math.min(7, Math.floor(W / 80)))).v.forEach(function (v) {
       g.strokeStyle = k.rule; g.beginPath(); g.moveTo(X(v), top); g.lineTo(X(v), bottom); g.stroke();
@@ -83,67 +83,32 @@
     });
   }
 
-  // --- rows ------------------------------------------------------------------------
+  // --- rows: one recording each, its lanes following its own sound ---------------------
 
-  function drawWave(r) {
-    var c = r.wave, g = fit(c), k = tokens(), W = c.W, Hh = c.H, top = 26, bot = Hh - 20;
-    var y = samples(r.c, r.i), amp = scale === 'same' ? H.amax : r.c.scale[r.i], mid = (top + bot) / 2, half = (bot - top) / 2;
-    var t0 = -H.pre_ms, t1 = H.post_ms, X = function (t) { return GUT + (W - GUT - 8) * (t - t0) / (t1 - t0); };
-    g.clearRect(0, 0, W, Hh);
-    timeAxis(g, k, t0, t1, X, top, bot, W);
-    [-1, 0, 1].forEach(function (s) { text(g, k, s ? (s * amp * 100).toPrecision(2) + '%' : '0', GUT - 6, mid - s * half); });
-    g.strokeStyle = k.c[r.n]; g.lineWidth = 1; g.beginPath();
-    var per = y.length / (W - GUT - 8);
-    for (var px = 0; px < W - GUT - 8; px++) {
-      var a = Math.floor(px * per), b = Math.max(a + 1, Math.floor((px + 1) * per)), lo = Infinity, hi = -Infinity;
-      for (var j = a; j < b && j < y.length; j++) { lo = Math.min(lo, y[j]); hi = Math.max(hi, y[j]); }
-      g.moveTo(GUT + px + 0.5, mid - Math.min(1, hi / amp) * half); g.lineTo(GUT + px + 0.5, mid - Math.max(-1, lo / amp) * half - 0.5);
+  function dropAt(r, t) {   // the latest drop at or just after t, so a drop stepped to is the one shown
+    var d = r.c.drops, i = 0;
+    while (i + 1 < d.length && d[i + 1].t <= t + 0.02) i++;
+    return i;
+  }
+  function draw(r) {
+    var t = r.audio.currentTime, playing = !r.audio.paused, k = tokens(r.n), x0 = t - WIN * (playing ? PH : 0.5);
+    var S = { wave: r.wave[src], wave_rate: r.c.wave_rate, loud: r.c.loud[src], loud_rate: r.c.loud_rate, spec: tint(r.spec[src], k.chan),
+              spec_cps: r.c.spec_cps, spec_fmax: r.c.spec_fmax, hits: r.hits, heard: r.heard };
+    var v = { t: t, x0: x0, win: WIN, big: false, playing: playing, gain: gain, smoothMs: 0, k: k };
+    r.view = drawLane('wave', r.lanes[0], S, v); drawLane('spec', r.lanes[1], S, v);
+    var i = dropAt(r, t), d = r.c.drops[i];
+    r.scrub.value = t;
+    if (i !== r.i) {
+      r.i = i;
+      r.read.textContent = 'Drop ' + (i + 1) + ' of ' + r.c.drops.length + ' at ' + d.t.toFixed(2) + ' s, ' + (i === r.c.typical ? 'typical, ' : '') +
+        (d.ring ? 'rings at ' + (d.hz / 1000).toFixed(2) + ' kHz' : 'no ring') + ', ' + Math.round(d.db) + ' dB over the room';
+      drawOverlay();
     }
-    g.stroke();
   }
-
-  function spectrum(y) {   // power in dB per frame and bin up to SPEC_FMAX, by a direct DFT, which is quick at this size
-    var nb = Math.round(SPEC_FMAX / (H.rate / SPEC_N)), nf = Math.floor((y.length - SPEC_N) / SPEC_HOP) + 1;
-    var win = new Float32Array(SPEC_N), cs = new Float32Array(SPEC_N), sn = new Float32Array(SPEC_N), out = new Float32Array(nf * nb);
-    for (var j = 0; j < SPEC_N; j++) { win[j] = 0.5 - 0.5 * Math.cos(2 * Math.PI * j / SPEC_N); cs[j] = Math.cos(2 * Math.PI * j / SPEC_N); sn[j] = Math.sin(2 * Math.PI * j / SPEC_N); }
-    for (var f = 0; f < nf; f++) for (var b = 0; b < nb; b++) {
-      var re = 0, im = 0;
-      for (j = 0; j < SPEC_N; j++) { var v = y[f * SPEC_HOP + j] * win[j], q = (b * j) % SPEC_N; re += v * cs[q]; im -= v * sn[q]; }
-      out[f * nb + b] = 10 * Math.log10(re * re + im * im + 1e-20);
-    }
-    return { db: out, nf: nf, nb: nb };
-  }
-
-  function drawSpec(r) {
-    var c = r.spec, g = fit(c), k = tokens(), W = c.W, Hh = c.H, top = 26, bot = Hh - 20;
-    var t0 = -H.pre_ms, t1 = H.post_ms, X = function (t) { return GUT + (W - GUT - 8) * (t - t0) / (t1 - t0); };
-    var S = spectrum(samples(r.c, r.i)), hi = 20 * Math.log10(H.amax * SPEC_N / 4) - SPEC_TOP, img = new ImageData(S.nf, S.nb);
-    for (var f = 0; f < S.nf; f++) for (var b = 0; b < S.nb; b++) {
-      var u = Math.max(0, Math.min(1, (S.db[f * S.nb + b] - hi + SPEC_RANGE) / SPEC_RANGE)) * (MAGMA.length - 1), m = Math.min(MAGMA.length - 2, Math.floor(u)), w = u - m, o = ((S.nb - 1 - b) * S.nf + f) * 4;
-      for (var ch = 0; ch < 3; ch++) img.data[o + ch] = MAGMA[m][ch] * (1 - w) + MAGMA[m + 1][ch] * w;
-      img.data[o + 3] = 255;
-    }
-    var tmp = document.createElement('canvas'); tmp.width = S.nf; tmp.height = S.nb; tmp.getContext('2d').putImageData(img, 0, 0);
-    var half = SPEC_N / 2 / H.rate * 1000;   // each frame is drawn at its centre time
-    g.clearRect(0, 0, W, Hh);
-    g.drawImage(tmp, X(t0 + half), top, X(t0 + half + (S.nf - 1) * SPEC_HOP / H.rate * 1000) - X(t0 + half), bot - top);
-    timeAxis(g, k, t0, t1, X, bot, bot, W);
-    nice(0, SPEC_FMAX / 1000, 5).v.forEach(function (v) { text(g, k, v ? v + ' kHz' : '0', GUT - 6, bot - (bot - top) * v * 1000 / SPEC_FMAX); });
-  }
-
-  function show(r, i) {
-    r.i = (i + r.c.drops.length) % r.c.drops.length;
-    var d = r.c.drops[r.i];
-    r.read.textContent = 'Drop ' + (r.i + 1) + ' of ' + r.c.drops.length + ' at ' + d.t.toFixed(2) + ' s, ' + (r.i === r.c.typical ? 'typical, ' : '') +
-      (d.ring ? 'rings at ' + (d.hz / 1000).toFixed(2) + ' kHz' : 'no ring') + ', ' + Math.round(d.db) + ' dB over the room';
-    drawWave(r); drawSpec(r); drawOverlay();
-  }
-
-  function play(r) {
-    var a = r.audio, t = r.c.drops[r.i].t;
-    rows.forEach(function (o) { if (o !== r) o.audio.pause(); });
-    a.currentTime = Math.max(0, t - PLAY_PRE); a.play();
-    clearTimeout(stopAt); stopAt = setTimeout(function () { a.pause(); }, PLAY_S * 1000);
+  function seek(r, t) { r.audio.currentTime = Math.max(0, Math.min(r.c.duration, t)); draw(r); }
+  function tick() {
+    rows.forEach(function (r) { if (!r.audio.paused) draw(r); });
+    requestAnimationFrame(tick);
   }
 
   function buildRows() {
@@ -151,19 +116,39 @@
       var el = document.createElement('div'), ring = c.drops.filter(function (d) { return d.ring; }).length;
       el.className = 'hrow';
       el.innerHTML = '<div class="hhead"><b class="hname" style="--c: var(--h' + (n + 1) + ')">' + label(c) + '</b>' +
-        '<span class="vmeta">' + c.drops.length + ' drops, ' + Math.round(100 * ring / c.drops.length) + '% ring, one every ' + (c.period_ms / 1000).toFixed(2) + ' s</span>' +
-        '<audio controls preload="none"></audio>' +
-        '<span class="seg"><button type="button" data-d="-1" aria-label="Previous drop">&lsaquo;</button><button type="button" data-d="0">Typical</button><button type="button" data-d="1" aria-label="Next drop">&rsaquo;</button></span>' +
+        '<span class="vmeta">' + c.drops.length + ' drops, ' + Math.round(100 * ring / c.drops.length) + '% ring, one every ' + (c.period_ms / 1000).toFixed(2) + ' s</span></div>' +
+        '<div class="transport card"><button class="primary" type="button">Play</button>' +
+        '<input type="range" class="scrub" min="0" max="' + c.duration + '" step="0.001" value="0" aria-label="Position in ' + label(c) + '">' +
+        '<span class="seg"><button type="button" data-d="-1" aria-label="Previous drop">&lsaquo; Drop</button><button type="button" data-d="0">Typical</button><button type="button" data-d="1" aria-label="Next drop">Drop &rsaquo;</button></span>' +
         '<span class="hread"></span></div>' +
-        '<div class="hplots"><div class="plot card hplay" title="Click to hear this drop"><span class="cap">Waveform</span><canvas></canvas></div>' +
-        '<div class="plot card"><span class="cap">Spectrogram</span><canvas></canvas></div></div>';
+        '<div class="hplots"><div class="plot card"><span class="cap">Waveform <span>% of loudest</span></span><canvas></canvas></div>' +
+        '<div class="plot card"><span class="cap">Spectrogram <span>kHz</span></span><canvas></canvas></div></div>';
       $('rows').appendChild(el);
-      var cv = el.querySelectorAll('canvas'), r = { c: c, n: n, i: c.typical, wave: cv[0], spec: cv[1], audio: el.querySelector('audio'), read: el.querySelector('.hread') };
-      r.audio.src = 'recordings/heights/' + src + '-' + c.slug + '.m4a';
-      r.audio.addEventListener('play', function () { rows.forEach(function (o) { if (o !== r) o.audio.pause(); }); });
-      el.querySelectorAll('[data-d]').forEach(function (b) { b.onclick = function () { var d = +b.dataset.d; show(r, d ? r.i + d : c.typical); }; });
-      el.querySelector('.hplay').onclick = function () { play(r); };
+      var dir = 'recordings/heights/' + c.slug + '/', spec = {};
+      ['clean', 'raw'].forEach(function (s) { var im = new Image(); im.onload = function () { draw(r); }; im.src = dir + 'spec-' + s + '.png'; spec[s] = im; });
+      var r = { c: c, n: n, i: -1, lanes: [].slice.call(el.querySelectorAll('canvas')), audio: new Audio(), read: el.querySelector('.hread'), scrub: el.querySelector('.scrub'),
+                play: el.querySelector('.primary'), wave: { clean: unpack(c.wave.clean), raw: unpack(c.wave.raw) }, spec: spec, dir: dir,
+                hits: c.drops.map(function (d) { return d.t; }), heard: c.drops.map(function (d) { return d.ring; }) };
+      r.audio.preload = 'auto'; r.audio.src = dir + src + '.m4a';
+      r.audio.addEventListener('play', function () { rows.forEach(function (o) { if (o !== r) o.audio.pause(); }); r.play.textContent = 'Pause'; });
+      r.audio.addEventListener('pause', function () { r.play.textContent = 'Play'; draw(r); });
+      r.audio.addEventListener('seeked', function () { draw(r); });
+      r.play.onclick = function () { if (r.audio.paused) r.audio.play(); else r.audio.pause(); };
+      r.scrub.oninput = function () { seek(r, +r.scrub.value); };
+      el.querySelectorAll('[data-d]').forEach(function (b) {
+        b.onclick = function () {
+          var d = +b.dataset.d, j = d ? Math.max(0, Math.min(c.drops.length - 1, dropAt(r, r.audio.currentTime) + d)) : c.typical;
+          r.audio.pause(); seek(r, c.drops[j].t);
+        };
+      });
+      r.lanes.forEach(function (cv) {
+        cv.parentNode.onclick = function (e) {
+          var x = e.clientX - cv.getBoundingClientRect().left;
+          if (r.view && x >= GUT) seek(r, r.view.x0 + (x - GUT) / r.view.pw * WIN);
+        };
+      });
       rows.push(r);
+      seek(r, c.drops[c.typical].t);
     });
   }
 
@@ -175,7 +160,8 @@
     g.clearRect(0, 0, W, Hh);
     timeAxis(g, k, t0, OV_MS, X, top, bot, W);
     rows.forEach(function (r) {
-      var y = samples(r.c, r.i), amp = scale === 'same' ? H.amax : r.c.scale[r.i];
+      if (r.i < 0) return;
+      var y = samples(r.c, r.i), amp = gain === 'full' ? H.amax : r.c.snip_scale[r.i];
       g.strokeStyle = k.c[r.n]; g.globalAlpha = 0.85; g.lineWidth = 1.2; g.beginPath();
       for (var j = 0; j < y.length; j++) {
         var t = j / H.rate * 1000 - H.pre_ms;
@@ -276,19 +262,19 @@
       };
     });
   }
-  function redraw() { rows.forEach(function (r) { drawWave(r); drawSpec(r); }); drawOverlay(); drawEnv(); }
+  function redraw() { rows.forEach(draw); drawOverlay(); drawEnv(); }
 
   if (!H) { $('empty').hidden = false; $('body').hidden = true; return; }
   var n = H.clips.reduce(function (s, c) { return s + c.drops.length; }, 0);
   $('meta').innerHTML = '<b>' + n + '</b> drops from <b>' + H.clips.length + '</b> recordings';
-  buildRows(); fillTable(); fillFeatures();
-  seg('scales', 'k', function (v) { scale = v; redraw(); });
+  buildRows(); fillTable(); fillFeatures(); drawEnv();
+  seg('wins', 'w', function (v) { WIN = +v; redraw(); });
+  seg('gains', 'g', function (v) { gain = v; redraw(); });
   seg('srcs', 's', function (v) {
     src = v;
-    rows.forEach(function (r) { var t = r.audio.currentTime, on = !r.audio.paused; r.audio.src = 'recordings/heights/' + src + '-' + r.c.slug + '.m4a'; r.audio.currentTime = t; if (on) r.audio.play(); });
+    rows.forEach(function (r) { var t = r.audio.currentTime, on = !r.audio.paused; r.audio.src = r.dir + src + '.m4a'; r.audio.currentTime = t; if (on) r.audio.play(); draw(r); });
   });
-  rows.forEach(function (r) { show(r, r.i); });
-  drawEnv();
+  requestAnimationFrame(tick);
   var last = innerWidth;
   addEventListener('resize', function () { if (innerWidth !== last) { last = innerWidth; redraw(); } });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw);

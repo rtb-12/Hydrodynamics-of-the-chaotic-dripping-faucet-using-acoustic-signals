@@ -112,7 +112,7 @@
 
 <script>
 (function () {
-  var PH = 0.8, GUT = 46, PAD = 8;   // playhead position while playing; lane gutters
+  var PH = 0.8;   // playhead position while playing
   var HARD_SYNC = 0.2, NUDGE = 0.02, SYNC_HOLD_MS = 300;   // re-seek audio beyond this real-time drift (s); else trim its rate by up to 2%; settle time after a seek
   var TIME = ['wave', 'loud', 'spec', 'drops'];
   var INFO = {
@@ -203,7 +203,6 @@
       el.addEventListener('error', function () { fail(new Error('media')); }, { once: true });
     });
   }
-  function unpack(b64) { var s = atob(b64), a = new Int8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
   function showEmpty() { $('empty').hidden = false; $('body').hidden = true; }
 
   script('recordings/index.js', function () {
@@ -222,7 +221,7 @@
     var dir = 'recordings/' + D.name + '/', lag = (D.stats.av_ms || 0) / 1000, spec = {};
     ['clean', 'raw'].forEach(function (k) { var im = new Image(); im.onload = function () { lastDrop = -2; }; im.src = dir + 'spec-' + k + '.png'; spec[k] = im; });
     R = { D: D, iv: D.drops.slice(1).map(function (t, i) { return t - D.drops[i]; }), hits: D.drops.map(function (t) { return t + lag; }),
-          wave: { clean: unpack(D.wave.clean), raw: unpack(D.wave.raw) }, spec: spec, tint: {}, urls: {} };
+          wave: { clean: unpack(D.wave.clean), raw: unpack(D.wave.raw) }, spec: spec, urls: {} };
     fillHeader(D); fillSound(D);
 
     requestAnimationFrame(tick);
@@ -312,126 +311,19 @@
     return { ink: g('--ink'), ink2: g('--ink-2'), ink3: g('--ink-3'), rule: g('--rule'), surface: g('--surface'), hydro: g('--hydro'),
              chan: g(R.D.channel === 'hydrophone' ? '--hydro' : '--aero'), sans: g('--display') };
   }
-  function text(g, k, s, x, y, align, base) { g.fillStyle = k.ink3; g.font = '11px ' + k.sans; g.textAlign = align || 'right'; g.textBaseline = base || 'middle'; g.fillText(s, x, y); }
   function vtext(g, k, s, x, y) { g.save(); g.translate(x, y); g.rotate(-Math.PI / 2); text(g, k, s, 0, 0, 'center', 'middle'); g.restore(); }
-  function pct(v) { v *= 100; return (v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toFixed(2)) + '%'; }
-  function boxcar(a, n) {   // centred moving average over prefix sums, shrinking at the ends
-    if (n < 2) return a;
-    var out = new Float32Array(a.length), cum = new Float64Array(a.length + 1), h = n >> 1, i;
-    for (i = 0; i < a.length; i++) cum[i + 1] = cum[i] + a[i];
-    for (i = 0; i < a.length; i++) { var lo = Math.max(0, i - h), hi = Math.min(a.length, i + h + 1); out[i] = (cum[hi] - cum[lo]) / (hi - lo); }
-    return out;
-  }
-  // The spectrogram PNG stores loudness as alpha; paint it in the channel colour once per theme.
-  function tinted(col) {
-    var im = R.spec[src], key = src + col;
-    if (!im.complete || !im.naturalWidth) return null;
-    if (!R.tint[key]) {
-      var c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight;
-      var g = c.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = col; g.fillRect(0, 0, c.width, c.height);
-      R.tint[key] = c;
-    }
-    return R.tint[key];
-  }
   function dropIndex(t) {
     var h = R.hits, lo = 0, hi = h.length;
     while (lo < hi) { var m = (lo + hi) >> 1; if (h[m] <= t + 1e-4) lo = m + 1; else hi = m; }
     return lo - 1;
   }
-  function grid(g, k, tk, X, yt, top, h, pw) {
-    g.strokeStyle = k.rule; g.lineWidth = 1; g.beginPath();
-    tk.v.forEach(function (tt) { var x = Math.round(X(tt)) + 0.5; g.moveTo(x, top); g.lineTo(x, top + h); });
-    yt.forEach(function (y) { var yy = Math.round(y[0]) + 0.5; g.moveTo(GUT, yy); g.lineTo(GUT + pw, yy); });
-    g.stroke();
-  }
-
   // --- time lanes: everything left of the playhead has happened ---------------------
 
   function lane(kind, c, big, t, hoverT) {
-    var D = R.D, g = fit(c), k = tokens(), top = big ? 8 : 24, axis = (big || kind === 'drops') ? 20 : 4;
-    var x0 = t - WIN * (vid.paused ? 0.5 : PH), pw = c.W - GUT - PAD, h = c.H - top - axis, yt = [];
-    function X(tt) { return GUT + (tt - x0) / WIN * pw; }
-    var tk = nice(x0, x0 + WIN, big ? 12 : 6);
-    g.clearRect(0, 0, c.W, c.H);
-    g.save(); g.beginPath(); g.rect(GUT, top, pw, h); g.clip();
-    if (kind === 'wave') drawWave(g, k, c, x0, pw, top, h, X, tk, yt);
-    else if (kind === 'loud') drawLoud(g, k, x0, pw, top, h, X, tk, yt);
-    else if (kind === 'spec') {
-      nice(0, D.spec_fmax / 1000, big ? 8 : 3).v.forEach(function (f) { yt.push([top + h - f * 1000 / D.spec_fmax * h, f ? f + ' kHz' : '0']); });
-      grid(g, k, tk, X, yt, top, h, pw);
-      var im = tinted(k.chan), cps = D.spec_cps;
-      if (im) {
-        var a = Math.max(0, Math.floor(x0 * cps)), b = Math.min(im.width, Math.ceil((x0 + WIN) * cps) + 1);
-        g.imageSmoothingEnabled = false;   // one column per analysis slice, drawn as measured
-        if (b > a) g.drawImage(im, a, 0, b - a, im.height, X(a / cps), top, (b - a) / cps / WIN * pw, h);
-      }
-    } else {
-      grid(g, k, tk, X, [], top, h, pw);
-      R.hits.forEach(function (tt, i) {
-        var x = X(tt); if (x < GUT - 5 || x > c.W) return;
-        g.fillStyle = k.ink; g.fillRect(x - 0.75, top + h * 0.4, 1.5, h * 0.5);
-        if (D.heard[i]) { g.fillStyle = k.chan; g.beginPath(); g.arc(x, top + h * 0.24, 3.2, 0, 7); g.fill(); }
-      });
-    }
-    if (kind !== 'drops') {   // drops as faint guides on every lane, so events line up by eye
-      g.setLineDash([2, 4]); g.lineWidth = 1;
-      R.hits.forEach(function (tt, i) {
-        var x = Math.round(X(tt)) + 0.5; if (x < GUT || x > c.W) return;
-        g.strokeStyle = D.heard[i] ? k.chan : k.ink3; g.globalAlpha = D.heard[i] ? 0.55 : 0.3;
-        g.beginPath(); g.moveTo(x, top); g.lineTo(x, top + h); g.stroke();
-      });
-      g.setLineDash([]); g.globalAlpha = 1;
-    }
-    var phx = X(t);
-    g.globalAlpha = 0.5; g.fillStyle = k.surface; g.fillRect(phx, top, c.W, h); g.globalAlpha = 1;
-    g.fillStyle = k.hydro; g.fillRect(phx - 0.75, top, 1.5, h);
-    if (hoverT != null) { g.fillStyle = k.ink2; g.fillRect(X(hoverT) - 0.5, top, 1, h); }
-    g.restore();
-    g.strokeStyle = k.rule; g.lineWidth = 1; g.strokeRect(GUT + 0.5, top + 0.5, pw - 1, h - 1);
-    yt.forEach(function (y) { if (y[1]) text(g, k, y[1], GUT - 6, y[0]); });
-    if (axis > 4) {
-      var dec = Math.max(0, -Math.floor(Math.log10(tk.st)));
-      tk.v.forEach(function (tt) { var x = X(tt); if (x > GUT + 16 && x < c.W - 24) text(g, k, tt.toFixed(dec) + ' s', x, top + h + 6, 'center', 'top'); });
-    }
-    return { x0: x0, pw: pw };
-  }
-  function drawWave(g, k, c, x0, pw, top, h, X, tk, yt) {
-    var D = R.D, w = R.wave[src], n = w.length / 2, dt = WIN / pw, c0 = Math.floor(x0 / dt), cols = Math.ceil(pw) + 2;
-    var hi = new Float32Array(cols), lo = new Float32Array(cols), ok = new Uint8Array(cols), target = 0.02, j;
-    for (j = 0; j < cols; j++) {
-      var a = Math.floor((c0 + j) * dt * D.wave_rate), b = Math.max(a + 1, Math.floor((c0 + j + 1) * dt * D.wave_rate)), mx = 0, mn = 0;
-      for (var q = Math.max(0, a); q < Math.min(n, b); q++) { if (w[2 * q] > mx) mx = w[2 * q]; if (w[2 * q + 1] < mn) mn = w[2 * q + 1]; }
-      ok[j] = b > 0 && a < n; hi[j] = mx / 127; lo[j] = mn / 127;   // stored square-root companded, which is the drawing scale
-      if (ok[j]) target = Math.max(target, hi[j], -lo[j]);
-    }
-    // Eased while playing so auto gain does not pump as loud drops scroll in and out.
-    c.peak = gain === 'full' ? 1 : c.peak && !vid.paused ? c.peak + (target - c.peak) * 0.2 : target;
-    var peak = c.peak, m = Math.round(smoothMs / 1000 / dt), H = boxcar(hi, m), L = boxcar(lo, m), mid = top + h / 2;
-    function Y(s) { return mid - Math.max(-1, Math.min(1, s / peak)) * (h / 2 - 4); }
-    yt.push([Y(peak), pct(peak * peak)], [Y(peak / 2), pct(peak * peak / 4)], [mid, '0'], [Y(-peak / 2), ''], [Y(-peak), '']);
-    grid(g, k, tk, X, yt, top, h, pw);
-    g.fillStyle = k.chan;
-    if (m < 2) {   // sharp: one min-to-max bar per pixel column, the way audio editors draw it
-      for (j = 0; j < cols; j++) if (ok[j]) { var y0 = Y(H[j]); g.fillRect(Math.round(X((c0 + j) * dt)), y0, 1, Math.max(1, Y(L[j]) - y0)); }
-    } else {
-      g.beginPath();
-      for (j = 0; j < cols; j++) if (ok[j]) g.lineTo(X((c0 + j + 0.5) * dt), Y(H[j]));
-      for (j = cols - 1; j >= 0; j--) if (ok[j]) g.lineTo(X((c0 + j + 0.5) * dt), Y(L[j]));
-      g.globalAlpha = 0.4; g.fill(); g.globalAlpha = 1;
-    }
-  }
-  function drawLoud(g, k, x0, pw, top, h, X, tk, yt) {
-    var Lr = R.D.loud_rate, arr = R.D.loud[src];
-    function Y(db) { return top + 4 + (-db / 60) * (h - 8); }
-    [0, -20, -40, -60].forEach(function (db) { yt.push([Y(db), db ? String(db) : '0 dB']); });
-    grid(g, k, tk, X, yt, top, h, pw);
-    var k0 = Math.max(0, Math.floor(x0 * Lr) - 1), k1 = Math.min(arr.length, Math.ceil((x0 + WIN) * Lr) + 2);
-    var pad = Math.round(smoothMs / 1000 * Lr), s0 = Math.max(0, k0 - pad), seg = boxcar(Float32Array.from(arr.slice(s0, k1 + pad)), pad);
-    if (k1 - k0 < 2) return;
-    g.beginPath(); for (var q = k0; q < k1; q++) g.lineTo(X(q / Lr), Y(seg[q - s0]));
-    g.strokeStyle = k.chan; g.lineWidth = 1.25; g.lineJoin = 'miter'; g.stroke();
-    g.lineTo(X((k1 - 1) / Lr), Y(-60)); g.lineTo(X(k0 / Lr), Y(-60));
-    g.globalAlpha = 0.12; g.fillStyle = k.chan; g.fill(); g.globalAlpha = 1;
+    var D = R.D, k = tokens();
+    return drawLane(kind, c, { wave: R.wave[src], wave_rate: D.wave_rate, loud: D.loud[src], loud_rate: D.loud_rate, spec: tint(R.spec[src], k.chan),
+                               spec_cps: D.spec_cps, spec_fmax: D.spec_fmax, hits: R.hits, heard: D.heard },
+                    { t: t, x0: t - WIN * (vid.paused ? 0.5 : PH), win: WIN, big: big, hover: hoverT, playing: !vid.paused, gain: gain, smoothMs: smoothMs, k: k });
   }
 
   // --- chaos plots ---------------------------------------------------------------------

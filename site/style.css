@@ -970,17 +970,15 @@ a:focus-visible, .sidenav a:focus-visible {
 .chaos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 0.75rem; }
 .chaos .plot { height: 380px; }
 
-/* Heights page: one row per recording, waveform beside spectrogram on one time axis. */
-.hrows { display: grid; gap: 1rem; }
-.hrow { display: grid; gap: 0.45rem; }
-.hhead { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.9rem; }
+/* Heights page: one row per recording, its waveform and spectrogram lanes side by side on its own playhead. */
+.hrows { display: grid; gap: 1.1rem; }
+.hrow { display: grid; gap: 0.5rem; }
+.hhead { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem 0.9rem; }
 .hname { font-size: 0.95rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.45rem; }
 .hname::before { content: ""; width: 10px; height: 10px; border-radius: 2px; background: var(--c); }
-.hhead audio { height: 32px; width: min(320px, 100%); }
-.hread { flex-basis: 100%; font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.hread { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .hplots, .duo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.75rem; }
-.hplots .plot { height: 210px; cursor: default; }
-.viewer .hplay { cursor: pointer; }
+.hplots .plot { height: 180px; cursor: crosshair; }
 .duo .plot { height: 340px; cursor: default; }
 .xy .mark { stroke: var(--ink); stroke-width: 2.5; }
 .xy .pt.c1 { fill: var(--h1); }

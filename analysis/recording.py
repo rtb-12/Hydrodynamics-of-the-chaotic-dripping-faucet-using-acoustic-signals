@@ -20,12 +20,12 @@ import av, numpy as np, noisereduce as nr, imageio_ffmpeg
 import scipy.ndimage as nd, scipy.signal as ss
 from scipy.io import wavfile
 from PIL import Image, ImageDraw
+from lanes import FS, WAVE_RATE, envelope, minmax, lanes
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'site' / 'recordings'
 FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
 
-FS = 48000                  # audio rate everything is resampled to
 ALIGN_NEAR = 1.0            # with --audio-offset, the alignment is searched this far either side of it, seconds
 ALIGN_OK = 1.5              # audio alignment peak must beat the runner-up by this factor to be trusted
 SCOUT_FRAMES = 600          # frames used to locate the impact point and water line
@@ -49,7 +49,6 @@ GATE_K = 3.0                # gate threshold in robust standard deviations
 GATE_FLOOR = 0.5            # ...but never below this fraction of a typical strong crossing
 BURST_K = 0.5               # a drop is timed at its first pulse at least this fraction of its tallest
 MIN_GAP_S = 0.05            # two drops closer than this are one drop (20 Hz ceiling)
-BAND = (2000, 15000)        # impact and plink energy lives here, below it is room noise
 HIGHPASS = 800              # cleaning high-pass, Hz
 ONSET_K = 8.0               # onset threshold as a multiple of the median envelope
 HEARD_WITHIN = 0.4          # a drop is "heard" if a sound starts within this long after it crosses the gate
@@ -58,10 +57,6 @@ RING_BAND = (1500, 16000)   # a ringing bubble's pitch is looked for here; below
 RING_N = 1024               # samples of sound the pitch is read from (21 ms), from RING_LEAD before the loudest moment
 RING_LEAD = 96
 RING_HALF = 150             # a ring is "sharp" by the share of its energy within this many Hz of its pitch
-WAVE_RATE = 4000            # waveform min/max pairs per second
-LOUD_RATE = 200             # loudness points per second
-SPEC_MAX_W = 16000          # spectrogram PNG width cap, browsers struggle beyond this
-SPEC_FMAX = 16000           # spectrogram top frequency, Hz
 HLG, PQ = 18, 16            # colour-transfer codes that mean HDR
 
 
@@ -260,11 +255,6 @@ def read_audio(path, slow=1.0, span=None):
     return x[int(span[0] / slow * FS):int(span[1] / slow * FS)] if span else x
 
 
-def envelope(x, lp=300):
-    y = ss.sosfiltfilt(ss.butter(4, BAND, 'bandpass', fs=FS, output='sos'), x)
-    return ss.sosfiltfilt(ss.butter(2, lp, fs=FS, output='sos'), np.abs(ss.hilbert(y)))
-
-
 def align(ref, other, near=None):
     """Seconds to add to a video time to find the same moment in `other`, and how clearly it won. `near` keeps
     the search within ALIGN_NEAR of a known rough offset, for audio whose few loud moments match in several places."""
@@ -350,36 +340,6 @@ def onsets(x):
     e = envelope(x, 500)
     p, _ = ss.find_peaks(e, height=ONSET_K * np.median(e), distance=int(MIN_GAP_S * FS))
     return p / FS
-
-
-# --- page data -------------------------------------------------------------
-
-def minmax(x):
-    """Base64 of int8 (max, min) pairs at WAVE_RATE, fine enough to zoom into one plink. Square-root
-    companded, the scale the viewer draws on, so a plink at 1% of the loudest keeps 13 levels instead of 1."""
-    n = FS // WAVE_RATE
-    r = x[:len(x) // n * n].reshape(-1, n) / (np.abs(x).max() or 1)
-    r = np.c_[r.max(1), r.min(1)]
-    pairs = np.round(np.sign(r) * np.sqrt(np.abs(r)) * 127).astype(np.int8)
-    return base64.b64encode(pairs.tobytes()).decode()
-
-
-def loudness(x):
-    n = FS // LOUD_RATE
-    e = envelope(x, 500)
-    e = e[:len(e) // n * n].reshape(-1, n).max(1)
-    return np.clip(np.round(20 * np.log10(e / (e.max() or 1) + 1e-9)), -60, 0).astype(int).tolist()
-
-
-def spectrogram_png(x, path, duration):
-    cps = min(200, SPEC_MAX_W / duration)   # long recordings get coarser columns rather than tiling
-    hop = min(512, int(FS / cps))
-    f, _, Z = ss.spectrogram(x, FS, nperseg=512, noverlap=512 - hop)
-    Z = 10 * np.log10(Z[f <= SPEC_FMAX] + 1e-14)
-    lo, hi = np.percentile(Z, [50, 99.9])
-    a = (np.clip((Z - lo) / (hi - lo), 0, 1) * 255).astype(np.uint8)[::-1]
-    Image.fromarray(np.dstack([np.full_like(a, 255), a]), 'LA').save(path, optimize=True)
-    return FS / hop
 
 
 def write_check(path, meta, geo, gate_box, box):
@@ -470,17 +430,14 @@ def process(video, audio=None, name=None, channel='microphone', impact=None, til
 
     wavfile.write(out / 'clean.wav', FS, (cl * 32767).astype(np.int16))
     wavfile.write(out / 'raw.wav', FS, (raw / (np.abs(raw).max() or 1) * 0.9 * 32767).astype(np.int16))
-    spec_cps = spectrogram_png(cl, out / 'spec-clean.png', meta['duration'])
-    spectrogram_png(raw, out / 'spec-raw.png', meta['duration'])
+    lane = lanes(cl, raw, out, meta['duration'])
     encode_video(video, out / 'video.mp4', meta, box, geo['tilt'])
 
     data = dict(
         name=name, created=meta['created'], duration=round(meta['duration'], 3), fps=round(meta['fps'], 3),
         channel=channel, offset=round(offset, 4), confidence=confidence and round(confidence, 2),
         offset_unsure=unsure, offset_hinted=audio_offset is not None,
-        wave_rate=WAVE_RATE, loud_rate=LOUD_RATE, spec_cps=spec_cps, spec_fmax=SPEC_FMAX,
-        wave=dict(clean=minmax(cl), raw=minmax(raw)),
-        loud=dict(clean=loudness(cl), raw=loudness(raw)),
+        **lane,
         drops=np.round(drops, 4).tolist(), heard=heard, sound=sound,
         stats=stats)
     (out / 'data.js').write_text(
