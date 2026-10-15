@@ -34,6 +34,9 @@ jobs:
       - name: Recording pipeline end to end on synthetic clips
         run: uv run analysis/recording.py --selftest
 
+      - name: Drop-height pipeline end to end on a synthetic recording
+        run: uv run analysis/heights.py --selftest
+
       - name: Site structure, links and offline guarantee
         run: python3 tools/validate_site.py
 
