@@ -67,7 +67,7 @@
 
 <script>
 (function () {
-  var SETS = { heights: 'First set, 20 to 40 cm', sweep: 'Height sweep, 10 to 35 cm' };   // folders under recordings/
+  var SETS = { heights: 'First set, 15 to 35 cm', sweep: 'Height sweep, 10 to 35 cm' };   // folders under recordings/
   var SET = SETS[new URLSearchParams(location.search).get('set')] ? new URLSearchParams(location.search).get('set') : 'heights';
   var pick = document.getElementById('pick');
   Object.keys(SETS).forEach(function (k) { pick.add(new Option(SETS[k], k, false, k === SET)); });
