@@ -204,8 +204,8 @@ function infoTips(INFO, tip, host) {
   return hideTip;
 }
 
-// Media streams from the network so playback starts at once; a full copy goes into the browser's Cache Storage once the
-// file can play through, and later visits play that copy. A copy is kept while the server's file has the same size.
+// Media streams from the network so playback starts at once; once the browser holds the whole file, a copy goes into its
+// Cache Storage (never earlier, so it cannot slow playback), and later visits play that copy while the server's file keeps its size.
 var MEDIA_CACHE = 'recordings-v1';
 function mediaUrl(url) {   // resolves to the cached copy as a blob URL, or to the network URL
   if (!window.caches) return Promise.resolve(url);   // opened from the filesystem, or an old browser
@@ -220,9 +220,13 @@ function mediaUrl(url) {   // resolves to the cached copy as a blob URL, or to t
     });
   }).catch(function () { return url; });
 }
-function keepMedia(el, url) {   // copy url into the cache once el can play through, unless it is already there
+function keepMedia(el, url) {   // copy url into the cache once el has all of it, unless it is already there
   if (!window.caches || /^blob:/.test(el.src)) return;
-  el.addEventListener('canplaythrough', function () {
+  function check() {
+    var b = el.buffered;
+    if (!el.duration || !b.length || b.start(0) > 0.1 || b.end(b.length - 1) < el.duration - 0.1 || b.length > 1) return;
+    el.removeEventListener('progress', check);
     caches.open(MEDIA_CACHE).then(function (c) { return c.match(url).then(function (hit) { if (!hit) return c.add(url); }); }).catch(function () {});
-  }, { once: true });
+  }
+  el.addEventListener('progress', check);
 }
