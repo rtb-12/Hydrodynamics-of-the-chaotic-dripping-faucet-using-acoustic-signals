@@ -2,6 +2,9 @@
 
 var GUT = 46, PAD = 8;   // time lanes' left gutter and right margin
 
+// Opened from the filesystem the browser keeps a page's data scripts even after they are regenerated, so ask afresh there.
+function fresh(url) { return location.protocol === 'file:' ? url + '?t=' + Date.now() : url; }
+
 // A static x-y plot as inline SVG. o: W, H, x and y as [lo, hi], xl and yl axis titles, pts [{x, y, label, now, faint, miss, cls}],
 // diag for the y = x line, join for a line through consecutive points not separated by a `cut`, marks [{x, y}] for short level bars.
 function xy(o) {

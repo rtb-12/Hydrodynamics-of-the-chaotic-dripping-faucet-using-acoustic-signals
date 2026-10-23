@@ -19,6 +19,9 @@
   --h1:      #0a6a8a;
   --h2:      #b4521a;
   --h3:      #4f7d1f;
+  --h4:      #7a4fa0;
+  --h5:      #a8326e;
+  --h6:      #8a6d00;
 
   --display: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
   --body:    "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif Pro", "Palatino Linotype", Georgia, serif;
@@ -44,6 +47,9 @@
     --h1:      #4fb3d6;
     --h2:      #e39058;
     --h3:      #9ccc65;
+    --h4:      #b79ae0;
+    --h5:      #ec7fb4;
+    --h6:      #e0c341;
   }
 }
 
@@ -61,6 +67,9 @@
   --h1:      #4fb3d6;
   --h2:      #e39058;
   --h3:      #9ccc65;
+  --h4:      #b79ae0;
+  --h5:      #ec7fb4;
+  --h6:      #e0c341;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -982,6 +991,9 @@ a:focus-visible, .sidenav a:focus-visible {
 .xy .pt.c1 { fill: var(--h1); }
 .xy .pt.c2 { fill: var(--h2); }
 .xy .pt.c3 { fill: var(--h3); }
+.xy .pt.c4 { fill: var(--h4); }
+.xy .pt.c5 { fill: var(--h5); }
+.xy .pt.c6 { fill: var(--h6); }
 
 /* Enlarged plot: the same drawing at dialog size, so it gains real detail. */
 .zoom { width: min(1400px, calc(100vw - 32px)); height: min(860px, calc(100vh - 32px)); max-width: none; max-height: none; padding: 0;

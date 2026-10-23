@@ -7,7 +7,6 @@
 <link rel="stylesheet" href="style.css">
 <script src="theme.js"></script>
 <script src="plots.js"></script>
-<script src="recordings/heights/data.js"></script>
 </head>
 <body>
 
@@ -21,9 +20,10 @@
   <div class="vhead">
     <div class="vtitle">
       <h1>Drop sound and fall height</h1>
+      <select id="pick" aria-label="Recording set"></select>
       <span class="vmeta" id="meta"></span>
     </div>
-    <p class="note">The same faucet at the same flow rate, about one drop a second; only the height the drops fall into the water changes. Each row is one phone recording, its waveform and spectrogram scrolling with its own sound. Play a row, click a graph to move there, or step from drop to drop; each row starts on a typical drop.</p>
+    <p class="note">The same faucet with the tap left alone through each set; only the height the drops fall into the water changes. Each row is one phone recording, its waveform and spectrogram scrolling with its own sound. Play a row, click a graph to move there, or step from drop to drop; each row starts on a typical drop.</p>
   </div>
 
   <p class="empty" id="empty" hidden>No data yet. Run
@@ -67,6 +67,15 @@
 
 <script>
 (function () {
+  var SETS = { heights: 'First set, 15 to 35 cm', sweep: 'Height sweep, 10 to 35 cm' };   // folders under recordings/
+  var SET = SETS[new URLSearchParams(location.search).get('set')] ? new URLSearchParams(location.search).get('set') : 'heights';
+  var pick = document.getElementById('pick');
+  Object.keys(SETS).forEach(function (k) { pick.add(new Option(SETS[k], k, false, k === SET)); });
+  pick.onchange = function () { location.search = '?set=' + pick.value; };
+  var data = document.createElement('script');   // a script tag rather than fetch, so the page also opens from the filesystem
+  data.src = fresh('recordings/' + SET + '/data.js'); data.onload = data.onerror = page; document.head.appendChild(data);
+
+  function page() {
   var PH = 0.8, OV_MS = 40;   // playhead position while playing; span of the overlaid drops, ms
   var LANE_FOOT = '<span>Click to jump there</span><span>Scroll to widen or narrow the window</span><span><kbd>Space</kbd> play or pause</span><span><kbd>[</kbd> <kbd>]</kbd> previous or next drop</span><span><kbd>Esc</kbd> close</span>';
   var OV_FOOT = '<span>Hover to read every height at one moment</span><span>Scroll to widen or narrow the time span</span><span><kbd>Esc</kbd> close</span>';
@@ -86,7 +95,7 @@
       'Cleaned has the music and hum below 1 kHz filtered out and the steady hiss turned down by at most 10 dB. It is deliberately gentle, so the drops themselves are unchanged and faint ones survive; louder noise reduction halved the drops&rsquo; peaks. The graphs follow whichever track is selected.'],
     all: ['Play all', 'Plays every row at once from the drop each row is showing, with those drops lined up so they land together. The slider moves all rows through their recordings together, still lined up.',
       'Hear picks which rows you listen to while all of them play; the rest play silently so their graphs still move. A row played on its own is always heard.',
-      'The drips do not run at quite the same rate (the 25 cm one about 10% faster), so the rows would drift apart by about a tenth of a second a drop. Halfway between drops, where every row is quiet, each row is moved so its next drop lands with the first row&rsquo;s. The sound is never sped up or slowed, so pitches stay true.'],
+      'The drips do not run at quite the same rate (the tap slows as the water above it falls), so the rows would drift apart by about a tenth of a second a drop. Halfway between drops, where every row is quiet, each row is moved so its next drop lands with the first row&rsquo;s. The sound is never sped up or slowed, so pitches stay true.'],
     speed: ['Slow motion', 'Plays the sound slower so one drop can be heard as it happens. The sound drops in pitch like a slowed tape: at 0.25&times; a 4 kHz ring sounds at 1 kHz, still easy to hear.',
       'Firefox mutes sound below 0.25&times;.']
   };
@@ -97,6 +106,9 @@
   var KINDS = ['wave', 'loud', 'spec', 'drops'], zoom = $('zoom'), zc = $('zc'), zRead = $('zRead'), zRow = null, zKind = null, zHover = null, zView = null, zSpan = 0;
 
   function label(c) { return c.h + ' cm'; }
+  function per(c) { return c.drip_s || c.period_ms / 1000; }   // the drip's own period where the set shares a tap, else the gaps heard
+  function rang(c) { return c.drops.filter(function (d) { return d.ring; }).length; }
+  function fell(c) { return c.drips || c.drops.length; }   // drips that fell, where the drip rate is known; else the drops heard
   function median(v) { v = v.slice().sort(function (a, b) { return a - b; }); return v.length ? (v[(v.length - 1) >> 1] + v[v.length >> 1]) / 2 : null; }
   function samples(c, i) {
     var a = unpack(c.snip[i]), k = c.snip_scale[i] / 127, out = new Float32Array(a.length);
@@ -105,7 +117,7 @@
   }
   function tokens(n) {
     var s = getComputedStyle(document.documentElement), g = function (v) { return s.getPropertyValue(v).trim(); };
-    var c = [g('--h1'), g('--h2'), g('--h3')];
+    var c = [g('--h1'), g('--h2'), g('--h3'), g('--h4'), g('--h5'), g('--h6')];
     return { ink: g('--ink'), ink2: g('--ink-2'), ink3: g('--ink-3'), rule: g('--rule'), surface: g('--surface'), hydro: g('--hydro'),
              sans: g('--display'), c: c, chan: c[n || 0] };
   }
@@ -151,7 +163,7 @@
   function seek(r, t) { r.audio.currentTime = Math.max(0, Math.min(r.c.duration, t)); draw(r); }
   // Drop times with each missed drop filled in at its expected time, so lining rows up never skips one.
   function beats(c) {
-    var P = c.period_ms / 1000, out = [];
+    var P = per(c), out = [];
     c.drops.forEach(function (d, i) {
       var prev = i ? c.drops[i - 1].t : null, n = prev == null ? 1 : Math.round((d.t - prev) / P);
       for (var k = 1; k < n; k++) out.push(prev + (d.t - prev) * k / n);
@@ -169,7 +181,7 @@
     var left = b[i + 1] - t;
     rows.slice(1).forEach(function (r) {
       if (r.audio.seeking) return;
-      if (r.lockedAt !== i) { r.lockedAt = i; r.next = r.beats[beatAt(r.beats, r.audio.currentTime + left - 0.5 * r.c.period_ms / 1000) + 1]; }
+      if (r.lockedAt !== i) { r.lockedAt = i; r.next = r.beats[beatAt(r.beats, r.audio.currentTime + left - 0.5 * per(r.c)) + 1]; }
       if (r.next == null) return;
       var err = r.audio.currentTime - (r.next - left);   // above zero: this row runs ahead
       if (Math.abs(err) < SYNC) return;
@@ -276,10 +288,10 @@
 
   function buildRows() {
     H.clips.forEach(function (c, n) {
-      var el = document.createElement('div'), ring = c.drops.filter(function (d) { return d.ring; }).length;
+      var el = document.createElement('div');
       el.className = 'hrow';
       el.innerHTML = '<div class="hhead"><b class="hname" style="--c: var(--h' + (n + 1) + ')">' + label(c) + '</b>' +
-        '<span class="vmeta">' + c.drops.length + ' drops, ' + Math.round(100 * ring / c.drops.length) + '% ring, one every ' + (c.period_ms / 1000).toFixed(2) + ' s; ' +
+        '<span class="vmeta">' + c.drops.length + (c.drips ? ' of about ' + c.drips + ' drips heard' : ' drops') + ', ' + Math.round(100 * rang(c) / fell(c)) + '% ring, one every ' + per(c).toFixed(2) + ' s; ' +
         'its steadiest ' + Math.round(c.duration) + ' s, from ' + Math.round(c.start) + ' s into the recording</span></div>' +
         '<div class="transport card"><button class="primary" type="button">Play</button>' +
         '<input type="range" class="scrub" min="0" max="' + c.duration + '" step="0.001" value="0" aria-label="Position in ' + label(c) + '">' +
@@ -288,7 +300,7 @@
         '<div class="hplots"><div class="hcol">' + lane('Waveform', '% of loudest', 'wave') + lane('Loudness', 'dB below the loudest moment', 'loud') + '</div>' +
         '<div class="hcol">' + lane('Spectrogram', 'kHz', 'spec') + lane('Drops', 'dot means it rang', 'drops') + '</div></div>';
       $('rows').appendChild(el);
-      var dir = 'recordings/heights/' + c.slug + '/', spec = {};
+      var dir = 'recordings/' + SET + '/' + c.slug + '/', spec = {};
       ['clean', 'raw'].forEach(function (s) { var im = new Image(); im.onload = function () { draw(r); }; im.src = dir + 'spec-' + s + '.png'; spec[s] = im; });
       var r = { c: c, n: n, i: -1, lanes: [].slice.call(el.querySelectorAll('canvas')), audio: new Audio(), read: el.querySelector('.hread'), scrub: el.querySelector('.scrub'),
                 play: el.querySelector('.primary'), wave: { clean: unpack(c.wave.clean), raw: unpack(c.wave.raw) }, spec: spec, dir: dir,
@@ -374,11 +386,12 @@
   // --- what changes ------------------------------------------------------------------
 
   function fillTable() {
-    var head = ['Recording', 'Drops', 'One drop every, middle half within', 'Ringing', 'Loudness, median', 'Sound lasts, median', 'Ring pitch, median', 'Ring dies away in, median'];
+    var head = ['Recording', 'Drops heard', 'One drop every, middle half within', 'Ringing', 'Loudness, median', 'Sound lasts, median', 'Ring pitch, median', 'Ring dies away in, median'];
     var body = H.clips.map(function (c) {
       var d = c.drops, rg = d.filter(function (x) { return x.ring; }), m = function (v, f) { return v == null ? '-' : f(v); };
-      var iv = d.slice(1).map(function (x, i) { return x.t - d[i].t; }).filter(function (v) { return Math.abs(v * 1000 / c.period_ms - 1) < 0.3; }).sort(function (a, b) { return a - b; });
-      return [label(c), d.length, (c.period_ms / 1000).toFixed(3) + ' s &plusmn; ' + Math.round((iv[Math.floor(iv.length * 0.75)] - iv[Math.floor(iv.length * 0.25)]) * 500) + ' ms', Math.round(100 * rg.length / d.length) + '%',
+      var iv = d.slice(1).map(function (x, i) { return x.t - d[i].t; }).filter(function (v) { return Math.abs(v / per(c) - 1) < 0.3; }).sort(function (a, b) { return a - b; });
+      var spread = iv.length > 3 ? ' &plusmn; ' + Math.round((iv[Math.floor(iv.length * 0.75)] - iv[Math.floor(iv.length * 0.25)]) * 500) + ' ms' : '';
+      return [label(c), d.length + (c.drips ? ' of ' + c.drips : ''), per(c).toFixed(3) + ' s' + spread, Math.round(100 * rg.length / fell(c)) + '%',
         m(median(d.map(function (x) { return x.db; })), function (v) { return v.toFixed(1) + ' dB'; }),
         m(median(d.map(function (x) { return x.dur; })), function (v) { return Math.round(v) + ' ms'; }),
         m(median(rg.map(function (x) { return x.hz; })), function (v) { return (v / 1000).toFixed(2) + ' kHz'; }),
@@ -393,8 +406,8 @@
     function card(title, sub, plot) { return '<div class="card xycard"><span class="xcap">' + title + ' <span>' + sub + '</span></span>' + plot + '</div>'; }
     var share = xy({ W: 520, H: 400, x: xr, y: [0, 100], xl: 'Fall height, cm', yl: 'Drops that ring, %',
       pts: H.clips.map(function (c, n) {
-        var k = c.drops.filter(function (d) { return d.ring; }).length, p = 100 * k / c.drops.length;
-        return { x: c.h, y: p, cls: 'c' + (n + 1), label: Math.round(p) + '% of ' + c.drops.length, tip: label(c) };
+        var p = 100 * rang(c) / fell(c);
+        return { x: c.h, y: p, cls: 'c' + (n + 1), label: Math.round(p) + '% of ' + fell(c), tip: label(c) + ': ' + rang(c) + ' of ' + fell(c) + (c.drips ? ' drips' : ' drops') };
       }) });
     var pts = [], marks = [], all = [];
     H.clips.forEach(function (c, n) {
@@ -407,7 +420,7 @@
       if (v.length) marks.push({ x: c.h, y: median(v) });
     });
     var pitch = xy({ W: 520, H: 400, x: xr, y: span(all, 0.5), xl: 'Fall height, cm', yl: 'Pitch, kHz', pts: pts, marks: marks });
-    $('feats').innerHTML = card('Drops that ring', 'one point per recording', share) + card('Ring pitch', 'one dot per drop that rang', pitch);
+    $('feats').innerHTML = card('Drops that ring', H.clips[0].drips ? 'share of every drip that fell' : 'one point per recording', share) + card('Ring pitch', 'one dot per drop that rang', pitch);
   }
 
   // --- wiring --------------------------------------------------------------------------
@@ -452,6 +465,7 @@
   addEventListener('resize', function () { if (innerWidth !== last) { last = innerWidth; redraw(); } });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw);
   new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
 })();
 </script>
 </body>

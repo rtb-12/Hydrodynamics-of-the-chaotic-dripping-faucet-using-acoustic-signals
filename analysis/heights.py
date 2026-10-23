@@ -19,7 +19,7 @@ from scipy.io import wavfile
 from lanes import FS, lanes, scale
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT = ROOT / 'site' / 'recordings' / 'heights'
+OUT = ROOT / 'site' / 'recordings'
 FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
 
 HP_HZ = 1000                # cleaning high-pass: music and hum sit below it, each drop keeps a 1.2-1.4 kHz burst above it
@@ -30,7 +30,12 @@ BAND = (2000, 9000)         # drop sound is measured here; the phone's codec inv
 DET_BAND = (4000, 9000)     # drops are found here, where the music is quietest
 RATE = 2000                 # detection envelope rate, Hz
 FLOOR_S = 3.0               # the detection floor is the running median over this long
-PERIOD_S = (0.5, 2.0)       # drip periods searched
+PERIOD_S = (0.5, 6.0)       # drip periods searched
+LOUD = 10.0                 # with --same-tap, drops this many times the floor in every clip set the shared period...
+FIT, FIT_REL = 0.8, 0.06    # ...the longest fitting nearly this share of the best fit's gaps as whole periods, within this fraction of one
+NEAR = 0.2                  # each clip then fits its own period within this fraction of the shared one, as the drip slows with the tank...
+OWN_GAPS = 6                # ...when it has at least this many gaps between loud drops; a near-silent clip keeps the shared period
+BETWEEN = 0.4               # the period is halved while midpoints hold drops this much more often than quarter points
 SNR_CAP = 100.0             # one loud burst cannot drag the drip's beat grid beyond this
 BEAT_STIFF = 150.0          # beat grid penalty on log(interval / period) squared
 SEARCH_S = 0.04             # each drop is looked for this far either side of its beat
@@ -75,6 +80,12 @@ def bandpass(x, band):
     return ss.sosfiltfilt(ss.butter(4, band, 'bandpass', fs=FS, output='sos'), x)
 
 
+def busy(snr, k):
+    """Speech, handling or a knock around envelope sample k: a raised median just before or after it."""
+    a, b = int(0.03 * RATE), int(0.3 * RATE)
+    return max(np.median(snr[max(0, k - b):max(1, k - a)]), np.median(snr[k + a:k + b])) > BUSY
+
+
 def period(snr):
     """Drip period in envelope samples, from the autocorrelation summed at one, two and three periods."""
     a = np.log(np.clip(snr, 1, None))
@@ -83,6 +94,37 @@ def period(snr):
     lags = np.arange(int(PERIOD_S[0] * RATE), int(PERIOD_S[1] * RATE))
     lags = lags[3 * lags < len(ac)]
     return int(lags[np.argmax(sum(ac[k * lags] for k in (1, 2, 3)))])
+
+
+def loud_gaps(snr):
+    """Seconds between consecutive loud drops, leaving out any inside speech or handling noise."""
+    pk, _ = ss.find_peaks(snr, height=LOUD, distance=int(PERIOD_S[0] * RATE))
+    return np.diff([k for k in pk if not busy(snr, k)]) / RATE
+
+
+def tap_period(gaps, lo=PERIOD_S[0], hi=PERIOD_S[1]):
+    """Envelope samples of the longest period in lo-hi s fitting nearly as many gaps as whole periods as the best does: a
+    missed drop doubles a gap but never halves one, so the period's fractions fit as well yet lose to it, and its double fits half."""
+    cands = np.arange(hi, lo, -0.005)
+    k = np.round(gaps[None, :] / cands[:, None])
+    ok = (k >= 1) & (np.abs(gaps[None, :] - k * cands[:, None]) <= FIT_REL * cands[:, None])
+    fit = ok.mean(1)
+    i = int(np.argmax(fit >= FIT * fit.max()))   # the first, so the longest, candidate near the best
+    return int(round(np.median(gaps[ok[i]] / k[i][ok[i]]) * RATE))
+
+
+def drip(snr, o, p=None):
+    """Beat grid for the drip. When only every other drop is loud, the period found is doubled, so it is halved while
+    midpoints between beats hold drops more often than noise explains."""
+    p, w = p or period(snr), int(SEARCH_S * RATE)
+    beats = beat_grid(o, p)
+    hit = lambda f: np.mean([snr[max(0, m - w):m + w].max() >= THR for m in (u + int(f * (v - u)) for u, v in zip(beats, beats[1:]))])
+    while p // 2 >= PERIOD_S[0] * RATE and len(beats) > 2:
+        if hit(0.5) - (hit(0.25) + hit(0.75)) / 2 < BETWEEN:
+            break
+        p //= 2
+        beats = beat_grid(o, p)
+    return beats
 
 
 def beat_grid(o, p):
@@ -103,18 +145,30 @@ def beat_grid(o, p):
     return beats[::-1]
 
 
-def find_drops(y):
-    """Onset times, s: the drop nearest each beat, if it clears THR and is not inside speech or handling noise."""
+def strength(y):
+    """Detection envelope at RATE, as multiples of its running floor."""
     e = ss.sosfiltfilt(ss.butter(2, 400, fs=FS, output='sos'), np.abs(ss.hilbert(bandpass(y, DET_BAND))))[::FS // RATE]
-    snr = e / nd.median_filter(e, int(FLOOR_S * RATE), mode='nearest')
-    w, lb, a, b = (int(v * RATE) for v in (SEARCH_S, LOOKBACK_S, 0.03, 0.3))
+    return e / nd.median_filter(e, int(FLOOR_S * RATE), mode='nearest')
+
+
+def own_period(snr, p):
+    """This clip's drip period, fitted to its own loud drops within NEAR of the shared period p (envelope samples)."""
+    g = loud_gaps(snr)
+    return tap_period(g, (1 - NEAR) * p / RATE, (1 + NEAR) * p / RATE) if len(g) >= OWN_GAPS else p
+
+
+def find_drops(y, p=None):
+    """Onset times, s: the drop nearest each beat, if it clears THR and is not inside speech or handling noise.
+    p is the drip period in envelope samples when it is known; otherwise it is found from this clip alone."""
+    snr = strength(y)
+    p = p and own_period(snr, p)
+    w, lb = int(SEARCH_S * RATE), int(LOOKBACK_S * RATE)
     found = []
-    for beat in beat_grid(np.log(np.clip(snr, 1, SNR_CAP)), period(snr)):
+    for beat in drip(snr, np.log(np.clip(snr, 1, SNR_CAP)), p):
         k = max(0, beat - w) + int(np.argmax(snr[max(0, beat - w):beat + w]))
         pk, _ = ss.find_peaks(snr[max(0, k - lb):k - int(0.01 * RATE)], height=max(THR, CLUSTER * snr[k]))
         k = max(0, k - lb) + int(pk[0]) if len(pk) else k
-        busy = max(np.median(snr[max(0, k - b):max(1, k - a)]), np.median(snr[k + a:k + b]))
-        if snr[k] >= THR and busy <= BUSY:
+        if snr[k] >= THR and not busy(snr, k):
             found.append(k)
     return [onset(y, k / RATE) for k in found]
 
@@ -188,10 +242,10 @@ def typical(rows):
     return min(pool, key=lambda i: abs(rows[i]['db'] - md) / 6 + abs(rows[i]['dur'] - mu) / 10)
 
 
-def analyse(x):
+def analyse(x, p=None):
     y = clean(x)   # finds faint drops, but its gain opens around each one, so drops are measured on the raw band
     yb = bandpass(x, BAND)
-    times = [t for t in find_drops(y) if FLOOR_MS[0] / 1000 < t < len(y) / FS - POST_MS / 1000]
+    times = [t for t in find_drops(y, p) if FLOOR_MS[0] / 1000 < t < len(y) / FS - POST_MS / 1000]
     rows, envs = [], []
     for t in times:
         r, env = measure(yb, t)
@@ -216,17 +270,23 @@ def steadiest(times, span, duration):
     return best[1]
 
 
-def process(clips, out=OUT, span=SPAN_S):
-    """Every clip's steadiest stretch: audio, lanes and drops into out, scaled alike so the heights compare by eye."""
+def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False):
+    """Every clip's steadiest stretch: audio, lanes and drops into out, scaled alike so the heights compare by eye.
+    With same_tap the clips share one drip period, found from the loud drops of all of them together."""
     hs = [float(h) for h, _ in clips]
     if len(set(hs)) != len(hs):
         raise SystemExit('one clip per height: keep the take with the steadier drip')
+    clips = [(float(h), load(path)) for h, path in sorted(clips, key=lambda c: float(c[0]))]
+    p = tap_period(np.concatenate([loud_gaps(strength(clean(x))) for _, x in clips])) if same_tap else None
+    if p:
+        print(f'shared drip period {p / RATE:.3f} s')
     recs = []
-    for h, path in sorted(clips, key=lambda c: float(c[0])):
-        h, x = float(h), load(path)
-        a = steadiest([r['t'] for r in analyse(x)[1]], span, len(x) / FS) if span else 0.0
+    for h, x in clips:
+        a = steadiest([r['t'] for r in analyse(x, p)[1]], span, len(x) / FS) if span else 0.0
         x = x[int(a * FS):int((a + span) * FS)] if span else x
-        recs.append(dict(slug=f'{h:g}cm', h=h, start=round(a, 2), x=x, a=analyse(x)))
+        own = p and own_period(strength(clean(x)), p) / RATE
+        recs.append(dict(slug=f'{h:g}cm', h=h, start=round(a, 2), x=x, a=analyse(x, p),
+                         drip_s=own and round(own, 3), drips=own and int(round(len(x) / FS / own))))
     ref = dict(clean=scale(*[r['a'][0] for r in recs]), raw=scale(*[r['x'] for r in recs]))
     for r in recs:
         x, (y, rows, envs) = r.pop('x'), r.pop('a')
@@ -299,6 +359,12 @@ def selftest():
     a = steadiest(times, 25, 100)   # a run of missed drops at 10-15 s and a jittery stretch at 60-70 s
     assert 14.4 <= a and a + 25 <= 60.1 or 69.4 <= a, f'steadiest stretch starts at {a} s'
 
+    gaps = np.array([2.9, 2.95, 5.8, 2.85, 0.7, 2.92, 8.75, 3.0, 2.88])   # missed drops, a rebound, a slow drift
+    assert abs(tap_period(gaps) / RATE - 2.9) < 0.05, f'gaps of a 2.9 s drip read as {tap_period(gaps) / RATE:.2f} s'
+    x, truth = synth(n=14, period=2.9)
+    got = find_drops(clean(x), tap_period(loud_gaps(strength(clean(x)))))
+    assert len(got) == 14 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'{len(got)} drops on a 2.9 s drip, made 14'
+
     x, truth = synth(n=12, ring_every=1, rebound=0.4)
     got = find_drops(clean(x))
     assert len(got) == 12 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), 'drops timed on their rebound'
@@ -328,13 +394,15 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     ap.add_argument('--clip', nargs=2, action='append', metavar=('HEIGHT_CM', 'AUDIO'), default=[])
     ap.add_argument('--span', type=float, default=SPAN_S, help='seconds of each recording to keep, its steadiest stretch; 0 keeps it all')
+    ap.add_argument('--set', default='heights', help='name of the recording set, its folder under site/recordings')
+    ap.add_argument('--same-tap', action='store_true', help='the tap was not touched between clips, so they share one drip period')
     ap.add_argument('--selftest', action='store_true')
     a = ap.parse_args()
     if a.selftest:
         return selftest()
     if not a.clip:
         ap.error('give at least one --clip')
-    process(a.clip, span=a.span)
+    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap)
 
 
 if __name__ == '__main__':
