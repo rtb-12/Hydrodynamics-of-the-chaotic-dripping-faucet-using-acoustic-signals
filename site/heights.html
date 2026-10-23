@@ -73,7 +73,7 @@
   Object.keys(SETS).forEach(function (k) { pick.add(new Option(SETS[k], k, false, k === SET)); });
   pick.onchange = function () { location.search = '?set=' + pick.value; };
   var data = document.createElement('script');   // a script tag rather than fetch, so the page also opens from the filesystem
-  data.src = 'recordings/' + SET + '/data.js'; data.onload = data.onerror = page; document.head.appendChild(data);
+  data.src = fresh('recordings/' + SET + '/data.js'); data.onload = data.onerror = page; document.head.appendChild(data);
 
   function page() {
   var PH = 0.8, OV_MS = 40;   // playhead position while playing; span of the overlaid drops, ms

@@ -193,14 +193,14 @@
   }
   function showEmpty() { $('empty').hidden = false; $('body').hidden = true; }
 
-  script('recordings/index.js', function () {
+  script(fresh('recordings/index.js'), function () {
     var list = window.RECORDING_LIST || [];
     if (!list.length) return showEmpty();
     var want = new URLSearchParams(location.search).get('r'), name = list.indexOf(want) >= 0 ? want : list[0], pick = $('pick');
     list.forEach(function (n) { pick.add(new Option(LABELS[n] || n, n, false, n === name)); });
     fillCounts(list, name);
     pick.onchange = function () { location.search = '?r=' + encodeURIComponent(pick.value); };
-    script('recordings/' + name + '/data.js', function () {
+    script(fresh('recordings/' + name + '/data.js'), function () {
       if (window.RECORDINGS && window.RECORDINGS[name]) init(window.RECORDINGS[name]); else showEmpty();
     });
   });
