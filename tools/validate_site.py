@@ -62,7 +62,7 @@ def check(page, css_classes):
     for href in re.findall(r'href="([^"#][^"]*)"', body):
         if href.startswith(('http', 'mailto')):
             continue
-        if not (page.parent / href.split('#')[0]).resolve().exists():
+        if not (page.parent / href.split('#')[0].split('?')[0]).resolve().exists():
             problems.append(f'dead link: {href}')
 
     for href in re.findall(r'href="([^"]*#[^"]+)"', body):
