@@ -76,6 +76,17 @@ Background music below 1 kHz is filtered out and the steady hiss turned down for
 Drops are placed one per drip period by dynamic programming, so a run of faint drops cannot lose the beat, and drops inside talking or handling noise are left out.
 Every measure is read from the raw 2 to 9 kHz band, since the phone's codec invents the sound above 9 kHz and the cleaning's gain opens around each drop.
 
+A slow-motion video of a height's drip goes beside its recording with `--video HEIGHT VIDEO X Y`, where X is the pixel column the drops fall down and Y the water line.
+The clip's slowed stretch is found from its own sound, which is slowed into a low murmur, and its frames are taken as shot at 240 fps; the drip rate the video then shows must match the sound's.
+Each drop is followed down the column frame by frame and timed where its fall meets the water line.
+Only the stretch on film is kept from that height's recording, so every moment of its row has a picture.
+The video and the sound were recorded together on two phones and are lined up by the drops themselves: the one shift that puts the most video drops within 30 ms of a heard drop, each of which is then pinned to it.
+With fewer than three drops matched, or another shift fitting as many, the video is only placed in the drip's rhythm and the page says so.
+
+```bash
+uv run analysis/heights.py --set sweep --same-tap --span 40 --clip 35 "heights/@35cm/WhatsApp Audio ....mpeg" --video 35 heights/@35cm/IMG_5388.mov 1000 500
+```
+
 ## The site
 
 Twelve pages, about 300 KB before any recordings, zero external requests, no libraries.
