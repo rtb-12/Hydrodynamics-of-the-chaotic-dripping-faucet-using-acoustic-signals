@@ -11,7 +11,7 @@ recording of background music, find every drop, measure its sound and write the 
     uv run analysis/heights.py --selftest
 
 Each recording is cut to its steadiest stretch of --span seconds, so every height is judged on its cleanest drops.
-A slow-motion video of the same drip can sit beside a recording; its drops are pinned onto the sound's.
+A slow-motion video filmed with a recording can sit beside it, lined up drop by drop.
 """
 
 import argparse, base64, collections, json, pathlib, subprocess, sys, tempfile
@@ -64,6 +64,7 @@ REGULAR = 0.15              # a gap within this fraction of the drip period is a
 CAPTURE_FPS = 240           # the videos' slow-motion capture rate; their drip must then match the sound's within RATE_TOL
 RATE_TOL = 0.1
 LEVEL_BLOCK_S = 0.1         # a slow-motion clip's slowed stretch is found from its own sound level in blocks this long...
+QUIET_S = 1.0               # ...as the first and last stretch quiet for this long
 SLOW_MARGIN_S = 0.5         # ...less this many clip seconds at each end, where the speed ramps
 VID_SCALE = 2               # video frames are searched at this fraction of full size
 VID_HALF_W = 120            # drops are looked for this many pixels either side of the given column, as the drip wanders
@@ -77,6 +78,8 @@ VID_CROP = (720, 960)       # video crop around the drop column, pixels, with th
 VID_WATER = 0.6
 VID_OUT = (360, 480)        # page video size
 VID_CRF = 26
+MATCH_S = 0.03              # a video drop this close to a heard one is the same drop...
+SYNC_MIN = 3                # ...and this many of them fix the offset; with fewer the video is placed by the drip's rhythm only
 
 
 def load(path):
@@ -252,6 +255,8 @@ def slow_stretch(path):
     x, b = load(path), int(LEVEL_BLOCK_S * FS)
     lv = 20 * np.log10(np.sqrt((x[:len(x) // b * b].reshape(-1, b) ** 2).mean(1)) + 1e-12)
     quiet = lv < (np.median(lv) + np.median(lv[:int(1 / LEVEL_BLOCK_S)])) / 2
+    n = int(QUIET_S / LEVEL_BLOCK_S)   # an opening: drops quiet runs shorter than n, such as the encoder's silent first moment
+    quiet = nd.maximum_filter1d(nd.minimum_filter1d(quiet.astype(np.uint8), n), n).astype(bool)
     return int(np.argmax(quiet)) * LEVEL_BLOCK_S + SLOW_MARGIN_S, (len(quiet) - int(np.argmax(quiet[::-1]))) * LEVEL_BLOCK_S - SLOW_MARGIN_S
 
 
@@ -325,15 +330,25 @@ def trim(hits, g):
     return hits
 
 
+def sync(hits, heard):
+    """(sound s, video s) pins for a video filmed with the sound, or None if the drops heard do not settle it: the one
+    shift that puts the most video drops within MATCH_S of a heard drop, by SYNC_MIN or more and more than any other shift."""
+    near = lambda o: [(min(heard, key=lambda a: abs(a - w - o)), w) for w in hits if heard and min(abs(a - w - o) for a in heard) < MATCH_S]
+    count = sorted(((len(near(a - w)), a - w) for a in heard for w in hits), reverse=True)
+    if not count or count[0][0] < SYNC_MIN or any(n == count[0][0] and abs(o - count[0][1]) > 2 * MATCH_S for n, o in count[1:]):
+        return None
+    return [[round(a, 4), round(w, 4)] for a, w in near(count[0][1])]
+
+
 def pins(beats, hits):
     """(sound s, video s) pairs putting each of the video's drops on one of the sound's, the video's run centred in it."""
     j = max(0, (len(beats) - len(hits)) // 2)
     return [[round(b, 4), round(v, 4)] for b, v in zip(beats[j:], hits)]
 
 
-def video(path, x, y, out, beats):
+def video(path, x, y, out, beats, heard):
     """A slow-motion clip's slowed stretch, cropped around the drop column, at real speed into out/video.mp4, and the pins
-    that put its drops on the sound's. It was filmed apart from the sound, so its drops are other drops of the same drip."""
+    that line its drops up with the heard ones; where too few are heard, with the drip's beats in its rhythm only."""
     meta = probe(path, CAPTURE_FPS, slow_stretch(path))
     hits = impacts(*lit_rows(path, meta, x, y))
     g, p = same_drip(path, hits, beats)
@@ -344,8 +359,11 @@ def video(path, x, y, out, beats):
                     '-vf', f'setpts=PTS/{meta["slow"]},crop={W}:{H}:{cx}:{cy},scale={VID_OUT[0]}:{VID_OUT[1]}',
                     '-fps_mode', 'passthrough', '-c:v', 'libx264', '-crf', str(VID_CRF), '-preset', 'slow', '-g', '60',
                     '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(out / 'video.mp4')], check=True)
-    print(f'  video: {len(hits)} drops, one every {g:.3f} s against the sound\'s {p:.3f} s')
-    return dict(duration=round(meta['duration'], 3), pins=pins(beats, fill(trim(hits, g), g)))
+    hits = trim(hits, g)
+    pinned = sync(hits, heard)
+    print(f'  video: {len(hits)} drops, one every {g:.3f} s against the sound\'s {p:.3f} s; '
+          + (f'{len(pinned)} matched to heard drops' if pinned else 'its heard drops do not settle the shift'))
+    return dict(duration=round(meta['duration'], 3), synced=bool(pinned), pins=pinned or pins(beats, fill(hits, g)))
 
 
 def encode(x, path):
@@ -423,7 +441,7 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=()):
                  env=[[round(float(v), 1) for v in row] for row in q], **lanes(y, x, d, len(x) / FS, ref))
         print(f'{r["slug"]}: {len(rows)} drops, period {r["period_ms"]} ms, {sum(w["ring"] for w in rows)} ring')
         if r['slug'] in vids:
-            r['video'] = video(*vids[r['slug']], d, fill([w['t'] for w in rows], r['drip_s'] or r['period_ms'] / 1000))
+            r['video'] = video(*vids[r['slug']], d, fill([w['t'] for w in rows], r['drip_s'] or r['period_ms'] / 1000), [w['t'] for w in rows])
     data = dict(rate=VIEW_RATE, pre_ms=PRE_MS, post_ms=POST_MS, env_ms=ENV_MS, band=BAND,
                 amax=max(max(c['snip_scale']) for c in recs), clips=recs)
     (out / 'data.js').write_text('window.HEIGHTS = ' + json.dumps(data, separators=(',', ':')) + ';\n')
@@ -514,6 +532,8 @@ def selftest():
         assert c['duration'] == 6.0 and len(c['drops']) >= 4, f'cut to {c["duration"]} s with {len(c["drops"])} drops'
         tone = np.sin(2 * np.pi * 440 * np.arange(16 * FS) / FS) * np.r_[np.ones(2 * FS), 0.01 * np.ones(12 * FS), np.ones(2 * FS)]
         wavfile.write(p, FS, (tone * 20000).astype(np.int16))
+        tone[:FS // 10] = 0   # the encoder's silent first moment
+        wavfile.write(p, FS, (tone * 20000).astype(np.int16))
         a, b = slow_stretch(p)
         assert abs(a - 2 - SLOW_MARGIN_S) < 0.11 and abs(b - 14 + SLOW_MARGIN_S) < 0.11, f'slowed stretch of 2-14 s read as {a}-{b} s'
 
@@ -531,6 +551,12 @@ def selftest():
     assert fill([0, 1, 3, 4], 1) == [0, 1, 2, 3, 4], 'a missed drop not put back'
     assert trim([0, 1.3, 2.3, 4.3, 5.6], 1) == [1.3, 2.3, 4.3], 'drops in the speed ramps kept'
     assert pins(list(range(10)), [0.5, 1.5]) == [[4, 0.5], [5, 1.5]], 'the video not centred in the sound'
+    hits = [1.0, 4.0, 7.0, 10.0, 13.0, 16.0]
+    heard = [3.0, 6.004, 9.0, 15.2, 18.003, 25.0]   # 2 s later; 12 s missed; one timed 0.2 s late; a stray sound
+    got = sync(hits, heard)
+    assert got == [[3.0, 1.0], [6.004, 4.0], [9.0, 7.0], [18.003, 16.0]], f'video pinned as {got}'
+    assert sync([1.0, 4.0, 20.0], [3.0, 6.0]) is None, 'two heard drops fixed the offset'
+    assert sync(hits, [3.0, 6.0, 9.0, 30.0, 33.0, 36.0]) is None, 'two shifts as good as each other were settled'
     try:
         same_drip('clip', [0, 2, 4], [0, 1, 2])
         raise AssertionError('a video drip twice the sound\'s was accepted')
