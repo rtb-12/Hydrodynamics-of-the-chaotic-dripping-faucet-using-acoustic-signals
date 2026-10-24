@@ -340,30 +340,36 @@ def sync(hits, heard):
     return [[round(a, 4), round(w, 4)] for a, w in near(count[0][1])]
 
 
-def pins(beats, hits):
-    """(sound s, video s) pairs putting each of the video's drops on one of the sound's, the video's run centred in it."""
-    j = max(0, (len(beats) - len(hits)) // 2)
-    return [[round(b, 4), round(v, 4)] for b, v in zip(beats[j:], hits)]
+def window(hits, length, heard, g, total):
+    """Sound seconds (a, b) to keep beside a film `length` s long, the film's time at a, and pins (sound s from a, film s
+    from that time). Lined up by sync, it is the filmed stretch itself; else the steadiest stretch a drip period g shorter,
+    the film moved within that period so one of its drops lands on a beat of the sound."""
+    pinned = sync(hits, heard)
+    if pinned:
+        o = float(np.median([a - w for a, w in pinned]))
+        a, b = max(0.0, o), min(total, o + length)
+        return a, b, a - o, [[round(s - a, 4), round(w - a + o, 4)] for s, w in pinned]
+    a = steadiest(heard, length - g, total)
+    b = min(total, a + length - g)
+    beats = [t - a for t in fill(heard, g) if a <= t <= b]
+    return a, b, next((h - t for t in beats for h in hits if 0 <= h - t <= length - (b - a)), 0.0), None
 
 
-def video(path, x, y, out, beats, heard):
-    """A slow-motion clip's slowed stretch, cropped around the drop column, at real speed into out/video.mp4, and the pins
-    that line its drops up with the heard ones; where too few are heard, with the drip's beats in its rhythm only."""
+def film(path, x, y):
+    """A slow-motion clip's slowed stretch, timed in real seconds, and when each of its drops meets the water."""
     meta = probe(path, CAPTURE_FPS, slow_stretch(path))
-    hits = impacts(*lit_rows(path, meta, x, y))
-    g, p = same_drip(path, hits, beats)
+    return meta, impacts(*lit_rows(path, meta, x, y))
+
+
+def encode_film(path, meta, x, y, v0, v1, dst):
+    """Real seconds v0 to v1 of the film, cropped around the drop column, at real speed."""
     W, H = VID_CROP
     cx, cy = min(max(x - W // 2, 0), meta['w'] - W), min(max(y - int(VID_WATER * H), 0), meta['h'] - H)
-    t0, t1 = meta['span']
-    subprocess.run([FFMPEG, '-v', 'error', '-y', '-ss', str(t0), '-to', str(t1), '-i', str(path), '-an',
-                    '-vf', f'setpts=PTS/{meta["slow"]},crop={W}:{H}:{cx}:{cy},scale={VID_OUT[0]}:{VID_OUT[1]}',
+    t0, slow = meta['span'][0], meta['slow']
+    subprocess.run([FFMPEG, '-v', 'error', '-y', '-ss', str(t0 + v0 * slow), '-to', str(t0 + v1 * slow), '-i', str(path), '-an',
+                    '-vf', f'setpts=PTS/{slow},crop={W}:{H}:{cx}:{cy},scale={VID_OUT[0]}:{VID_OUT[1]}',
                     '-fps_mode', 'passthrough', '-c:v', 'libx264', '-crf', str(VID_CRF), '-preset', 'slow', '-g', '60',
-                    '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(out / 'video.mp4')], check=True)
-    hits = trim(hits, g)
-    pinned = sync(hits, heard)
-    print(f'  video: {len(hits)} drops, one every {g:.3f} s against the sound\'s {p:.3f} s; '
-          + (f'{len(pinned)} matched to heard drops' if pinned else 'its heard drops do not settle the shift'))
-    return dict(duration=round(meta['duration'], 3), synced=bool(pinned), pins=pinned or pins(beats, fill(hits, g)))
+                    '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(dst)], check=True)
 
 
 def encode(x, path):
@@ -421,10 +427,22 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=()):
     p = tap_period(np.concatenate([loud_gaps(strength(clean(x))) for _, x in clips])) if same_tap else None
     if p:
         print(f'shared drip period {p / RATE:.3f} s')
-    recs = []
+    recs, films = [], {}
     for h, x in clips:
-        a = steadiest([r['t'] for r in analyse(x, p)[1]], span, len(x) / FS) if span else 0.0
-        x = x[int(a * FS):int((a + span) * FS)] if span else x
+        times, total, slug = [r['t'] for r in analyse(x, p)[1]], len(x) / FS, f'{h:g}cm'
+        if slug in vids:   # only the stretch on film is kept
+            path, vx, vy = vids[slug]
+            meta, hits = film(path, vx, vy)
+            g, q = same_drip(path, hits, fill(times, p / RATE if p else float(np.median(np.diff(times)))))
+            hits = trim(hits, g)
+            a, b, v0, pinned = window(hits, meta['duration'], times, g, total)
+            films[slug] = (path, meta, vx, vy, v0, v0 + b - a, pinned)
+            print(f'{slug} video: {len(hits)} drops, one every {g:.3f} s against the sound\'s {q:.3f} s; '
+                  + (f'{len(pinned)} matched to heard drops' if pinned else 'its heard drops do not settle the shift'))
+        else:
+            a = steadiest(times, span, total) if span else 0.0
+            b = a + span if span else total
+        x = x[int(a * FS):int(b * FS)]
         own = p and own_period(strength(clean(x)), p) / RATE
         recs.append(dict(slug=f'{h:g}cm', h=h, start=round(a, 2), x=x, a=analyse(x, p),
                          drip_s=own and round(own, 3), drips=own and int(round(len(x) / FS / own))))
@@ -440,8 +458,10 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=()):
                  typical=typical(rows), drops=rows, snip=[w for w, _ in snips], snip_scale=[round(v, 6) for _, v in snips],
                  env=[[round(float(v), 1) for v in row] for row in q], **lanes(y, x, d, len(x) / FS, ref))
         print(f'{r["slug"]}: {len(rows)} drops, period {r["period_ms"]} ms, {sum(w["ring"] for w in rows)} ring')
-        if r['slug'] in vids:
-            r['video'] = video(*vids[r['slug']], d, fill([w['t'] for w in rows], r['drip_s'] or r['period_ms'] / 1000), [w['t'] for w in rows])
+        if r['slug'] in films:
+            path, meta, vx, vy, v0, v1, pinned = films[r['slug']]
+            encode_film(path, meta, vx, vy, v0, v1, d / 'video.mp4')
+            r['video'] = dict(synced=bool(pinned), pins=pinned or [[0.0, 0.0]])
     data = dict(rate=VIEW_RATE, pre_ms=PRE_MS, post_ms=POST_MS, env_ms=ENV_MS, band=BAND,
                 amax=max(max(c['snip_scale']) for c in recs), clips=recs)
     (out / 'data.js').write_text('window.HEIGHTS = ' + json.dumps(data, separators=(',', ':')) + ';\n')
@@ -550,13 +570,18 @@ def selftest():
     assert len(got) == 3 and all(abs(g - h) < 0.002 for g, h in zip(got, hit)), f'impacts at {hit[:3]} s read as {got}'
     assert fill([0, 1, 3, 4], 1) == [0, 1, 2, 3, 4], 'a missed drop not put back'
     assert trim([0, 1.3, 2.3, 4.3, 5.6], 1) == [1.3, 2.3, 4.3], 'drops in the speed ramps kept'
-    assert pins(list(range(10)), [0.5, 1.5]) == [[4, 0.5], [5, 1.5]], 'the video not centred in the sound'
     hits = [1.0, 4.0, 7.0, 10.0, 13.0, 16.0]
     heard = [3.0, 6.004, 9.0, 15.2, 18.003, 25.0]   # 2 s later; 12 s missed; one timed 0.2 s late; a stray sound
     got = sync(hits, heard)
     assert got == [[3.0, 1.0], [6.004, 4.0], [9.0, 7.0], [18.003, 16.0]], f'video pinned as {got}'
     assert sync([1.0, 4.0, 20.0], [3.0, 6.0]) is None, 'two heard drops fixed the offset'
     assert sync(hits, [3.0, 6.0, 9.0, 30.0, 33.0, 36.0]) is None, 'two shifts as good as each other were settled'
+    got = window(hits, 20.0, [0.5] + heard, 3.0, 30.0)   # the film starts 0.5 s after the sound's own start
+    assert got == (2.0015, 22.0015, 0.0, [[0.9985, 1.0], [4.0025, 4.0], [6.9985, 7.0], [16.0015, 16.0]]), f'synced film kept as {got}'
+    got = window(hits, 20.0, [h - 0.5 for h in hits], 3.0, 30.0)[:3]   # the film starts before the sound
+    assert got == (0.0, 19.5, 0.5), f'a film starting first kept as {got}'
+    got = window(hits, 20.0, [3.0, 6.0], 3.0, 30.0)
+    assert got == (0.0, 17.0, 1.0, None), f'unsynced film kept as {got}'
     try:
         same_drip('clip', [0, 2, 4], [0, 1, 2])
         raise AssertionError('a video drip twice the sound\'s was accepted')

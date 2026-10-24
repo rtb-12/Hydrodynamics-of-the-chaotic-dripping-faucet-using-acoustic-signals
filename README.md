@@ -79,6 +79,7 @@ Every measure is read from the raw 2 to 9 kHz band, since the phone's codec inve
 A slow-motion video of a height's drip goes beside its recording with `--video HEIGHT VIDEO X Y`, where X is the pixel column the drops fall down and Y the water line.
 The clip's slowed stretch is found from its own sound, which is slowed into a low murmur, and its frames are taken as shot at 240 fps; the drip rate the video then shows must match the sound's.
 Each drop is followed down the column frame by frame and timed where its fall meets the water line.
+Only the stretch on film is kept from that height's recording, so every moment of its row has a picture.
 The video and the sound were recorded together on two phones and are lined up by the drops themselves: the one shift that puts the most video drops within 30 ms of a heard drop, each of which is then pinned to it.
 With fewer than three drops matched, or another shift fitting as many, the video is only placed in the drip's rhythm and the page says so.
 

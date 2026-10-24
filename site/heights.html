@@ -98,7 +98,7 @@
       'The drips do not run at quite the same rate (the tap slows as the water above it falls), so the rows would drift apart by about a tenth of a second a drop. Halfway between drops, where every row is quiet, each row is moved so its next drop lands with the first row&rsquo;s. The sound is never sped up or slowed, so pitches stay true.'],
     video: ['Video', 'A slow-motion clip of the same drip at this height, shot at 240 frames a second and cropped to the column the drops fall down. It plays at real speed here; use Speed to slow it down, to 0.1&times; for 24 frames a second of the fall.',
       'The video and the sound were recorded together on two phones. They are lined up by the drops: one shift puts most splashes within 30 ms of a heard drop, and no other shift fits as many. Each of those splashes is then pinned to its own sound.',
-      'Where the heard drops do not settle one shift (too few heard, or two shifts fitting as well), the video is only placed in the drip&rsquo;s rhythm, and its row says so. The slow motion lasts about 25 to 37 s, so part of each sound has no picture.'],
+      'Where the heard drops do not settle one shift (too few heard, or two shifts fitting as well), the video is only placed in the drip&rsquo;s rhythm, and its row says so. Only the stretch the camera filmed in slow motion, 25 to 37 s, is kept, so every moment of these rows has a picture.'],
     speed: ['Slow motion', 'Plays the sound slower so one drop can be heard as it happens. The sound drops in pitch like a slowed tape: at 0.25&times; a 4 kHz ring sounds at 1 kHz, still easy to hear.',
       'Firefox mutes sound below 0.25&times;.']
   };
@@ -165,8 +165,7 @@
   function follow(r) {
     var v = r.c.video, el = r.vid;
     if (!v || !el.readyState || el.seeking || performance.now() < r.hold) return;
-    var m = vidAt(v.pins, r.audio.currentTime), want = m[0], at = Math.max(0, Math.min(v.duration, want));
-    r.vnote.hidden = at === want;
+    var m = vidAt(v.pins, r.audio.currentTime), want = m[0], at = Math.max(0, Math.min(r.c.duration, want));
     if (r.audio.paused || at !== want) { if (!el.paused) el.pause(); if (Math.abs(el.currentTime - at) > 0.002) el.currentTime = at; return; }
     var drift = (el.currentTime - want) / rate;
     if (el.paused || Math.abs(drift) > HARD_SYNC) {
@@ -324,7 +323,7 @@
       el.className = 'hrow';
       el.innerHTML = '<div class="hhead"><b class="hname" style="--c: var(--h' + (n + 1) + ')">' + label(c) + '</b>' +
         '<span class="vmeta">' + c.drops.length + (c.drips ? ' of about ' + c.drips + ' drips heard' : ' drops') + ', ' + Math.round(100 * rang(c) / fell(c)) + '% ring, one every ' + per(c).toFixed(2) + ' s; ' +
-        'its steadiest ' + Math.round(c.duration) + ' s, from ' + Math.round(c.start) + ' s into the recording' +
+        (c.video ? 'the ' + Math.round(c.duration) + ' s on film' : 'its steadiest ' + Math.round(c.duration) + ' s') + ', from ' + Math.round(c.start) + ' s into the recording' +
         (c.video && !c.video.synced ? '; its heard drops do not settle where the video lines up, so it only keeps the drip&rsquo;s rhythm' : '') + '</span></div>' +
         '<div class="transport card"><button class="primary" type="button">Play</button>' +
         '<input type="range" class="scrub" min="0" max="' + c.duration + '" step="0.001" value="0" aria-label="Position in ' + label(c) + '">' +
@@ -332,7 +331,7 @@
         '<span class="hread"></span></div>' +
         '<div class="hplots' + (c.video ? ' withvid' : '') + '">' +
         (c.video ? '<div class="vidbox hvid"><video muted playsinline preload="metadata" aria-label="Slow-motion video of the ' + label(c) + ' drops"></video>' +
-          '<span class="vnote" hidden>Not filmed at this moment</span><button class="info" type="button" data-info="video" aria-label="About the video">i</button></div>' : '') +
+          '<button class="info" type="button" data-info="video" aria-label="About the video">i</button></div>' : '') +
         '<div class="hcol">' + lane('Waveform', '% of loudest', 'wave') + lane('Loudness', 'dB below the loudest moment', 'loud') + '</div>' +
         '<div class="hcol">' + lane('Spectrogram', 'kHz', 'spec') + lane('Drops', 'dot means it rang', 'drops') + '</div></div>';
       $('rows').appendChild(el);
@@ -347,7 +346,7 @@
         r.audio.src = u; setRate(r.audio); keepMedia(r.audio, dir + src + '.m4a'); seek(r, t);
       });
       if (c.video) {
-        r.vid = el.querySelector('video'); r.vnote = el.querySelector('.vnote'); r.hold = 0;
+        r.vid = el.querySelector('video'); r.hold = 0;
         mediaUrl(dir + 'video.mp4').then(function (u) { r.vid.src = u; keepMedia(r.vid, dir + 'video.mp4'); });
         r.vid.addEventListener('loadeddata', function () { draw(r); });
         r.vid.onclick = function () { toggle(r); };

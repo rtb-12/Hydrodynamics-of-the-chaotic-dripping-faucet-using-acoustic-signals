@@ -989,7 +989,6 @@ a:focus-visible, .sidenav a:focus-visible {
 .hplots.withvid { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); }
 .hvid { height: 300px; aspect-ratio: 3 / 4; justify-self: center; }
 .hvid .info { position: absolute; top: 6px; right: 6px; }
-.vnote { position: absolute; inset: auto 0 0; padding: 0.4rem; font-size: 0.74rem; text-align: center; color: #fff; background: rgba(12, 14, 17, 0.68); }
 .duo .plot { height: 340px; }
 .xy .mark { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
 .xy .pt.c1 { fill: var(--h1); }
