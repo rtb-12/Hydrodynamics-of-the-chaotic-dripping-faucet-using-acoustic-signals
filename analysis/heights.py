@@ -1,22 +1,25 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["numpy", "scipy", "imageio-ffmpeg", "pillow"]
+# dependencies = ["numpy", "scipy", "imageio-ffmpeg", "pillow", "av", "noisereduce"]
 # ///
 """Compare the sound of one drop across fall heights, for site/heights.html: clean each phone
 recording of background music, find every drop, measure its sound and write the page's data.
 
     uv run analysis/heights.py --clip 20 "audios /water drop 20 cm.mp4" --clip 40 "audios /water drop 40 cm .mp4"
+    uv run analysis/heights.py --set sweep --same-tap --clip 35 a.mpeg --video 35 IMG_5388.mov 1000 500
     uv run analysis/heights.py --selftest
 
 Each recording is cut to its steadiest stretch of --span seconds, so every height is judged on its cleanest drops.
+A slow-motion video of the same drip can sit beside a recording; its drops are pinned onto the sound's.
 """
 
-import argparse, base64, json, pathlib, subprocess, sys, tempfile
+import argparse, base64, collections, json, pathlib, subprocess, sys, tempfile
 import numpy as np, imageio_ffmpeg
 import scipy.ndimage as nd, scipy.signal as ss
 from scipy.io import wavfile
 from lanes import FS, lanes, scale
+from recording import probe, frames
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'site' / 'recordings'
@@ -58,6 +61,22 @@ VIEW_RATE = 24000           # stored sound rate; still above twice the 9 kHz the
 AUDIO_KBPS = '96k'          # page audio bitrate
 SPAN_S = 60.0               # each recording is cut to its steadiest stretch this long
 REGULAR = 0.15              # a gap within this fraction of the drip period is a clean one; any other is a missed or extra drop
+CAPTURE_FPS = 240           # the videos' slow-motion capture rate; their drip must then match the sound's within RATE_TOL
+RATE_TOL = 0.1
+LEVEL_BLOCK_S = 0.1         # a slow-motion clip's slowed stretch is found from its own sound level in blocks this long...
+SLOW_MARGIN_S = 0.5         # ...less this many clip seconds at each end, where the speed ramps
+VID_SCALE = 2               # video frames are searched at this fraction of full size
+VID_HALF_W = 120            # drops are looked for this many pixels either side of the given column, as the drip wanders
+VID_TOP = 0.3               # ...from this fraction of the way down to the water line; above it is the faucet's stand
+VID_LIT = 12                # a pixel lights when it is this many grey levels above the frames two either side
+VID_ENTER = 0.25            # a drop is first seen in this top share of the searched rows
+FALL_STEP = (10, 60)        # rows (searched size) a falling drop moves from one frame to the next...
+FALL_FRAMES = 4             # ...for at least this many frames
+VID_GAP_S = 0.5             # no second drop this soon after one, real seconds
+VID_CROP = (720, 960)       # video crop around the drop column, pixels, with the water line VID_WATER of the way down
+VID_WATER = 0.6
+VID_OUT = (360, 480)        # page video size
+VID_CRF = 26
 
 
 def load(path):
@@ -227,6 +246,108 @@ def snippet(y, t):
     return base64.b64encode(q.tobytes()).decode(), scale
 
 
+def slow_stretch(path):
+    """Clip seconds of a phone slow-motion clip's slowed stretch: its sound is slowed with it into a low murmur, so the
+    stretch is the quiet middle between the normal-speed ends."""
+    x, b = load(path), int(LEVEL_BLOCK_S * FS)
+    lv = 20 * np.log10(np.sqrt((x[:len(x) // b * b].reshape(-1, b) ** 2).mean(1)) + 1e-12)
+    quiet = lv < (np.median(lv) + np.median(lv[:int(1 / LEVEL_BLOCK_S)])) / 2
+    return int(np.argmax(quiet)) * LEVEL_BLOCK_S + SLOW_MARGIN_S, (len(quiet) - int(np.argmax(quiet[::-1]))) * LEVEL_BLOCK_S - SLOW_MARGIN_S
+
+
+def lit_rows(path, meta, x, y):
+    """Real times, and per frame which rows of the drop column light up against the frames two either side, with the
+    water line's row. The column is the most lit one near x, as the drip wanders; y is the water line, pixels."""
+    s, r0 = VID_SCALE, int(VID_TOP * y) // VID_SCALE
+    c0, c1 = max(0, x - VID_HALF_W) // s, (x + VID_HALF_W) // s
+    buf, ts, out = collections.deque(maxlen=5), [], []
+    for t, g in frames(path, meta, s):
+        buf.append((t, g[r0:(y + 10) // s, c0:c1].astype(np.int16)))
+        if len(buf) == 5:
+            d = buf[2][1] - np.maximum(buf[0][1], buf[4][1])
+            L = d - np.median(d, axis=1, keepdims=True) > VID_LIT   # less each row's median, which is the lights' flicker
+            c = int(np.argmax(nd.uniform_filter1d(L.mean(0), 3)))
+            ts.append(buf[2][0]); out.append(L[:, max(0, c - 2):c + 3].any(1))
+    return np.array(ts), np.array(out), y // s - r0
+
+
+def impacts(ts, P, surf):
+    """When each drop meets the water: a lit blob entering at the top is followed down, FALL_STEP rows a frame to the lit
+    row nearest where its speed so far puts it, and the line through its fall is carried on to the water line's row surf."""
+    out, t, top = [], 1, int(VID_ENTER * surf)
+    while t < len(P):
+        rows = np.nonzero(P[t][:top])[0]
+        f, run = ([rows.max()], [t]) if len(rows) else ([], [])
+        while run and run[-1] + 1 < len(P):
+            nxt = np.nonzero(P[run[-1] + 1])[0]
+            nxt = nxt[(nxt >= f[-1] + FALL_STEP[0]) & (nxt <= f[-1] + FALL_STEP[1]) & (nxt < surf)]
+            if not len(nxt):
+                break
+            ahead = f[-1] + (f[-1] - f[-2] if len(f) > 1 else sum(FALL_STEP) / 2)
+            f.append(nxt[np.argmin(np.abs(nxt - ahead))]); run.append(run[-1] + 1)
+        if len(run) >= FALL_FRAMES:
+            k, b = np.polyfit(ts[run], f, 1)
+            out.append(float((surf - b) / k))
+            t = int(np.searchsorted(ts, out[-1] + VID_GAP_S))
+        else:
+            t += 1
+    return out
+
+
+def fill(times, p):
+    """Drop times with each missed drop put back at its share of the gap, as the page's beats() does."""
+    out = []
+    for t in times:
+        if out:
+            n = int(round((t - out[-1]) / p))
+            out += [out[-1] + (t - out[-1]) * k / n for k in range(1, n)]
+        out.append(t)
+    return out
+
+
+def same_drip(path, hits, beats):
+    """The video's and the sound's drip periods, s, which must agree, or the capture rate assumed is wrong."""
+    if len(hits) < 2:
+        raise SystemExit(f'{path}: {len(hits)} drops seen in the video; check its drop column and water line')
+    g, p = float(np.median(np.diff(hits))), float(np.median(np.diff(beats)))
+    if abs(g / p - 1) > RATE_TOL:
+        raise SystemExit(f'{path}: drops every {g:.2f} s in the video, {p:.2f} s in the sound; was it shot at {CAPTURE_FPS} fps?')
+    return g, p
+
+
+def trim(hits, g):
+    """hits without a first or last drop whose gap to its neighbour is no whole number of periods g: the speed still ramps there."""
+    off = lambda a, b: abs((b - a) / g - round((b - a) / g)) > REGULAR
+    while len(hits) > 2 and off(hits[0], hits[1]):
+        hits = hits[1:]
+    while len(hits) > 2 and off(hits[-2], hits[-1]):
+        hits = hits[:-1]
+    return hits
+
+
+def pins(beats, hits):
+    """(sound s, video s) pairs putting each of the video's drops on one of the sound's, the video's run centred in it."""
+    j = max(0, (len(beats) - len(hits)) // 2)
+    return [[round(b, 4), round(v, 4)] for b, v in zip(beats[j:], hits)]
+
+
+def video(path, x, y, out, beats):
+    """A slow-motion clip's slowed stretch, cropped around the drop column, at real speed into out/video.mp4, and the pins
+    that put its drops on the sound's. It was filmed apart from the sound, so its drops are other drops of the same drip."""
+    meta = probe(path, CAPTURE_FPS, slow_stretch(path))
+    hits = impacts(*lit_rows(path, meta, x, y))
+    g, p = same_drip(path, hits, beats)
+    W, H = VID_CROP
+    cx, cy = min(max(x - W // 2, 0), meta['w'] - W), min(max(y - int(VID_WATER * H), 0), meta['h'] - H)
+    t0, t1 = meta['span']
+    subprocess.run([FFMPEG, '-v', 'error', '-y', '-ss', str(t0), '-to', str(t1), '-i', str(path), '-an',
+                    '-vf', f'setpts=PTS/{meta["slow"]},crop={W}:{H}:{cx}:{cy},scale={VID_OUT[0]}:{VID_OUT[1]}',
+                    '-fps_mode', 'passthrough', '-c:v', 'libx264', '-crf', str(VID_CRF), '-preset', 'slow', '-g', '60',
+                    '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(out / 'video.mp4')], check=True)
+    print(f'  video: {len(hits)} drops, one every {g:.3f} s against the sound\'s {p:.3f} s')
+    return dict(duration=round(meta['duration'], 3), pins=pins(beats, fill(trim(hits, g), g)))
+
+
 def encode(x, path):
     with tempfile.TemporaryDirectory() as tmp:
         wav = pathlib.Path(tmp) / 'a.wav'
@@ -270,9 +391,11 @@ def steadiest(times, span, duration):
     return best[1]
 
 
-def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False):
+def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=()):
     """Every clip's steadiest stretch: audio, lanes and drops into out, scaled alike so the heights compare by eye.
-    With same_tap the clips share one drip period, found from the loud drops of all of them together."""
+    With same_tap the clips share one drip period, found from the loud drops of all of them together.
+    videos holds (height, path, x, y) for slow-motion clips of the drip: x is the drop column and y the water line, pixels."""
+    vids = {f'{float(h):g}cm': (path, int(x), int(y)) for h, path, x, y in videos}
     hs = [float(h) for h, _ in clips]
     if len(set(hs)) != len(hs):
         raise SystemExit('one clip per height: keep the take with the steadier drip')
@@ -299,6 +422,8 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False):
                  typical=typical(rows), drops=rows, snip=[w for w, _ in snips], snip_scale=[round(v, 6) for _, v in snips],
                  env=[[round(float(v), 1) for v in row] for row in q], **lanes(y, x, d, len(x) / FS, ref))
         print(f'{r["slug"]}: {len(rows)} drops, period {r["period_ms"]} ms, {sum(w["ring"] for w in rows)} ring')
+        if r['slug'] in vids:
+            r['video'] = video(*vids[r['slug']], d, fill([w['t'] for w in rows], r['drip_s'] or r['period_ms'] / 1000))
     data = dict(rate=VIEW_RATE, pre_ms=PRE_MS, post_ms=POST_MS, env_ms=ENV_MS, band=BAND,
                 amax=max(max(c['snip_scale']) for c in recs), clips=recs)
     (out / 'data.js').write_text('window.HEIGHTS = ' + json.dumps(data, separators=(',', ':')) + ';\n')
@@ -387,12 +512,43 @@ def selftest():
         d = process([('20', p)], pathlib.Path(tmp) / 'cut', span=6.0)
         c = d['clips'][0]
         assert c['duration'] == 6.0 and len(c['drops']) >= 4, f'cut to {c["duration"]} s with {len(c["drops"])} drops'
+        tone = np.sin(2 * np.pi * 440 * np.arange(16 * FS) / FS) * np.r_[np.ones(2 * FS), 0.01 * np.ones(12 * FS), np.ones(2 * FS)]
+        wavfile.write(p, FS, (tone * 20000).astype(np.int16))
+        a, b = slow_stretch(p)
+        assert abs(a - 2 - SLOW_MARGIN_S) < 0.11 and abs(b - 14 + SLOW_MARGIN_S) < 0.11, f'slowed stretch of 2-14 s read as {a}-{b} s'
+
+    rng = np.random.default_rng(2)
+    ts, surf, hit = np.arange(2400) / 240, 175, [1.0, 4.1, 7.3, 9.0]   # a drop at 9 s that the camera missed comes later
+    P = rng.random((len(ts), 180)) < 0.003
+    for k, h in enumerate(hit[:3]):
+        for j in range(-6, -1):   # 30 rows a frame, lost from sight two frames before the water as in the real clips
+            f = round(h * 240) + j
+            P[f, max(0, int(surf + 30 * (f - h * 240))) - 4:int(surf + 30 * (f - h * 240))] = True
+            P[f, int(surf + 30 * (f - h * 240)) + 25] = k == 1 and j == -3   # a stray pixel just below one drop
+        P[round(h * 240) + 1:round(h * 240) + 30, surf - 15:] = True   # the splash
+    got = impacts(ts, P, surf)
+    assert len(got) == 3 and all(abs(g - h) < 0.002 for g, h in zip(got, hit)), f'impacts at {hit[:3]} s read as {got}'
+    assert fill([0, 1, 3, 4], 1) == [0, 1, 2, 3, 4], 'a missed drop not put back'
+    assert trim([0, 1.3, 2.3, 4.3, 5.6], 1) == [1.3, 2.3, 4.3], 'drops in the speed ramps kept'
+    assert pins(list(range(10)), [0.5, 1.5]) == [[4, 0.5], [5, 1.5]], 'the video not centred in the sound'
+    try:
+        same_drip('clip', [0, 2, 4], [0, 1, 2])
+        raise AssertionError('a video drip twice the sound\'s was accepted')
+    except SystemExit:
+        pass
+    try:
+        same_drip('clip', [3.0], [0, 1, 2])
+        raise AssertionError('a video with one drop was accepted')
+    except SystemExit:
+        pass
     print('selftest ok')
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     ap.add_argument('--clip', nargs=2, action='append', metavar=('HEIGHT_CM', 'AUDIO'), default=[])
+    ap.add_argument('--video', nargs=4, action='append', metavar=('HEIGHT_CM', 'VIDEO', 'X', 'Y'), default=[],
+                    help='slow-motion video of that height\'s drip, with its drop column X and water line Y in pixels')
     ap.add_argument('--span', type=float, default=SPAN_S, help='seconds of each recording to keep, its steadiest stretch; 0 keeps it all')
     ap.add_argument('--set', default='heights', help='name of the recording set, its folder under site/recordings')
     ap.add_argument('--same-tap', action='store_true', help='the tap was not touched between clips, so they share one drip period')
@@ -402,7 +558,7 @@ def main():
         return selftest()
     if not a.clip:
         ap.error('give at least one --clip')
-    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap)
+    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap, videos=a.video)
 
 
 if __name__ == '__main__':

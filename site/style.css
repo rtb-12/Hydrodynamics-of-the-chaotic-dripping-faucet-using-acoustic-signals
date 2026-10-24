@@ -986,6 +986,10 @@ a:focus-visible, .sidenav a:focus-visible {
 .hread { font-family: var(--mono); font-size: 0.78rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .hplots, .duo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.75rem; }
 .hcol { display: grid; grid-template-rows: 1.6fr 1fr; gap: 0.5rem; height: 300px; min-width: 0; }
+.hplots.withvid { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); }
+.hvid { height: 300px; aspect-ratio: 3 / 4; justify-self: center; }
+.hvid .info { position: absolute; top: 6px; right: 6px; }
+.vnote { position: absolute; inset: auto 0 0; padding: 0.4rem; font-size: 0.74rem; text-align: center; color: #fff; background: rgba(12, 14, 17, 0.68); }
 .duo .plot { height: 340px; }
 .xy .mark { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
 .xy .pt.c1 { fill: var(--h1); }
@@ -1009,7 +1013,7 @@ a:focus-visible, .sidenav a:focus-visible {
 .zfoot { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: center; padding: 0.6rem 1rem; border-top: 1px solid var(--rule); font-size: 0.78rem; color: var(--ink-3); }
 
 @media (max-width: 900px) {
-  .vgrid, .chaos, .trio, .hplots, .duo { grid-template-columns: minmax(0, 1fr); }
+  .vgrid, .chaos, .trio, .hplots, .hplots.withvid, .duo { grid-template-columns: minmax(0, 1fr); }
   .lanes { grid-template-rows: 170px 110px 110px 70px; min-height: 0; }
   .transport { flex-wrap: wrap; }
   .clock { width: 100%; flex-wrap: wrap; gap: 0.3rem 1rem; }
