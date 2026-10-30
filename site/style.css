@@ -990,6 +990,9 @@ a:focus-visible, .sidenav a:focus-visible {
 .hvid { height: 300px; aspect-ratio: 3 / 4; justify-self: center; }
 .hvid .info { position: absolute; top: 6px; right: 6px; }
 .duo .plot { height: 340px; }
+.shapes { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 0.75rem; }   /* --n: one column per recording */
+.shapes .plot { height: 180px; }
+.shapes .plot.wide { grid-column: 1 / -1; height: 280px; }
 .xy .mark { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
 .xy .pt.c1 { fill: var(--h1); }
 .xy .pt.c2 { fill: var(--h2); }
@@ -1023,3 +1026,5 @@ a:focus-visible, .sidenav a:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .expand, .loadbar i { transition: none; }
 }
+@media (max-width: 900px) { .shapes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .shapes { grid-template-columns: minmax(0, 1fr); } }

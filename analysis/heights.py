@@ -3,14 +3,17 @@
 # requires-python = ">=3.11"
 # dependencies = ["numpy", "scipy", "imageio-ffmpeg", "pillow", "av", "noisereduce"]
 # ///
-"""Compare the sound of one drop across fall heights, for site/heights.html: clean each phone
+"""Compare the sound of one drop across clips that differ in one thing, such as fall height, for site/heights.html: clean each phone
 recording of background music, find every drop, measure its sound and write the page's data.
 
     uv run analysis/heights.py --clip 20 "audios /water drop 20 cm.mp4" --clip 40 "audios /water drop 40 cm .mp4"
     uv run analysis/heights.py --set sweep --same-tap --clip 35 a.mpeg --video 35 IMG_5388.mov 1000 500
+    uv run analysis/heights.py --set nozzle --var "Nozzle diameter" --unit mm --free --span 0 --clip 2 a.mpeg --clip 5 b.mpeg
     uv run analysis/heights.py --selftest
 
-Each recording is cut to its steadiest stretch of --span seconds, so every height is judged on its cleanest drops.
+Each recording is cut to its steadiest stretch of --span seconds, so every clip is judged on its cleanest drops.
+--var and --unit name what differs between clips (fall height in cm unless told otherwise).
+--free finds drops without assuming a steady drip, for clips whose drips are irregular.
 A slow-motion video filmed with a recording can sit beside it, lined up drop by drop.
 """
 
@@ -43,6 +46,8 @@ SNR_CAP = 100.0             # one loud burst cannot drag the drip's beat grid be
 BEAT_STIFF = 150.0          # beat grid penalty on log(interval / period) squared
 SEARCH_S = 0.04             # each drop is looked for this far either side of its beat
 LOOKBACK_S = 0.2            # ...and moved to an earlier event this close before it, in case the beat sat on a rebound
+FREE_DB = 12.0              # with --free a drop is any click this many dB over the room...
+FREE_GAP_S = 0.25           # ...at least this long after the one before
 THR = 3.0                   # a drop must rise this many times above the floor
 CLUSTER = 0.25              # an earlier event counts if it reaches this fraction of the drop's peak
 BUSY = 2.0                  # median level 30-300 ms either side of a drop above this many times the floor is speech or handling
@@ -105,7 +110,7 @@ def bandpass(x, band):
 def busy(snr, k):
     """Speech, handling or a knock around envelope sample k: a raised median just before or after it."""
     a, b = int(0.03 * RATE), int(0.3 * RATE)
-    return max(np.median(snr[max(0, k - b):max(1, k - a)]), np.median(snr[k + a:k + b])) > BUSY
+    return max(np.median(snr[max(0, k - b):max(1, k - a)]), np.median(snr[min(k + a, len(snr) - 1):k + b])) > BUSY
 
 
 def period(snr):
@@ -179,20 +184,32 @@ def own_period(snr, p):
     return tap_period(g, (1 - NEAR) * p / RATE, (1 + NEAR) * p / RATE) if len(g) >= OWN_GAPS else p
 
 
+def earliest(snr, k):
+    """The first event within LOOKBACK_S before envelope sample k that reaches CLUSTER of its peak, else k: a rebound's plink can outshine its drop."""
+    lb = int(LOOKBACK_S * RATE)
+    pk, _ = ss.find_peaks(snr[max(0, k - lb):k - int(0.01 * RATE)], height=max(THR, CLUSTER * snr[k]))
+    return max(0, k - lb) + int(pk[0]) if len(pk) else k
+
+
 def find_drops(y, p=None):
     """Onset times, s: the drop nearest each beat, if it clears THR and is not inside speech or handling noise.
     p is the drip period in envelope samples when it is known; otherwise it is found from this clip alone."""
     snr = strength(y)
     p = p and own_period(snr, p)
-    w, lb = int(SEARCH_S * RATE), int(LOOKBACK_S * RATE)
+    w = int(SEARCH_S * RATE)
     found = []
     for beat in drip(snr, np.log(np.clip(snr, 1, SNR_CAP)), p):
-        k = max(0, beat - w) + int(np.argmax(snr[max(0, beat - w):beat + w]))
-        pk, _ = ss.find_peaks(snr[max(0, k - lb):k - int(0.01 * RATE)], height=max(THR, CLUSTER * snr[k]))
-        k = max(0, k - lb) + int(pk[0]) if len(pk) else k
+        k = earliest(snr, max(0, beat - w) + int(np.argmax(snr[max(0, beat - w):beat + w])))
         if snr[k] >= THR and not busy(snr, k):
             found.append(k)
     return [onset(y, k / RATE) for k in found]
+
+
+def free_drops(y):
+    """Onset times, s, of every click clear of speech and handling noise and FREE_GAP_S after the one before; no drip period assumed."""
+    snr = strength(y)
+    pk, _ = ss.find_peaks(snr, height=THR, distance=FREE_GAP_S * RATE)
+    return [onset(y, k / RATE) for k in sorted({earliest(snr, k) for k in pk}) if not busy(snr, k)]
 
 
 def onset(y, t):
@@ -379,21 +396,24 @@ def encode(x, path):
         subprocess.run([FFMPEG, '-v', 'error', '-y', '-i', str(wav), '-c:a', 'aac', '-b:a', AUDIO_KBPS, str(path)], check=True)
 
 
-def typical(rows):
-    """The drop nearest the median loudness and length among its height's usual kind (ringing or not)."""
+def ranked(rows):
+    """Indices of its clip's usual kind of drop (ringing or not), nearest the median loudness and length first."""
     ring = sum(r['ring'] for r in rows) * 2 >= len(rows)
     pool = [i for i, r in enumerate(rows) if r['ring'] == ring]
     md, mu = np.median([rows[i]['db'] for i in pool]), np.median([rows[i]['dur'] for i in pool])
-    return min(pool, key=lambda i: abs(rows[i]['db'] - md) / 6 + abs(rows[i]['dur'] - mu) / 10)
+    return sorted(pool, key=lambda i: abs(rows[i]['db'] - md) / 6 + abs(rows[i]['dur'] - mu) / 10)
 
 
-def analyse(x, p=None):
+def analyse(x, p=None, free=False):
     y = clean(x)   # finds faint drops, but its gain opens around each one, so drops are measured on the raw band
     yb = bandpass(x, BAND)
-    times = [t for t in find_drops(y, p) if FLOOR_MS[0] / 1000 < t < len(y) / FS - POST_MS / 1000]
+    lo = np.flatnonzero(x)[:1].sum() / FS + FLOOR_MS[0] / 1000   # a floor must not reach into the recording's opening digital silence
+    times = [t for t in (free_drops(y) if free else find_drops(y, p)) if lo < t < len(y) / FS - POST_MS / 1000]
     rows, envs = [], []
     for t in times:
         r, env = measure(yb, t)
+        if free and r['db'] < FREE_DB:
+            continue
         rows.append(dict(t=round(t, 4), **r)); envs.append(20 * np.log10(np.maximum(env, 1e-3)))
     return y, rows, np.array(envs)
 
@@ -415,21 +435,25 @@ def steadiest(times, span, duration):
     return best[1]
 
 
-def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=()):
-    """Every clip's steadiest stretch: audio, lanes and drops into out, scaled alike so the heights compare by eye.
+def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), free=False, var='Fall height', unit='cm'):
+    """Every clip's steadiest stretch: audio, lanes and drops into out, scaled alike so the clips compare by eye.
     With same_tap the clips share one drip period, found from the loud drops of all of them together.
-    videos holds (height, path, x, y) for slow-motion clips of the drip: x is the drop column and y the water line, pixels."""
-    vids = {f'{float(h):g}cm': (path, int(x), int(y)) for h, path, x, y in videos}
-    hs = [float(h) for h, _ in clips]
-    if len(set(hs)) != len(hs):
-        raise SystemExit('one clip per height: keep the take with the steadier drip')
-    clips = [(float(h), load(path)) for h, path in sorted(clips, key=lambda c: float(c[0]))]
+    videos holds (value, path, x, y) for slow-motion clips of the drip: x is the drop column and y the water line, pixels."""
+    if free and same_tap:
+        raise SystemExit('--free finds drops without a drip period, so --same-tap has none to share')
+    vids = {f'{float(v):g}{unit}': (path, int(x), int(y)) for v, path, x, y in videos}
+    vs = [float(v) for v, _ in clips]
+    if len(set(vs)) != len(vs):
+        raise SystemExit(f'one clip per {var.lower()}: keep the take with the steadier drip')
+    clips = [(float(v), load(path)) for v, path in sorted(clips, key=lambda c: float(c[0]))]
     p = tap_period(np.concatenate([loud_gaps(strength(clean(x))) for _, x in clips])) if same_tap else None
     if p:
         print(f'shared drip period {p / RATE:.3f} s')
     recs, films = [], {}
-    for h, x in clips:
-        times, total, slug = [r['t'] for r in analyse(x, p)[1]], len(x) / FS, f'{h:g}cm'
+    for v, x in clips:
+        times, total, slug = [r['t'] for r in analyse(x, p, free)[1]], len(x) / FS, f'{v:g}{unit}'
+        if len(times) < 2:
+            raise SystemExit(f'{slug}: {len(times)} drops found, too few to compare; check the recording')
         if slug in vids:   # only the stretch on film is kept
             path, vx, vy = vids[slug]
             meta, hits = film(path, vx, vy)
@@ -444,7 +468,7 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=()):
             b = a + span if span else total
         x = x[int(a * FS):int(b * FS)]
         own = p and own_period(strength(clean(x)), p) / RATE
-        recs.append(dict(slug=f'{h:g}cm', h=h, start=round(a, 2), x=x, a=analyse(x, p),
+        recs.append(dict(slug=slug, v=v, start=round(a, 2), x=x, a=analyse(x, p, free),
                          drip_s=own and round(own, 3), drips=own and int(round(len(x) / FS / own))))
     ref = dict(clean=scale(*[r['a'][0] for r in recs]), raw=scale(*[r['x'] for r in recs]))
     for r in recs:
@@ -454,8 +478,9 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=()):
         encode(x, d / 'raw.m4a'); encode(y, d / 'clean.m4a')
         snips = [snippet(y, row['t']) for row in rows]
         q = np.percentile(envs, [25, 50, 75], axis=0)
+        order = ranked(rows)
         r.update(duration=round(len(x) / FS, 2), period_ms=round(float(np.median(np.diff([w['t'] for w in rows]))) * 1000, 1),
-                 typical=typical(rows), drops=rows, snip=[w for w, _ in snips], snip_scale=[round(v, 6) for _, v in snips],
+                 typical=order[0], shapes=sorted(order[:3]), drops=rows, snip=[w for w, _ in snips], snip_scale=[round(v, 6) for _, v in snips],
                  env=[[round(float(v), 1) for v in row] for row in q], **lanes(y, x, d, len(x) / FS, ref))
         print(f'{r["slug"]}: {len(rows)} drops, period {r["period_ms"]} ms, {sum(w["ring"] for w in rows)} ring')
         if r['slug'] in films:
@@ -463,19 +488,21 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=()):
             encode_film(path, meta, vx, vy, v0, v1, d / 'video.mp4')
             r['video'] = dict(synced=bool(pinned), pins=pinned or [[0.0, 0.0]])
     data = dict(rate=VIEW_RATE, pre_ms=PRE_MS, post_ms=POST_MS, env_ms=ENV_MS, band=BAND,
-                amax=max(max(c['snip_scale']) for c in recs), clips=recs)
+                amax=max(max(c['snip_scale']) for c in recs), var=var, unit=unit, free=free, span=span, clips=recs)
     (out / 'data.js').write_text('window.HEIGHTS = ' + json.dumps(data, separators=(',', ':')) + ';\n')
     return data
 
 
-def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0):
-    """Hum, noise and a speech-like burst, plus drops that alternate a 4 kHz ringing plink and a faint click."""
+def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=None):
+    """Hum, noise and a speech-like burst, plus drops that alternate a 4 kHz ringing plink and a faint click.
+    at gives the drops' times instead, with no speech."""
     rng = np.random.default_rng(seed)
-    t = np.arange(int((n + 1) * period * FS)) / FS
+    n = len(at) if at else n
+    t = np.arange(int(((at[-1] + 1) if at else (n + 1) * period) * FS)) / FS
     x = 0.05 * np.sin(2 * np.pi * 220 * t) + 0.03 * np.sin(2 * np.pi * 440 * t) + 0.002 * rng.standard_normal(len(t))
     truth = []
     for i in range(n):
-        s = int((0.6 + i * period + 0.01 * rng.standard_normal()) * FS)
+        s = int(((at[i] if at else 0.6 + i * period) + 0.01 * rng.standard_normal()) * FS)
         k = np.arange(int(0.08 * FS))
         click = np.zeros(len(k)); click[:24] = rng.standard_normal(24)
         if i % ring_every == 0:
@@ -487,7 +514,8 @@ def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0):
             x[r:r + len(k)] += 2 * rebound * np.exp(-k / (0.008 * FS)) * np.sin(2 * np.pi * 6000 * k / FS)
         truth.append((s / FS, i % ring_every == 0))
     b = int((0.6 + 10.5 * period - 1 / 6) * FS)   # a third of a second of talking, centred between two drops
-    x[b:b + FS // 3] += 0.05 * bandpass(rng.standard_normal(FS // 3), (3000, 8000))
+    if not at:
+        x[b:b + FS // 3] += 0.05 * bandpass(rng.standard_normal(FS // 3), (3000, 8000))
     return x, truth
 
 
@@ -538,6 +566,8 @@ def selftest():
         d = process([('20', p), ('25', q), ('40', p)], pathlib.Path(tmp) / 'out')
         assert [c['slug'] for c in d['clips']] == ['20cm', '25cm', '40cm']
         assert d['clips'][0]['drops'][d['clips'][0]['typical']]['ring']
+        c = d['clips'][0]
+        assert len(c['shapes']) == 3 and c['typical'] in c['shapes'] and all(c['drops'][i]['ring'] for i in c['shapes']), f'shapes {c["shapes"]}'
         assert len(base64.b64decode(d['clips'][0]['snip'][0])) == (PRE_MS + POST_MS) * VIEW_RATE // 1000
         assert all((pathlib.Path(tmp) / 'out' / '25cm' / f).stat().st_size > 0 for f in ('clean.m4a', 'raw.m4a', 'spec-clean.png'))
         top = [np.abs(np.frombuffer(base64.b64decode(c['wave']['raw']), np.int8).astype(int)).max() for c in d['clips']]
@@ -545,6 +575,18 @@ def selftest():
         try:
             process([('20', p), ('20', q)], pathlib.Path(tmp) / 'two')
             raise AssertionError('two takes at one height were accepted')
+        except SystemExit:
+            pass
+        try:
+            process([('20', p)], pathlib.Path(tmp) / 'both', same_tap=True, free=True)
+            raise AssertionError('--free with --same-tap was accepted')
+        except SystemExit:
+            pass
+        quiet = pathlib.Path(tmp) / 'c.wav'
+        wavfile.write(quiet, FS, (60 * np.random.default_rng(2).standard_normal(len(x))).astype(np.int16))
+        try:
+            process([('20', p), ('25', quiet)], pathlib.Path(tmp) / 'quiet', free=True)
+            raise AssertionError('a clip without two drops was accepted')
         except SystemExit:
             pass
         d = process([('20', p)], pathlib.Path(tmp) / 'cut', span=6.0)
@@ -592,24 +634,48 @@ def selftest():
         raise AssertionError('a video with one drop was accepted')
     except SystemExit:
         pass
+    at = list(np.cumsum(np.random.default_rng(5).uniform(0.4, 6, 20)) + 0.6)   # irregular drips: the beat grid assumes a steady one
+    x, truth = synth(n=0, ring_every=1, at=at)
+    got = [r['t'] for r in analyse(x, free=True)[1]]
+    assert len(got) == 20 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'{len(got)} free drops among 20 irregular ones'
+    x, _ = synth(n=0, ring_every=1, at=at, rebound=0.2)
+    got = [r['t'] for r in analyse(x, free=True)[1]]
+    assert len(got) == 20 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'free drops timed on their rebound: {got[:3]}'
+    x, _ = synth(n=0, ring_every=1, at=at)
+    beat = find_drops(clean(x))
+    assert not (len(beat) == 20 and all(abs(d - t) < 0.002 for d, (t, _) in zip(beat, truth))), 'the beat grid found irregular drips: --free not needed'
+    x, truth = synth(n=0, ring_every=2, faint=0.01, at=at)   # every other drop is a faint click
+    rows = analyse(x, free=True)[1]
+    assert rows and all(r['db'] >= FREE_DB for r in rows), f'a click under {FREE_DB} dB kept: {[r["db"] for r in rows]}'
+    assert len(rows) < len(free_drops(clean(x))), 'no click was found below the limit to leave out'
+    x, truth = synth(n=0, ring_every=1, at=[0.35, 2.0, 4.0])
+    x[:int(0.165 * FS)] = 0   # phone voice notes open on digital silence, which no drop's floor may include
+    rows = analyse(x, free=True)[1]
+    assert [round(r['t']) for r in rows] == [2, 4], f'a drop measured against the opening silence kept: {[(r["t"], r["db"]) for r in rows]}'
+    rows = [dict(db=20 - i, dur=40, ring=i < 3) for i in range(7)]
+    assert ranked(rows) == [4, 5, 3, 6], f'usual kind ranked as {ranked(rows)}'   # the three ringing drops are left out
+    assert len(ranked(rows[:2] + [dict(db=20, dur=40, ring=False)])) == 2, 'fewer than three of the usual kind not kept whole'
     print('selftest ok')
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
-    ap.add_argument('--clip', nargs=2, action='append', metavar=('HEIGHT_CM', 'AUDIO'), default=[])
-    ap.add_argument('--video', nargs=4, action='append', metavar=('HEIGHT_CM', 'VIDEO', 'X', 'Y'), default=[],
-                    help='slow-motion video of that height\'s drip, with its drop column X and water line Y in pixels')
+    ap.add_argument('--clip', nargs=2, action='append', metavar=('VALUE', 'AUDIO'), default=[])
+    ap.add_argument('--video', nargs=4, action='append', metavar=('VALUE', 'VIDEO', 'X', 'Y'), default=[],
+                    help='slow-motion video of that clip\'s drip, with its drop column X and water line Y in pixels')
     ap.add_argument('--span', type=float, default=SPAN_S, help='seconds of each recording to keep, its steadiest stretch; 0 keeps it all')
     ap.add_argument('--set', default='heights', help='name of the recording set, its folder under site/recordings')
     ap.add_argument('--same-tap', action='store_true', help='the tap was not touched between clips, so they share one drip period')
+    ap.add_argument('--var', default='Fall height', help='what differs between the clips')
+    ap.add_argument('--unit', default='cm', help='unit of the clips\' VALUE')
+    ap.add_argument('--free', action='store_true', help='find drops without assuming a steady drip, for irregular drips')
     ap.add_argument('--selftest', action='store_true')
     a = ap.parse_args()
     if a.selftest:
         return selftest()
     if not a.clip:
         ap.error('give at least one --clip')
-    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap, videos=a.video)
+    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap, videos=a.video, free=a.free, var=a.var, unit=a.unit)
 
 
 if __name__ == '__main__':

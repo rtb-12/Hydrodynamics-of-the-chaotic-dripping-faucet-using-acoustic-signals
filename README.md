@@ -68,6 +68,15 @@ uv run analysis/heights.py --clip 15 "audios /water drop 20 cm.mp4" --clip 35 "a
 uv run analysis/heights.py --selftest    # a synthetic recording with known drops, run by CI
 ```
 
+Any one thing can differ between recordings, not only height.
+`--var NAME` and `--unit UNIT` say what it is (`"Fall height"` and `cm` by default), and `--clip VALUE AUDIO` gives each recording's value.
+Drops that come at irregular gaps need `--free`, which takes every click at least 12 dB over the room and 0.25 s after the one before, with no drip period assumed; it cannot be combined with `--same-tap`.
+Each recording also stores three drops of its usual kind nearest its median loudness and length, to compare shapes.
+
+```bash
+uv run analysis/heights.py --set nozzle --var "Nozzle diameter" --unit mm --free --span 0 --clip 2 a.mpeg --clip 5 b.mpeg
+```
+
 The first set's files are named 5 cm higher than the drops really fell (20, 25 and 40 cm for 15, 20 and 35 cm).
 A second set goes in its own folder with `--set NAME`, shown on the same page through its picker.
 When the tap was left alone between recordings, `--same-tap` finds one drip period from the loud drops of all of them, which a slow drip with few drops per recording needs, and counts ringing against every drip that fell.
