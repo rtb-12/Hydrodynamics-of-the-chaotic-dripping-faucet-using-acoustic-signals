@@ -64,7 +64,7 @@
 
     <section class="intervals">
       <h2 id="changes"></h2>
-      <p class="note">A drop <b>rings</b> when it traps a small air bubble that keeps sounding a clear tone for a few milliseconds; without one it only clicks. Below, the share of drops that ring in each recording, then the pitch and the loudness of each drop, spread a little sideways around its value so dots do not hide each other, with a bar at the median.</p>
+      <p class="note">A drop <b>rings</b> when it traps a small air bubble that keeps sounding a clear tone for a few milliseconds; without one it only clicks.<span id="featnote"> Below, the share of drops that ring in each recording, then the pitch and the loudness of each drop, spread a little sideways around its value so dots do not hide each other, with a bar at the median.</span></p>
       <div class="tablewrap"><table id="tbl"></table></div>
       <div class="duo" id="feats"></div>
     </section>
@@ -79,9 +79,9 @@
   var SETS = {   // folders under recordings/
     heights: { name: 'First set, 15 to 35 cm', title: HEAD, note: NOTE },
     sweep: { name: 'Height sweep, 10 to 35 cm', title: HEAD, note: NOTE },
-    nozzle: { name: 'Nozzle size, 2 to 7 mm', title: 'Drop sound and nozzle size', note: 'The same drop falling 25 cm into plain water from nozzles of 2, 5 and 7 mm internal diameter. ' + ROWS },
-    glycerin: { name: 'Glycerin, 0 to 30 ml', title: 'Drop sound and glycerin', note: 'Glycerin added to 900 ml of water, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0 ml is plain water. ' + ROWS },
-    heights3: { name: 'Height, final run, 15 to 35 cm', title: 'Drop sound and fall height, final run', note: 'Fall heights of 15, 25 and 35 cm from a 5 mm nozzle into plain water. ' + ROWS }
+    nozzle: { name: 'Nozzle size, 2 to 7 mm', title: 'Drop sound and nozzle size', note: 'The same drop falling 25 cm into plain water from nozzles of 2, 5 and 7 mm internal diameter. ' + ROWS, charts: false },
+    glycerin: { name: 'Glycerin, 0 to 30 ml', title: 'Drop sound and glycerin', note: 'Glycerin added to 900 ml of water, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0 ml is plain water. ' + ROWS, charts: false },
+    heights3: { name: 'Height, final run, 15 to 35 cm', title: 'Drop sound and fall height, final run', note: 'Fall heights of 15, 25 and 35 cm from a 5 mm nozzle into plain water. ' + ROWS, charts: false }
   };
   var SET = SETS[new URLSearchParams(location.search).get('set')] ? new URLSearchParams(location.search).get('set') : 'heights';
   document.title = SETS[SET].title;
@@ -538,7 +538,8 @@
   var n = H.clips.reduce(function (s, c) { return s + c.drops.length; }, 0);
   $('meta').innerHTML = '<b>' + n + '</b> drops from <b>' + H.clips.length + '</b> recordings';
   $('changes').textContent = 'What changes with ' + H.var.toLowerCase();
-  buildRows(); fillTable(); fillFeatures(); buildShapes(); drawEnv(); drawAllShapes();
+  buildRows(); fillTable();
+  if (SETS[SET].charts === false) $('featnote').remove(); else fillFeatures(); buildShapes(); drawEnv(); drawAllShapes();
   seg('wins', 'w', function (v) { WIN = +v; redraw(); });
   wireZoom();
   document.querySelectorAll('[data-ov]').forEach(function (pl) {
