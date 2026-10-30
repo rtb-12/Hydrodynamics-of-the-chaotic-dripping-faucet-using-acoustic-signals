@@ -19,15 +19,15 @@
 <main class="viewer">
   <div class="vhead">
     <div class="vtitle">
-      <h1>Drop sound and fall height</h1>
+      <h1 id="title"></h1>
       <select id="pick" aria-label="Recording set"></select>
       <span class="vmeta" id="meta"></span>
     </div>
-    <p class="note">The same faucet with the tap left alone through each set; only the height the drops fall into the water changes. Each row is one phone recording, its waveform and spectrogram scrolling with its own sound. Where a row has a slow-motion video of its drip, the video plays beside it, each splash lined up with its own sound. Play a row, click a graph to move there, or step from drop to drop; each row starts on a typical drop.</p>
+    <p class="note" id="intro"></p>
   </div>
 
   <p class="empty" id="empty" hidden>No data yet. Run
-  <code>uv run analysis/heights.py --clip HEIGHT AUDIO</code> for each recording, then reload.</p>
+  <code>uv run analysis/heights.py --clip VALUE AUDIO</code> for each recording, then reload.</p>
 
   <div class="vbody" id="body">
     <div class="options">
@@ -48,8 +48,8 @@
     </dialog>
 
     <section class="intervals">
-      <h2>All heights on top of each other</h2>
-      <p class="note">Left, the drop at each row&rsquo;s playhead, lined up at the moment of impact, over the first 40 ms. Right, how loud a drop is in the 2 to 9 kHz band after it hits, as the median of every drop at that height with the middle half shaded. 0 dB is the room&rsquo;s own noise just before the drop.</p>
+      <h2>All recordings on top of each other</h2>
+      <p class="note">Left, the drop at each row&rsquo;s playhead, lined up at the moment of impact, over the first 40 ms. Right, how loud a drop is in the 2 to 9 kHz band after it hits, as the median of every drop in that recording with the middle half shaded. 0 dB is the room&rsquo;s own noise just before the drop.</p>
       <div class="duo">
         <div class="plot card" tabindex="0" data-ov="wave"><span class="cap">Shown drops, overlaid <span>after impact</span></span><span class="expand">Click to enlarge</span><canvas id="ovWave"></canvas></div>
         <div class="plot card" tabindex="0" data-ov="env"><span class="cap">Typical loudness after impact <span>dB over the room</span></span><span class="expand">Click to enlarge</span><canvas id="ovEnv"></canvas></div>
@@ -57,8 +57,14 @@
     </section>
 
     <section class="intervals">
-      <h2>What changes with height</h2>
-      <p class="note">A drop <b>rings</b> when it traps a small air bubble that keeps sounding a clear tone for a few milliseconds; without one it only clicks. Below, the share of drops that ring at each height, and the pitch of each drop that rang, spread a little sideways around its height so dots do not hide each other, with a bar at the median.</p>
+      <h2>Drop shape</h2>
+      <p class="note">Each drop is divided by its own peak, so only its shape is compared, not its loudness; drops are lined up at impact, over the first 40 ms. First, three typical drops from each recording; then the typical drop of every recording together.</p>
+      <div class="shapes" id="shapes"></div>
+    </section>
+
+    <section class="intervals">
+      <h2 id="changes"></h2>
+      <p class="note">A drop <b>rings</b> when it traps a small air bubble that keeps sounding a clear tone for a few milliseconds; without one it only clicks. Below, the share of drops that ring in each recording, then the pitch and the loudness of each drop, spread a little sideways around its value so dots do not hide each other, with a bar at the median.</p>
       <div class="tablewrap"><table id="tbl"></table></div>
       <div class="duo" id="feats"></div>
     </section>
@@ -67,18 +73,30 @@
 
 <script>
 (function () {
-  var SETS = { heights: 'First set, 15 to 35 cm', sweep: 'Height sweep, 10 to 35 cm' };   // folders under recordings/
+  var HEAD = 'Drop sound and fall height';
+  var NOTE = 'The same faucet with the tap left alone through each set; only the height the drops fall into the water changes. Each row is one phone recording, its waveform and spectrogram scrolling with its own sound. Where a row has a slow-motion video of its drip, the video plays beside it, each splash lined up with its own sound. Play a row, click a graph to move there, or step from drop to drop; each row starts on a typical drop.';
+  var ROWS = 'Each row is one phone recording, its waveform and spectrogram scrolling with its own sound. Play a row, click a graph to move there, or step from drop to drop; each row starts on a typical drop. The tap was adjusted between recordings, so the drip rate differs from row to row.';
+  var SETS = {   // folders under recordings/
+    heights: { name: 'First set, 15 to 35 cm', title: HEAD, note: NOTE },
+    sweep: { name: 'Height sweep, 10 to 35 cm', title: HEAD, note: NOTE },
+    nozzle: { name: 'Nozzle size, 2 to 7 mm', title: 'Drop sound and nozzle size', note: 'The same drop falling 25 cm into plain water from nozzles of 2, 5 and 7 mm internal diameter. ' + ROWS },
+    glycerin: { name: 'Glycerin, 0 to 30 ml', title: 'Drop sound and glycerin', note: 'Glycerin added to 900 ml of water, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0 ml is plain water. ' + ROWS },
+    heights3: { name: 'Height, final run, 15 to 35 cm', title: 'Drop sound and fall height, final run', note: 'Fall heights of 15, 25 and 35 cm from a 5 mm nozzle into plain water. ' + ROWS }
+  };
   var SET = SETS[new URLSearchParams(location.search).get('set')] ? new URLSearchParams(location.search).get('set') : 'heights';
+  document.title = SETS[SET].title;
+  document.getElementById('title').textContent = SETS[SET].title; document.getElementById('intro').textContent = SETS[SET].note;
   var pick = document.getElementById('pick');
-  Object.keys(SETS).forEach(function (k) { pick.add(new Option(SETS[k], k, false, k === SET)); });
+  Object.keys(SETS).forEach(function (k) { pick.add(new Option(SETS[k].name, k, false, k === SET)); });
   pick.onchange = function () { location.search = '?set=' + pick.value; };
   var data = document.createElement('script');   // a script tag rather than fetch, so the page also opens from the filesystem
   data.src = fresh('recordings/' + SET + '/data.js'); data.onload = data.onerror = page; document.head.appendChild(data);
 
   function page() {
   var PH = 0.8, OV_MS = 40;   // playhead position while playing; span of the overlaid drops, ms
+  var H = window.HEIGHTS, FREE = H && H.free, SHAPE_ALPHA = [1, 0.6, 0.35];   // free sets have no assumed drip period; line opacity of a condition's three drops
   var LANE_FOOT = '<span>Click to jump there</span><span>Scroll to widen or narrow the window</span><span><kbd>Space</kbd> play or pause</span><span><kbd>[</kbd> <kbd>]</kbd> previous or next drop</span><span><kbd>Esc</kbd> close</span>';
-  var OV_FOOT = '<span>Hover to read every height at one moment</span><span>Scroll to widen or narrow the time span</span><span><kbd>Esc</kbd> close</span>';
+  var OV_FOOT = '<span>Hover to read every recording at one moment</span><span>Scroll to widen or narrow the time span</span><span><kbd>Esc</kbd> close</span>';
   var INFO = {
     wave: ['Waveform', 'The microphone signal. Each pixel column is drawn from the highest to the lowest sample in that slice of time, so nothing is averaged away.',
       'Height uses a square-root scale so quiet drops stay visible next to loud ones; the labels give the true percentage of the loudest sample of all the recordings, since every row is drawn on that one scale unless the gain is set to fit the window.',
@@ -89,14 +107,16 @@
       'A drop impact shows as a thin vertical streak across many frequencies. A ringing bubble shows as a short horizontal mark at its pitch.',
       'Above about 9 kHz the phone&rsquo;s audio compression makes up the sound rather than recording it, so read nothing into that part.'],
     drops: ['Drops lane', 'Every drop found in this recording. A dot above a tick means the drop rang: it trapped a bubble that sounded a clear tone for at least 6 ms.',
-      'Drops are found one per drip period, so faint ones are looked for where the drip says they must be, and drops inside talking or handling noise are left out.',
+      FREE ? 'Drops are every click more than 12 dB over the room, at least 0.25 s apart; no drip rate is assumed, since these drips are irregular, so a faint drop is not looked for and drops inside talking or handling noise are left out.'
+        : 'Drops are found one per drip period, so faint ones are looked for where the drip says they must be, and drops inside talking or handling noise are left out.',
       'The blue line is now. While playing it sits near the right, so what is to its left has already been heard.'],
     audio: ['Audio tracks', 'Raw is the phone recording as captured.',
       'Cleaned has the music and hum below 1 kHz filtered out and the steady hiss turned down by at most 10 dB. It is deliberately gentle, so the drops themselves are unchanged and faint ones survive; louder noise reduction halved the drops&rsquo; peaks. The graphs follow whichever track is selected.'],
     all: ['Play all', 'Plays every row at once from the drop each row is showing, with those drops lined up so they land together. The slider moves all rows through their recordings together, still lined up.',
       'Hear picks which rows you listen to while all of them play; the rest play silently so their graphs still move. A row played on its own is always heard.',
-      'The drips do not run at quite the same rate (the tap slows as the water above it falls), so the rows would drift apart by about a tenth of a second a drop. Halfway between drops, where every row is quiet, each row is moved so its next drop lands with the first row&rsquo;s. The sound is never sped up or slowed, so pitches stay true.'],
-    video: ['Video', 'A slow-motion clip of the same drip at this height, shot at 240 frames a second and cropped to the column the drops fall down. It plays at real speed here; use Speed to slow it down, to 0.1&times; for 24 frames a second of the fall.',
+      FREE ? 'The drips do not run at the same rate and are irregular, so the rows would drift apart. Halfway between drops, where every row is quiet, each row is moved so its next drop lands with the first row&rsquo;s; only the drops found are used, none is filled in. The sound is never sped up or slowed, so pitches stay true.'
+        : 'The drips do not run at quite the same rate (the tap slows as the water above it falls), so the rows would drift apart by about a tenth of a second a drop. Halfway between drops, where every row is quiet, each row is moved so its next drop lands with the first row&rsquo;s. The sound is never sped up or slowed, so pitches stay true.'],
+    video: ['Video', 'A slow-motion clip of the same drip in this recording, shot at 240 frames a second and cropped to the column the drops fall down. It plays at real speed here; use Speed to slow it down, to 0.1&times; for 24 frames a second of the fall.',
       'The video and the sound were recorded together on two phones. They are lined up by the drops: one shift puts most splashes within 30 ms of a heard drop, and no other shift fits as many. Each of those splashes is then pinned to its own sound.',
       'Where the heard drops do not settle one shift (too few heard, or two shifts fitting as well), the video is only placed in the drip&rsquo;s rhythm, and its row says so. Only the stretch the camera filmed in slow motion, 25 to 37 s, is kept, so every moment of these rows has a picture.'],
     speed: ['Slow motion', 'Plays the sound slower so one drop can be heard as it happens. The sound drops in pitch like a slowed tape: at 0.25&times; a 4 kHz ring sounds at 1 kHz, still easy to hear.',
@@ -104,13 +124,13 @@
   };
 
   function $(id) { return document.getElementById(id); }
-  var H = window.HEIGHTS, rows = [], WIN = 0.5, gain = 'full', src = 'clean', rate = 1;
+  var rows = [], WIN = 0.5, gain = 'full', src = 'clean', rate = 1;
   var LEAD = 0.3, QUIET = 0.15, SYNC = 0.01, all = false;   // Play all starts this long before the drops; no row is moved closer than QUIET to a drop, nor by less than SYNC, s
   var HARD_SYNC = 0.2, NUDGE = 0.02, SYNC_HOLD_MS = 300;   // re-seek a video beyond this real-time drift (s); else trim its rate by up to 2%; settle time after a seek
   var RATE_STEP = 0.005;   // a video's rate is only changed by more than this share
   var KINDS = ['wave', 'loud', 'spec', 'drops'], zoom = $('zoom'), zc = $('zc'), zRead = $('zRead'), zRow = null, zKind = null, zHover = null, zView = null, zSpan = 0;
 
-  function label(c) { return c.h + ' cm'; }
+  function label(c) { return c.v + ' ' + H.unit; }
   function per(c) { return c.drip_s || c.period_ms / 1000; }   // the drip's own period where the set shares a tap, else the gaps heard
   function rang(c) { return c.drops.filter(function (d) { return d.ring; }).length; }
   function fell(c) { return c.drips || c.drops.length; }   // drips that fell, where the drip rate is known; else the drops heard
@@ -194,6 +214,7 @@
   function seek(r, t) { r.audio.currentTime = Math.max(0, Math.min(r.c.duration, t)); draw(r); }
   // Drop times with each missed drop filled in at its expected time, so lining rows up never skips one.
   function beats(c) {
+    if (FREE) return c.drops.map(function (d) { return d.t; });
     var P = per(c), out = [];
     c.drops.forEach(function (d, i) {
       var prev = i ? c.drops[i - 1].t : null, n = prev == null ? 1 : Math.round((d.t - prev) / P);
@@ -322,8 +343,8 @@
       var el = document.createElement('div');
       el.className = 'hrow';
       el.innerHTML = '<div class="hhead"><b class="hname" style="--c: var(--h' + (n + 1) + ')">' + label(c) + '</b>' +
-        '<span class="vmeta">' + c.drops.length + (c.drips ? ' of about ' + c.drips + ' drips heard' : ' drops') + ', ' + Math.round(100 * rang(c) / fell(c)) + '% ring, one every ' + per(c).toFixed(2) + ' s; ' +
-        (c.video ? 'the ' + Math.round(c.duration) + ' s on film' : 'its steadiest ' + Math.round(c.duration) + ' s') + ', from ' + Math.round(c.start) + ' s into the recording' +
+        '<span class="vmeta">' + c.drops.length + (c.drips ? ' of about ' + c.drips + ' drips heard' : ' drops') + ', ' + Math.round(100 * rang(c) / fell(c)) + '% ring, ' + (FREE ? 'median gap ' : 'one every ') + per(c).toFixed(2) + ' s; ' +
+        (c.video ? 'the ' + Math.round(c.duration) + ' s on film' : (H.span ? 'its steadiest ' : 'all ') + Math.round(c.duration) + ' s') + ', from ' + Math.round(c.start) + ' s into the recording' +
         (c.video && !c.video.synced ? '; its heard drops do not settle where the video lines up, so it only keeps the drip&rsquo;s rhythm' : '') + '</span></div>' +
         '<div class="transport card"><button class="primary" type="button">Play</button>' +
         '<input type="range" class="scrub" min="0" max="' + c.duration + '" step="0.001" value="0" aria-label="Position in ' + label(c) + '">' +
@@ -424,13 +445,45 @@
     return { t0: 0, t1: span, pw: W - GUT - 10 };
   }
 
+  // --- drop shape: each drop scaled to its own peak -----------------------------------
+
+  function drawShapes(c, lines, big) {   // lines: { n: condition index, i: drop index, a: opacity }; big is the card of every recording, with a legend
+    var g = fit(c), k = tokens(), W = c.W, Hh = c.H, t0 = -Math.min(H.pre_ms, OV_MS / 20), top = big ? 48 : 32, bot = Hh - 22, mid = (top + bot) / 2, half = (bot - top) / 2;
+    var X = function (t) { return 10 + (W - 20) * (t - t0) / (OV_MS - t0); };
+    g.clearRect(0, 0, W, Hh);
+    timeAxis(g, k, t0, OV_MS, X, top, bot, W);
+    lines.forEach(function (l) {
+      var y = samples(H.clips[l.n], l.i), j0 = Math.round((t0 + H.pre_ms) * H.rate / 1000), j1 = Math.round((OV_MS + H.pre_ms) * H.rate / 1000);
+      var pk = Math.max.apply(null, Array.prototype.map.call(y.subarray(j0, j1 + 1), Math.abs)) || 1;   // a rebound after the drawn span must not shrink the drop
+      g.strokeStyle = k.c[l.n]; g.globalAlpha = l.a; g.lineWidth = 1.2; g.beginPath();
+      for (var j = 0, on = false; j < y.length; j++) {
+        var t = j / H.rate * 1000 - H.pre_ms;
+        if (t < t0 || t > OV_MS) continue;
+        g[on ? 'lineTo' : 'moveTo'](X(t), mid - y[j] / pk * half); on = true;
+      }
+      g.stroke(); g.globalAlpha = 1;
+    });
+    if (big) legend(g, k);
+  }
+  function buildShapes() {
+    $('shapes').style.setProperty('--n', H.clips.length);
+    $('shapes').innerHTML = H.clips.map(function (c) {
+      return '<div class="plot card"><span class="cap">' + label(c) + ' <span>three typical drops</span></span><canvas></canvas></div>';
+    }).join('') + '<div class="plot card wide"><span class="cap">Typical drop of every recording <span>each at its own peak</span></span><canvas></canvas></div>';
+  }
+  function drawAllShapes() {
+    var cv = $('shapes').querySelectorAll('canvas');
+    H.clips.forEach(function (c, n) { drawShapes(cv[n], c.shapes.map(function (i, j) { return { n: n, i: i, a: SHAPE_ALPHA[j] }; })); });
+    drawShapes(cv[H.clips.length], H.clips.map(function (c, n) { return { n: n, i: c.typical, a: 0.9 }; }), true);
+  }
+
   // --- what changes ------------------------------------------------------------------
 
   function fillTable() {
-    var head = ['Recording', 'Drops heard', 'One drop every, middle half within', 'Ringing', 'Loudness, median', 'Sound lasts, median', 'Ring pitch, median', 'Ring dies away in, median'];
+    var head = ['Recording', 'Drops heard', FREE ? 'Median gap, middle half within' : 'One drop every, middle half within', 'Ringing', 'Loudness, median', 'Sound lasts, median', 'Ring pitch, median', 'Ring dies away in, median'];
     var body = H.clips.map(function (c) {
       var d = c.drops, rg = d.filter(function (x) { return x.ring; }), m = function (v, f) { return v == null ? '-' : f(v); };
-      var iv = d.slice(1).map(function (x, i) { return x.t - d[i].t; }).filter(function (v) { return Math.abs(v / per(c) - 1) < 0.3; }).sort(function (a, b) { return a - b; });
+      var iv = d.slice(1).map(function (x, i) { return x.t - d[i].t; }).filter(function (v) { return FREE || Math.abs(v / per(c) - 1) < 0.3; }).sort(function (a, b) { return a - b; });
       var spread = iv.length > 3 ? ' &plusmn; ' + Math.round((iv[Math.floor(iv.length * 0.75)] - iv[Math.floor(iv.length * 0.25)]) * 500) + ' ms' : '';
       return [label(c), d.length + (c.drips ? ' of ' + c.drips : ''), per(c).toFixed(3) + ' s' + spread, Math.round(100 * rg.length / fell(c)) + '%',
         m(median(d.map(function (x) { return x.db; })), function (v) { return v.toFixed(1) + ' dB'; }),
@@ -443,25 +496,30 @@
   }
 
   function fillFeatures() {
-    var hs = H.clips.map(function (c) { return c.h; }), xr = [Math.min.apply(null, hs) - 5, Math.max.apply(null, hs) + 5];
+    var hs = H.clips.map(function (c) { return c.v; }), pad = (Math.max.apply(null, hs) - Math.min.apply(null, hs)) / 6 || 1, xr = [Math.min.apply(null, hs) - pad, Math.max.apply(null, hs) + pad];
     function card(title, sub, plot) { return '<div class="card xycard"><span class="xcap">' + title + ' <span>' + sub + '</span></span>' + plot + '</div>'; }
-    var share = xy({ W: 520, H: 400, x: xr, y: [0, 100], xl: 'Fall height, cm', yl: 'Drops that ring, %',
+    var share = xy({ W: 520, H: 400, x: xr, y: [0, 100], xl: H.var + ', ' + H.unit, yl: 'Drops that ring, %',
       pts: H.clips.map(function (c, n) {
         var p = 100 * rang(c) / fell(c);
-        return { x: c.h, y: p, cls: 'c' + (n + 1), label: Math.round(p) + '% of ' + fell(c), tip: label(c) + ': ' + rang(c) + ' of ' + fell(c) + (c.drips ? ' drips' : ' drops') };
+        return { x: c.v, y: p, cls: 'c' + (n + 1), label: Math.round(p) + '% of ' + fell(c), tip: label(c) + ': ' + rang(c) + ' of ' + fell(c) + (c.drips ? ' drips' : ' drops') };
       }) });
-    var pts = [], marks = [], all = [];
+    var pts = [], marks = [], all = [], lpts = [], lmarks = [], ldb = [];
     H.clips.forEach(function (c, n) {
       var v = [];
       c.drops.forEach(function (d, i) {
+        ldb.push(d.db);
+        lpts.push({ x: c.v + ((i * 0.618034) % 1 - 0.5) * pad * 0.5, y: d.db, cls: 'c' + (n + 1), tip: label(c) + ', drop ' + (i + 1) + ': ' + d.db.toFixed(1) + ' dB' });
         if (!d.ring) return;
         var y = d.hz / 1000; v.push(y); all.push(y);
-        pts.push({ x: c.h + ((i * 0.618034) % 1 - 0.5) * 2.4, y: y, cls: 'c' + (n + 1), tip: label(c) + ', drop ' + (i + 1) + ': ' + y.toFixed(2) + ' kHz' });
+        pts.push({ x: c.v + ((i * 0.618034) % 1 - 0.5) * pad * 0.5, y: y, cls: 'c' + (n + 1), tip: label(c) + ', drop ' + (i + 1) + ': ' + y.toFixed(2) + ' kHz' });
       });
-      if (v.length) marks.push({ x: c.h, y: median(v) });
+      if (v.length) marks.push({ x: c.v, y: median(v) });
+      lmarks.push({ x: c.v, y: median(c.drops.map(function (d) { return d.db; })) });
     });
-    var pitch = xy({ W: 520, H: 400, x: xr, y: span(all, 0.5), xl: 'Fall height, cm', yl: 'Pitch, kHz', pts: pts, marks: marks });
-    $('feats').innerHTML = card('Drops that ring', H.clips[0].drips ? 'share of every drip that fell' : 'one point per recording', share) + card('Ring pitch', 'one dot per drop that rang', pitch);
+    var pitch = xy({ W: 520, H: 400, x: xr, y: span(all, 0.5), xl: H.var + ', ' + H.unit, yl: 'Pitch, kHz', pts: pts, marks: marks });
+    var loud = xy({ W: 520, H: 400, x: xr, y: span(ldb, 1), xl: H.var + ', ' + H.unit, yl: 'Loudness, dB over the room', pts: lpts, marks: lmarks });
+    $('feats').innerHTML = card('Drops that ring', H.clips[0].drips ? 'share of every drip that fell' : 'one point per recording', share) + card('Ring pitch', 'one dot per drop that rang', pitch) +
+      card('Loudness of every drop', 'one dot per drop, bar at the median', loud);
   }
 
   // --- wiring --------------------------------------------------------------------------
@@ -474,12 +532,13 @@
       };
     });
   }
-  function redraw() { rows.forEach(draw); drawOverlay(); drawEnv(); if (zoom.open) drawZoom(); }
+  function redraw() { rows.forEach(draw); drawOverlay(); drawEnv(); drawAllShapes(); if (zoom.open) drawZoom(); }
 
   if (!H) { $('empty').hidden = false; $('body').hidden = true; return; }
   var n = H.clips.reduce(function (s, c) { return s + c.drops.length; }, 0);
   $('meta').innerHTML = '<b>' + n + '</b> drops from <b>' + H.clips.length + '</b> recordings';
-  buildRows(); fillTable(); fillFeatures(); drawEnv();
+  $('changes').textContent = 'What changes with ' + H.var.toLowerCase();
+  buildRows(); fillTable(); fillFeatures(); buildShapes(); drawEnv(); drawAllShapes();
   seg('wins', 'w', function (v) { WIN = +v; redraw(); });
   wireZoom();
   document.querySelectorAll('[data-ov]').forEach(function (pl) {
