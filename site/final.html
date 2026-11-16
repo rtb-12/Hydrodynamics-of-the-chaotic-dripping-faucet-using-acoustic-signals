@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Final Results</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script src="plots.js"></script>
+</head>
+<body>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.Tech project, 2026&ndash;27</span>
+  <button id="themeBtn" class="themetoggle" type="button">System</button>
+</header>
+
+<div class="shell wide">
+
+  <nav class="sidenav">
+    <h2>On this page</h2>
+    <ul>
+      <li><a href="#height">1. Fall height</a></li>
+      <li><a href="#nozzle">2. Nozzle diameter</a></li>
+      <li><a href="#viscosity">3. Viscosity</a></li>
+      <li><a href="#formation">4. Drop formation</a></li>
+      <li><a href="#limits">Limitations</a></li>
+    </ul>
+    <h2>Sections</h2>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="final.html" aria-current="page">Final results</a></li>
+      <li><a href="heights.html?set=final-height">Height lanes</a></li>
+      <li><a href="heights.html?set=nozzle">Nozzle lanes</a></li>
+      <li><a href="heights.html?set=viscosity">Viscosity lanes</a></li>
+      <li><a href="theory.html">Theory</a></li>
+      <li><a href="papers.html">Papers</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <p class="eyebrow">Final results</p>
+    <h1>What fall height, nozzle diameter and viscosity do to the impact sound</h1>
+    <p class="lede">Each experiment changes one parameter of a single drop falling into a pool of the same liquid and records the airborne sound with a MEMS microphone.
+    Every drop is measured against the room noise just before it, so levels are given as dB over room noise.
+    Literature values come only from the papers in this project&rsquo;s collection and are marked with their source.</p>
+
+    <div class="eq">
+      <span class="tag">Impact conditions</span>
+      <b>U</b> = &radic;(2gh)&nbsp;&nbsp;&nbsp;<b>We</b> = &rho;U&sup2;D / &sigma;&nbsp;&nbsp;&nbsp;<b>Fr</b> = U&sup2; / (gD)&nbsp;&nbsp;&nbsp;<b>Oh</b> = &mu; / &radic;(&rho;&sigma;D)<br>
+      <b>f<sub>0</sub></b> = (1 / 2&pi;a) &radic;(3&gamma;p<sub>0</sub> / &rho;)&nbsp;&nbsp;&asymp;&nbsp;3.29 / a&nbsp;&nbsp;Hz&middot;m in water
+      <dl>
+        <dt>h, U, D</dt><dd>fall height, impact speed, drop diameter</dd>
+        <dt>We, Fr, Oh</dt><dd>Weber, Froude and Ohnesorge numbers; &rho;, &sigma;, &mu; of the liquid</dd>
+        <dt>f<sub>0</sub>, a</dt><dd>Minnaert frequency of an entrained bubble of radius a (Phillips et al. 2018, Eq. 2)</dd>
+      </dl>
+    </div>
+
+    <h2 id="height">1. Fall height</h2>
+    <p>A 5&nbsp;mm nozzle releases water drops of about 5&nbsp;mm into plain water from 13 to 60&nbsp;cm.
+    The 15, 25 and 35&nbsp;cm recordings are the earlier final run; 13, 33, 43 and 60&nbsp;cm are new.</p>
+    <div class="bleed trio" id="heightCharts"></div>
+    <div class="callout">
+      <b>Against the literature</b>
+      <p>For a 4.5&nbsp;mm drop, regular bubble entrainment, one bubble and one clean ring per drop, needs U &asymp; 1.10&ndash;1.42&nbsp;m/s, about 6&ndash;10&nbsp;cm of fall (Oguz &amp; Prosperetti 1990 fit, as cited by Phillips et al. 2018; consistent with Pumphrey &amp; Walton 1988, p.&nbsp;227: a reproducible 7&nbsp;kHz tone at 7&ndash;8&nbsp;cm).
+      Our heights give U = 1.6&ndash;3.3&nbsp;m/s, so every condition lies above that window, in the splash regime where Chashechkin (2024, Table 4) records resonance packets only irregularly between 1.98 and 4.43&nbsp;m/s and none above 4.6&nbsp;m/s.</p>
+    </div>
+    <div class="tablewrap bleed"><table id="heightTable"></table></div>
+    <details class="lanesbox bleed" id="heightLanesBox"><summary>Listen: every height as synced lanes</summary>
+      <iframe class="embedlanes" id="heightLanes" src="heights.html?set=final-height&amp;embed=1" title="Fall height recordings, synced lanes" loading="lazy"></iframe>
+    </details>
+
+    <h2 id="nozzle">2. Nozzle diameter</h2>
+    <p>Nozzles of 2, 5 and 7&nbsp;mm internal diameter, water falling 25&nbsp;cm into water.
+    Tate&rsquo;s law with a Harkins&ndash;Brown factor of 0.60&ndash;0.72 predicts drops of about 3.9, 5.2 and 5.9&nbsp;mm; the 4&nbsp;mm row of the same calculation reproduces the 5.0&nbsp;mm drop that Chashechkin &amp; Prokhorov (2014, p.&nbsp;3) measure from a 4&nbsp;mm nozzle.</p>
+    <div class="bleed trio" id="nozzleCharts"></div>
+    <div class="callout">
+      <b>Against the literature</b>
+      <p>Drop mass grows only linearly with nozzle radius, so drop diameter changes by about 1.5&times; across 2&ndash;7&nbsp;mm and large acoustic differences are not expected from drop size alone.
+      At 25&nbsp;cm (U = 2.2&nbsp;m/s) none of the three drops is inside its regular entrainment window, and Phillips et al. (2018, p.&nbsp;2) report no regular entrainment for drops above 5&nbsp;mm, which includes the 7&nbsp;mm nozzle&rsquo;s drop.</p>
+    </div>
+    <div class="tablewrap bleed"><table id="nozzleTable"></table></div>
+    <details class="lanesbox bleed" id="nozzleLanesBox"><summary>Listen: every nozzle as synced lanes</summary>
+      <iframe class="embedlanes" id="nozzleLanes" src="heights.html?set=nozzle&amp;embed=1" title="Nozzle diameter recordings, synced lanes" loading="lazy"></iframe>
+    </details>
+
+    <h2 id="viscosity">3. Viscosity</h2>
+    <p>The same 5&nbsp;mm nozzle and 25&nbsp;cm fall with water, a 50% glycerin&ndash;water mixture and pure glycerin, each falling into a pool of the same liquid.
+    Both glycerin runs were filmed with sound, and each video is locked to its recording by cross-correlating the two audio tracks, so a splash on screen lands on its own click.</p>
+    <div class="tablewrap bleed">
+      <table>
+        <thead><tr><th>Liquid</th><th>&rho;, kg/m&sup3;</th><th>&mu;, mPa&middot;s</th><th>&sigma;, N/m</th><th>Oh (D = 4.5&nbsp;mm)</th><th>We at 25&nbsp;cm</th><th>Re at 25&nbsp;cm</th></tr></thead>
+        <tbody>
+          <tr><td>Water</td><td>998</td><td>1.0</td><td>0.0728</td><td>0.0017</td><td>344</td><td>11&thinsp;300</td></tr>
+          <tr><td>50% glycerin</td><td>1126</td><td>&asymp; 6</td><td>&asymp; 0.070</td><td>0.010</td><td>383</td><td>2000</td></tr>
+          <tr><td>Glycerin</td><td>1261</td><td>&asymp; 1410</td><td>0.063</td><td>2.35</td><td>441</td><td>9</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Liquid properties are textbook values at 20&nbsp;&deg;C; We and Re take the drop sizes from Tate&rsquo;s law (5.1, 4.9 and 4.5&nbsp;mm).</p>
+    <div class="bleed trio" id="viscosityCharts"></div>
+    <div class="callout">
+      <b>Against the literature</b>
+      <p>No paper in the collection measures drop-impact sound in any liquid but water.
+      The physics points one way: the viscous damping constant of a 0.4&nbsp;mm bubble is about 0.0005 in water but about 0.6 in glycerin, so a glycerin bubble rings for about one cycle, and Re &asymp; 9 leaves little inertia to fold a cavity shut.
+      Phillips et al. (2018, p.&nbsp;6) silence the impact by blocking entrainment with a rod or a surfactant; glycerin is a third way to lose the bubble and with it the sound.</p>
+    </div>
+    <div class="tablewrap bleed"><table id="viscosityTable"></table></div>
+    <details class="lanesbox bleed" id="viscosityLanesBox"><summary>Listen and watch: every liquid as synced lanes, with video</summary>
+      <iframe class="embedlanes" id="viscosityLanes" src="heights.html?set=viscosity&amp;embed=1" title="Viscosity recordings, synced lanes and video" loading="lazy"></iframe>
+    </details>
+
+    <h2 id="formation">4. Drop formation and impact, high-speed video</h2>
+    <p>Backlit shadowgraph clips from a Phantom Miro C110 at 1280&nbsp;&times;&nbsp;1024: the drop arrives, opens a crater, and the crater&rsquo;s collapse throws up a Worthington jet that pinches off a droplet.
+    The clips were cleaned of the camera software&rsquo;s tracking marks, denoised and upscaled 2&times; with every frame kept.
+    Step frame by frame, or click a still to jump to that stage.
+    Times assume 900 fps, the camera&rsquo;s rate at full resolution; the pre-contact fall speed of the 25&nbsp;cm take 0 drop agrees with it.
+    Both 25&nbsp;cm jets leave the frame, so their starred stills mark the middle of the time off frame, not the apex.</p>
+    <div class="bleed formation" id="formationClips"></div>
+    <div class="callout">
+      <b>Against the literature</b>
+      <p>In the Pumphrey&ndash;Phillips mechanism a single bubble pinches off the crater bottom about 24&ndash;27&nbsp;ms after contact and rings at once.
+      In the splash regime of 5&nbsp;mm drops the crater bottoms out near 23&nbsp;ms, the jet rises near 140&nbsp;ms and the sounding gas cavities form at 170&ndash;230&nbsp;ms (Chashechkin &amp; Prokhorov 2025, Prokhorov &amp; Chashechkin 2011).
+      In all three clips the crater reaches its deepest point 21&ndash;22 frames after contact, 23&ndash;24&nbsp;ms at 900 fps, matching the 23&nbsp;ms crater bottom of Chashechkin &amp; Prokhorov (2025) for a 5&nbsp;mm drop at 2.4&nbsp;m/s.
+      The jet then rises for about 100&nbsp;ms and pinches off its top droplet 130&ndash;150&nbsp;ms after contact, the splash-regime sequence rather than a single bubble at the crater bottom.</p>
+    </div>
+
+    <h2 id="limits">Limitations</h2>
+    <ul>
+      <li>The microphone stores HE-AAC at 48&nbsp;kHz, which synthesises the band above about 9&nbsp;kHz, so every measure uses 2&ndash;9&nbsp;kHz and rings above 9&nbsp;kHz are not seen.</li>
+      <li>The recorder applies its own noise suppression and gain control; dB over room noise cancels slow gain changes but is not a sound pressure level.</li>
+      <li>One recording per condition, of about one minute; spreads are the middle half of the drops in that recording, not run-to-run repeatability.</li>
+      <li>Drop diameters are predicted from Tate&rsquo;s law, not measured.</li>
+    </ul>
+  </main>
+</div>
+
+<script>
+(function () {
+  var SETS = [   // folders under recordings/, the charts they get, and the paper reading each compares with
+    { id: 'height', set: 'final-height', paper: [
+      ['Regular entrainment window, 4.5 mm drop', 'U = 1.10-1.42 m/s, h = 6-10 cm', 'Oguz & Prosperetti fit, cited by Phillips 2018'],
+      ['Reproducible tone, 3.9 mm drop at 7-8 cm', 'about 7 kHz', 'Pumphrey & Walton 1988, p. 227'],
+      ['Bubbles and Minnaert tones still recorded', 'fall heights 8-30 cm', 'Pumphrey & Walton 1988, Fig. 7'],
+      ['Splash-mode resonance packets, D = 5 mm', 'formed at 1.98-4.43 m/s, none above 4.6 m/s', 'Chashechkin 2024, Table 4'],
+      ['Ring peak pressure against impact speed', '26-34 Pa over 2-4.4 m/s, about +2 dB', 'Chashechkin 2024, Table 4'],
+      ['Ring decay phase, D = 5 mm', '3-19 ms, growing with U', 'Chashechkin 2024, Table 4'],
+      ['Air-audible packets at 2.6-4 m/s', '1.6-18 kHz, no trend with height', 'Prokhorov 2011; Chashechkin 2014']] },
+    { id: 'nozzle', set: 'nozzle', paper: [
+      ['Drop from a 4 mm nozzle', 'D = 5.0 mm', 'Chashechkin & Prokhorov 2014, p. 3'],
+      ['Regular entrainment by drop size', 'none for D below 1 mm or above 5 mm', 'Phillips 2018, p. 2'],
+      ['Window at 25 cm (U = 2.18 m/s)', 'D = 4 mm needs 1.19-1.56 m/s; 5 mm needs 1.02-1.30 m/s', 'Oguz & Prosperetti fit, cited by Phillips 2018']] },
+    { id: 'viscosity', set: 'viscosity', paper: [
+      ['Impact sound in liquids other than water', 'not measured in any paper in the collection', '-'],
+      ['Entrainment blocked (rod or surfactant)', 'no sound', 'Phillips 2018, p. 6'],
+      ['Dripping regime by Ohnesorge number', 'chaos at Oh = 0.01, none at 0.1, jetting at O(1)', 'Ambravaneswaran 2000, p. 5335']] }
+  ];
+  var DATA = {};
+
+  function $(id) { return document.getElementById(id); }
+  function median(v) { v = v.slice().sort(function (a, b) { return a - b; }); return v.length ? (v[(v.length - 1) >> 1] + v[v.length >> 1]) / 2 : null; }
+  function q(v, p) { v = v.slice().sort(function (a, b) { return a - b; }); return v.length ? v[Math.min(v.length - 1, Math.floor(p * (v.length - 1) + 0.5))] : null; }
+  function f1(v) { return v == null ? '-' : v.toFixed(1); }
+
+  // One set's data.js sets window.HEIGHTS, so the sets are loaded one after another and each copy kept.
+  function load(i) {
+    if (i === SETS.length) return draw();
+    var s = document.createElement('script');
+    s.src = fresh('recordings/' + SETS[i].set + '/data.js');
+    s.onload = s.onerror = function () { DATA[SETS[i].set] = window.HEIGHTS; window.HEIGHTS = undefined; load(i + 1); };
+    document.head.appendChild(s);
+  }
+
+  function stats(c) {
+    var db = c.drops.map(function (d) { return d.db; }), r = c.drops.filter(function (d) { return d.ring; });
+    var hz = r.map(function (d) { return d.hz / 1000; }), tau = r.map(function (d) { return d.tau; }).filter(function (t) { return t != null; });
+    return { v: c.v, n: c.drops.length, ring: r.length, share: c.drops.length ? 100 * r.length / c.drops.length : 0,
+      db: [q(db, 0.25), median(db), q(db, 0.75)], hz: [q(hz, 0.25), median(hz), q(hz, 0.75)], tau: median(tau) };
+  }
+
+  function card(title, sub, plot) { return '<div class="card xycard"><span class="xcap">' + title + ' <span>' + sub + '</span></span>' + plot + '</div>'; }
+
+  function charts(S, H) {
+    var st = H.clips.map(stats), vs = st.map(function (s) { return s.v; });
+    var pad = (Math.max.apply(null, vs) - Math.min.apply(null, vs)) / 8 || 1, xr = [Math.min(0, Math.min.apply(null, vs) - pad), Math.max.apply(null, vs) + pad];
+    var band = S.id === 'height' ? { x: [6, 10], label: 'regular entrainment' } : null, xl = H.var + ', ' + H.unit;
+    function pts(f) { return st.filter(function (s) { return f(s)[1] != null; }).map(function (s, n) { return { x: s.v, y: f(s)[1], cls: 'c' + (n + 1), tip: s.v + ' ' + H.unit + ': ' + f(s)[1].toFixed(2) }; }); }
+    function bars(f) { return st.filter(function (s) { return f(s)[1] != null; }).map(function (s) { return { x: s.v, lo: f(s)[0], hi: f(s)[2] }; }); }
+    var dbs = [].concat.apply([], st.map(function (s) { return s.db; })), hzs = [].concat.apply([], st.map(function (s) { return s.hz; })).filter(function (v) { return v != null; });
+    var loud = xy({ W: 400, H: 330, x: xr, y: [0, Math.ceil((Math.max.apply(null, dbs) + 5) / 10) * 10], xl: xl, yl: 'Peak level, dB over room noise', join: true, band: band,
+      pts: pts(function (s) { return s.db; }).map(function (p, n) { p.label = 'n = ' + st[n].n; return p; }), bars: bars(function (s) { return s.db; }) });
+    var share = xy({ W: 400, H: 330, x: xr, y: [0, 100], xl: xl, yl: 'Drops that ring, %', join: true, band: band,
+      pts: st.map(function (s, n) { return { x: s.v, y: s.share, cls: 'c' + (n + 1), label: s.ring + ' of ' + s.n, tip: s.v + ' ' + H.unit + ': ' + s.share.toFixed(0) + '%' }; }) });
+    var pitch = hzs.length ? xy({ W: 400, H: 330, x: xr, y: [0, Math.ceil(Math.max.apply(null, hzs) + 1)], xl: xl, yl: 'Ring pitch, kHz', band: band,
+      pts: pts(function (s) { return s.hz; }), bars: bars(function (s) { return s.hz; }) }) : '<p class="note">No drop rang.</p>';
+    $(S.id + 'Charts').innerHTML = card('Loudness', 'median, middle half', loud) + card('Ringing drops', 'bubble tone of 6 ms or more', share) +
+      card('Ring pitch', 'ringing drops, median, middle half', pitch);
+    return st;
+  }
+
+  function table(S, H, st) {
+    var head = '<thead><tr><th>' + H.var + '</th><th>Drops</th><th>Ring</th><th>Level, dB (median, middle half)</th><th>Pitch, kHz</th><th>Decay, ms</th></tr></thead>';
+    var ours = st.map(function (s) {
+      return '<tr><td>' + s.v + ' ' + H.unit + '</td><td>' + s.n + '</td><td>' + s.share.toFixed(0) + '%</td><td>' + f1(s.db[1]) + ' (' + f1(s.db[0]) + '-' + f1(s.db[2]) + ')</td><td>' +
+        (s.hz[1] == null ? '-' : s.hz[1].toFixed(2)) + '</td><td>' + f1(s.tau) + '</td></tr>';
+    }).join('');
+    var lit = '<tr class="sub"><td colspan="6">Literature</td></tr>' + S.paper.map(function (p) { return '<tr><td colspan="2">' + p[0] + '</td><td colspan="2">' + p[1] + '</td><td colspan="2">' + p[2] + '</td></tr>'; }).join('');
+    $(S.id + 'Table').innerHTML = head + '<tbody>' + ours + lit + '</tbody>';
+  }
+
+  function draw() {
+    SETS.forEach(function (S) {
+      var H = DATA[S.set];
+      if (!H) { $(S.id + 'Charts').innerHTML = '<p class="note">No data yet for this set.</p>'; $(S.id + 'Table').parentNode.hidden = $(S.id + 'LanesBox').hidden = true; return; }
+      table(S, H, charts(S, H));
+    });
+  }
+
+  // Embedded lane viewers report their height, so each frame fits its content.
+  addEventListener('message', function (e) {
+    if (!e.data || e.data.lanes == null) return;
+    document.querySelectorAll('iframe.embedlanes').forEach(function (f) { if (f.contentWindow === e.source) f.style.height = e.data.h + 'px'; });
+  });
+
+  function formation() {
+    var F = window.FORMATION, TITLES = { '25cm-a': '25 cm fall, take 0', '25cm-b': '25 cm fall, take 1', '35cm': '35 cm fall' };
+    if (!F) { $('formationClips').innerHTML = '<p class="note">No high-speed clips yet.</p>'; return; }
+    $('formationClips').innerHTML = Object.keys(F).map(function (slug) {
+      var c = F[slug], ms = c.capture_fps ? 1000 / c.capture_fps : null;
+      c.contact = c.stages.filter(function (s) { return s.name === 'contact'; }).map(function (s) { return s.frame; })[0];
+      return '<figure class="card fclip" data-slug="' + slug + '"><video muted playsinline preload="metadata" src="recordings/formation/' + slug + '/video.mp4"></video>' +
+        '<div class="fctl"><button type="button" data-a="play">Play</button><button type="button" data-a="-1" aria-label="Previous frame">&#9664;</button><button type="button" data-a="1" aria-label="Next frame">&#9654;</button>' +
+        '<span class="seg">' + [1, 0.25, 0.1].map(function (r) { return '<button type="button" data-r="' + r + '" aria-pressed="' + (r === 0.25) + '">' + r + '&times;</button>'; }).join('') + '</span>' +
+        '<span class="fread"></span></div>' +
+        '<div class="fstrip">' + c.stages.map(function (s) {
+          return '<button type="button" data-t="' + s.t_playback_s + '"' + (s.note ? ' title="' + s.note + '"' : '') + '><img src="recordings/formation/' + slug + '/stage-' + s.name + '.jpg" alt="' + s.name.replace('_', ' ') + '" loading="lazy"><span>' + s.name.replace('_', ' ') + (s.note ? '*' : '') +
+            (ms != null && c.contact != null ? '<br>' + ((s.frame - c.contact) * ms).toFixed(1) + ' ms' : '<br>frame ' + s.frame) + '</span></button>';
+        }).join('') + '</div>' +
+        '<figcaption>' + TITLES[slug] + (c.capture_fps ? ', ' + c.capture_fps + ' fps capture, ' + c.frames + ' frames' : '') + '</figcaption></figure>';
+    }).join('');
+    document.querySelectorAll('.fclip').forEach(function (fig) {
+      var v = fig.querySelector('video'), c = F[fig.dataset.slug], fps = c.fps_playback, read = fig.querySelector('.fread');
+      function show() {
+        var fr = Math.floor(v.currentTime * fps);
+        read.textContent = 'Frame ' + fr + (c.capture_fps && c.contact != null ? ', ' + ((fr - c.contact) * 1000 / c.capture_fps).toFixed(1) + ' ms from contact' : '');
+      }
+      v.playbackRate = 0.25;
+      v.addEventListener('loadedmetadata', function () { v.currentTime = (c.contact + 0.5) / fps; }, { once: true });   // open on the moment of contact
+      v.addEventListener('timeupdate', show); v.addEventListener('seeked', show);
+      fig.querySelectorAll('[data-a]').forEach(function (b) {
+        b.onclick = function () {
+          if (b.dataset.a === 'play') { if (v.paused) v.play(); else v.pause(); return; }
+          v.pause(); v.currentTime = Math.max(0, (Math.floor(v.currentTime * fps) + +b.dataset.a + 0.5) / fps);
+        };
+      });
+      v.addEventListener('play', function () { fig.querySelector('[data-a="play"]').textContent = 'Pause'; });
+      v.addEventListener('pause', function () { fig.querySelector('[data-a="play"]').textContent = 'Play'; });
+      fig.querySelectorAll('[data-r]').forEach(function (b) {
+        b.onclick = function () { fig.querySelectorAll('[data-r]').forEach(function (o) { o.setAttribute('aria-pressed', o === b); }); v.playbackRate = +b.dataset.r; };
+      });
+      fig.querySelectorAll('[data-t]').forEach(function (b) { b.onclick = function () { v.pause(); v.currentTime = +b.dataset.t + 0.5 / fps; }; });
+    });
+  }
+
+  var fs = document.createElement('script');
+  fs.src = fresh('recordings/formation/stages.js'); fs.onload = fs.onerror = formation; document.head.appendChild(fs);
+  load(0);
+})();
+</script>
+</body>
+</html>
