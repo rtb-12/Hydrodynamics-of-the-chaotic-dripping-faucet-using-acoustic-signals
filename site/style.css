@@ -1064,3 +1064,6 @@ tr.sub td { font-family: var(--display); font-size: 0.78rem; font-weight: 600; l
 .lanesbox summary { cursor: pointer; padding: 0.7rem 1rem; font-size: 0.9rem; font-weight: 600; color: var(--hydro); }
 .lanesbox[open] summary { border-bottom: 1px solid var(--rule); }
 .lanesbox .embedlanes { margin: 0; border: 0; border-radius: 0 0 var(--radius) var(--radius); }
+.duofilm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin: 0 0 1.5rem; font-family: var(--display); }
+.duofilm video { aspect-ratio: 8 / 7; }
+@media (max-width: 900px) { .duofilm { grid-template-columns: minmax(0, 1fr); } }

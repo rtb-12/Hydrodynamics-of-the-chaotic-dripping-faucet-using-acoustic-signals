@@ -87,7 +87,12 @@
 
     <h2 id="viscosity">3. Viscosity</h2>
     <p>The same 5&nbsp;mm nozzle and 25&nbsp;cm fall with water, a 50% glycerin&ndash;water mixture and pure glycerin, each falling into a pool of the same liquid.
-    Both glycerin runs were filmed with sound, and each video is locked to its recording by cross-correlating the two audio tracks, so a splash on screen lands on its own click.</p>
+    Both glycerin runs were also filmed with sound; the films below play their own soundtrack, recorded with the picture, so each splash and its click arrive together.
+    The films are separate takes from the measured recordings: their drips run at a different rate, so neither can be lined up with a recording, and the numbers come from the recordings alone.</p>
+    <div class="bleed duofilm">
+      <figure class="card fclip"><video controls playsinline preload="metadata" src="recordings/viscosity-film/glycerin-50.mp4"></video><figcaption>50% glycerin, 25&nbsp;cm, with its own sound: a drop lands about every 9&nbsp;s, first at 1.5&nbsp;s, each followed by a second click as the jet&rsquo;s droplet falls back</figcaption></figure>
+      <figure class="card fclip"><video controls playsinline preload="metadata" src="recordings/viscosity-film/glycerin-100.mp4"></video><figcaption>Pure glycerin, 25&nbsp;cm, with its own sound: the drops land without a click above the room noise</figcaption></figure>
+    </div>
     <div class="tablewrap bleed">
       <table>
         <thead><tr><th>Liquid</th><th>&rho;, kg/m&sup3;</th><th>&mu;, mPa&middot;s</th><th>&sigma;, N/m</th><th>Oh (D = 4.5&nbsp;mm)</th><th>We at 25&nbsp;cm</th><th>Re at 25&nbsp;cm</th></tr></thead>
@@ -107,7 +112,7 @@
       Phillips et al. (2018, p.&nbsp;6) silence the impact by blocking entrainment with a rod or a surfactant; glycerin is a third way to lose the bubble and with it the sound.</p>
     </div>
     <div class="tablewrap bleed"><table id="viscosityTable"></table></div>
-    <details class="lanesbox bleed" id="viscosityLanesBox"><summary>Listen and watch: every liquid as synced lanes, with video</summary>
+    <details class="lanesbox bleed" id="viscosityLanesBox"><summary>Listen: every liquid as synced lanes</summary>
       <iframe class="embedlanes" id="viscosityLanes" src="heights.html?set=viscosity&amp;embed=1" title="Viscosity recordings, synced lanes and video" loading="lazy"></iframe>
     </details>
 
@@ -199,7 +204,7 @@
       pts: st.map(function (s, n) { return { x: s.v, y: s.share, cls: 'c' + (n + 1), label: s.ring + ' of ' + s.n, tip: s.v + ' ' + H.unit + ': ' + s.share.toFixed(0) + '%' }; }) });
     var pitch = hzs.length ? xy({ W: 400, H: 330, x: xr, y: [0, Math.ceil(Math.max.apply(null, hzs) + 1)], xl: xl, yl: 'Ring pitch, kHz', band: band,
       pts: pts(function (s) { return s.hz; }), bars: bars(function (s) { return s.hz; }) }) : '<p class="note">No drop rang.</p>';
-    $(S.id + 'Charts').innerHTML = card('Loudness', 'median, middle half', loud) + card('Ringing drops', 'bubble tone of 6 ms or more', share) +
+    $(S.id + 'Charts').innerHTML = card('Loudness', 'median, middle half', loud) + card('Ringing drops', 'a tone decaying for 6 ms or more', share) +
       card('Ring pitch', 'ringing drops, median, middle half', pitch);
     return st;
   }
