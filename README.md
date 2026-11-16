@@ -86,6 +86,7 @@ Each recording is cut to its steadiest minute (`--span`), the stretch with the m
 Background music below 1 kHz is filtered out and the steady hiss turned down for listening and for finding faint drops.
 Drops are placed one per drip period by dynamic programming, so a run of faint drops cannot lose the beat, and drops inside talking or handling noise are left out.
 Every measure is read from the raw 2 to 9 kHz band, since the phone's codec invents the sound above 9 kHz and the cleaning's gain opens around each drop.
+A ring pitch that recurs in a third of a recording's drops and also stands out of the sound between drops is the tank or microphone resonating, not a bubble, so rings are looked for away from it.
 
 A slow-motion video of a height's drip goes beside its recording with `--video HEIGHT VIDEO X Y`, where X is the pixel column the drops fall down and Y the water line.
 The clip's slowed stretch is found from its own sound, which is slowed into a low murmur, and its frames are taken as shot at 240 fps; the drip rate the video then shows must match the sound's.

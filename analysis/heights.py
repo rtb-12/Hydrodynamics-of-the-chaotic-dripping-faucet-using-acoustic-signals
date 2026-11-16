@@ -63,6 +63,8 @@ RING_SNR = 10.0             # ...and that peak is this many times its own freque
 RING_FRAMES = 3             # a ring is this many tonal frames in a row, each within RING_DF of the last
 RING_DF = 250
 RING_START_MS = 20          # only a ring starting this soon after the impact belongs to it; later ones follow a rebound
+RES_SHARE = 0.3             # a ring pitch shared by this share of a clip's drops...
+RES_PROM = 1.3              # ...and this many times the between-drop spectrum around it is the tank or mic resonating, not a bubble
 VIEW_RATE = 24000           # stored sound rate; still above twice the 9 kHz the codec keeps
 AUDIO_KBPS = '96k'          # page audio bitrate
 SPAN_S = 60.0               # each recording is cut to its steadiest stretch this long
@@ -224,8 +226,8 @@ def onset(y, t):
     return (a + (below[-1] + 1 if len(below) else 0)) / FS
 
 
-def measure(yb, t):
-    """Loudness over the drop's own floor, how long it lasts, and its ring (pitch, decay)."""
+def measure(yb, t, skip=()):
+    """Loudness over the drop's own floor, how long it lasts, and its ring (pitch, decay), not at the pitches skip."""
     s, m = int(t * FS), FS * ENV_MS // 1000
     blocks = lambda a, b: np.sqrt((yb[a:b][:(b - a) // m * m].reshape(-1, m) ** 2).mean(1))
     floor = np.median(blocks(s - FLOOR_MS[0] * FS // 1000, s - FLOOR_MS[1] * FS // 1000))
@@ -233,7 +235,7 @@ def measure(yb, t):
     pk = int(np.argmax(env[:30]))
     gone = np.nonzero(env[pk:] < 10 ** (END_DB / 20))[0]
     end = pk + (int(gone[0]) if len(gone) else len(env) - pk)
-    hz = ring(yb[s:s + POST_MS * FS // 1000], yb[s - FLOOR_MS[0] * FS // 1000:s - FLOOR_MS[1] * FS // 1000])
+    hz = ring(yb[s:s + POST_MS * FS // 1000], yb[s - FLOOR_MS[0] * FS // 1000:s - FLOOR_MS[1] * FS // 1000], skip)
     dur, rings, tau = end * ENV_MS, hz is not None, None
     if rings and end - pk >= 5:
         tail = np.log(env[pk:end])
@@ -241,12 +243,13 @@ def measure(yb, t):
     return dict(db=round(20 * np.log10(env[pk]), 2), dur=dur, ring=rings, hz=hz, tau=tau if tau and 0 < tau < POST_MS else None), env
 
 
-def ring(seg, pre):
-    """Pitch of a tone that stands out of the floor for RING_FRAMES frames in a row, starting near the impact; else None."""
+def ring(seg, pre, skip=()):
+    """Pitch of a tone that stands out of the floor for RING_FRAMES frames in a row, starting near the impact, away from the
+    pitches skip; else None."""
     spec = lambda v: ss.stft(v, FS, nperseg=RING_WIN, noverlap=RING_WIN - RING_HOP, nfft=RING_NFFT, boundary=None, padded=False)
     f, t, Z = spec(seg)
     P, N = np.abs(Z) ** 2, (np.abs(spec(pre)[2]) ** 2).mean(1, keepdims=True)
-    inb = ((f >= BAND[0]) & (f <= BAND[1]))[:, None]
+    inb = ((f >= BAND[0]) & (f <= BAND[1]) & np.all([abs(f - h) > RING_HALF for h in skip], axis=0))[:, None]
     E = np.where(inb, np.maximum(P - N, 0), 0)
     j = E.argmax(0)
     near = abs(f[:, None] - f[j]) <= RING_HALF
@@ -413,9 +416,9 @@ def analyse(x, p=None, free=False):
     yb = bandpass(x, BAND)
     lo = np.flatnonzero(x)[:1].sum() / FS + FLOOR_MS[0] / 1000   # a floor must not reach into the recording's opening digital silence
     times = [t for t in (free_drops(y) if free else find_drops(y, p)) if lo < t < len(y) / FS - POST_MS / 1000]
-    rows, envs = [], []
+    rows, envs, skip = [], [], resonances(yb, [measure(yb, t)[0]['hz'] for t in times])
     for t in times:
-        r, env = measure(yb, t)
+        r, env = measure(yb, t, skip)
         rows.append(dict(t=round(t, 4), **r)); envs.append(20 * np.log10(np.maximum(env, 1e-3)))
     keep = on_beat(rows) if free else range(len(rows))
     return y, [rows[i] for i in keep], np.array([envs[i] for i in keep])
@@ -439,6 +442,17 @@ def on_beat(rows):
         k = (t - loud[i - 1]) / ((loud[i] - loud[i - 1]) / n)
         return abs(k - round(k)) < REGULAR
     return [i for i, r in enumerate(rows) if r['t'] in loud or r['db'] >= END_DB and fits(r['t'])]
+
+
+def resonances(yb, hz):
+    """Ring pitches hz (None for no ring) shared by RES_SHARE of the drops that also stand out of the between-drop spectrum,
+    which a click excites in the tank or microphone every time; a bubble's pitch changes from drop to drop."""
+    f, _, Z = ss.stft(yb, FS, nperseg=RING_WIN, noverlap=0, nfft=RING_NFFT)
+    N = np.median(np.abs(Z) ** 2, axis=1)   # drops are brief, so the median is the sound between them
+    prom = N / nd.median_filter(N, int(1000 * RING_NFFT / FS))
+    rung = np.array([h for h in hz if h])
+    return [h for h in sorted(set(rung)) if (abs(rung - h) <= RING_HALF).sum() >= RES_SHARE * len(hz)
+            and prom[np.argmin(abs(f - h))] >= RES_PROM]
 
 
 def steadiest(times, span, duration):
@@ -516,9 +530,9 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
     return data
 
 
-def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=None):
-    """Hum, noise and a speech-like burst, plus drops that alternate a 4 kHz ringing plink and a faint click.
-    at gives the drops' times instead, with no speech."""
+def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=None, hz=4000):
+    """Hum, noise and a speech-like burst, plus drops that alternate a ringing plink at hz (one per drop if a list) and a faint
+    click. at gives the drops' times instead, with no speech."""
     rng = np.random.default_rng(seed)
     n = len(at) if at else n
     t = np.arange(int(((at[-1] + 1) if at else (n + 1) * period) * FS)) / FS
@@ -529,7 +543,7 @@ def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=N
         k = np.arange(int(0.08 * FS))
         click = np.zeros(len(k)); click[:24] = rng.standard_normal(24)
         if i % ring_every == 0:
-            x[s:s + len(k)] += 0.3 * click + 0.4 * np.exp(-k / (0.012 * FS)) * np.sin(2 * np.pi * 4000 * k / FS)
+            x[s:s + len(k)] += 0.3 * click + 0.4 * np.exp(-k / (0.012 * FS)) * np.sin(2 * np.pi * (hz[i] if np.ndim(hz) else hz) * k / FS)
         else:
             x[s:s + len(k)] += faint * click
         if rebound:   # a louder plink 120 ms later, from the jet's droplet falling back
@@ -562,6 +576,17 @@ def selftest():
     rr = [r for r in rows if r['ring']]
     assert np.median([r['db'] for r in rr]) > np.median([r['db'] for r in rows if not r['ring']]) + 10
 
+    r, w = np.exp(-1 / (0.01 * FS)), 2 * np.pi * 2900 / FS   # a 2.9 kHz tank or mic resonance, heard faintly between drops too
+    resonate = lambda x: x + ss.lfilter([1 - r], [1, -2 * r * np.cos(w), r * r], bandpass(x, (1500, 9000)))
+    x, _ = synth(n=14, ring_every=99, faint=0.3)
+    got = [r['hz'] for r in analyse(resonate(x))[1]]
+    assert abs(got[0] - 4000) < 50 and got[1:] == [None] * 13, f'every click rang at the resonance: {got}'
+    yb = bandpass(resonate(x), BAND)
+    assert resonances(yb, [2906] + [None] * 13) == [] and resonances(yb, [2906] * 5 + [None] * 9) == [2906], 'one drop ringing at it'
+    assert resonances(bandpass(x, BAND), [2906] * 5 + [None] * 9) == [], 'a shared pitch not heard between drops'
+    pitch = [3300 + 300 * i for i in range(14)]   # bubbles' pitch changes from drop to drop
+    got = [r['hz'] for r in analyse(resonate(synth(n=14, ring_every=1, hz=pitch)[0]))[1]]
+    assert len(got) == 14 and all(g and abs(g - h) < 60 for g, h in zip(got, pitch)), f'rings at {pitch} read as {got}'
     x, truth = synth(n=12, ring_every=1)
     s = int((truth[6][0] - 0.1) * FS)   # talking over one drop
     x[s:s + FS // 2] += 0.1 * bandpass(np.random.default_rng(1).standard_normal(FS // 2), (3000, 8000))
