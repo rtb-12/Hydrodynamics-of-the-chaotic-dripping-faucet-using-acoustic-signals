@@ -56,13 +56,13 @@
       </div>
     </section>
 
-    <section class="intervals">
+    <section class="intervals noembed">
       <h2>Drop shape</h2>
       <p class="note">Each drop is divided by its own peak, so only its shape is compared, not its loudness; drops are lined up at impact, over the first 40 ms. First, three typical drops from each recording; then the typical drop of every recording together.</p>
       <div class="shapes" id="shapes"></div>
     </section>
 
-    <section class="intervals">
+    <section class="intervals noembed">
       <h2 id="changes"></h2>
       <p class="note">A drop <b>rings</b> when it traps a small air bubble that keeps sounding a clear tone for a few milliseconds; without one it only clicks.<span id="featnote"> Below, the share of drops that ring in each recording, then the pitch and the loudness of each drop, spread a little sideways around its value so dots do not hide each other, with a bar at the median.</span></p>
       <div class="tablewrap"><table id="tbl"></table></div>
@@ -84,6 +84,10 @@
     heights3: { name: 'Height, final run, 15 to 35 cm', title: 'Drop sound and fall height, final run', note: 'Fall heights of 15, 25 and 35 cm from a 5 mm nozzle into plain water. ' + ROWS, charts: false }
   };
   var SET = SETS[new URLSearchParams(location.search).get('set')] ? new URLSearchParams(location.search).get('set') : 'heights';
+  if (new URLSearchParams(location.search).has('embed')) {   // inside final.html: rows and overlays only, sized to its content by the parent
+    document.documentElement.classList.add('embed');
+    new ResizeObserver(function () { parent.postMessage({ lanes: SET, h: document.documentElement.scrollHeight }, '*'); }).observe(document.body);
+  }
   document.title = SETS[SET].title;
   document.getElementById('title').textContent = SETS[SET].title; document.getElementById('intro').textContent = SETS[SET].note;
   var pick = document.getElementById('pick');

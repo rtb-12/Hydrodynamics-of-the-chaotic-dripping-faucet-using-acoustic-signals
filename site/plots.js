@@ -6,11 +6,14 @@ var GUT = 46, PAD = 8;   // time lanes' left gutter and right margin
 function fresh(url) { return location.protocol === 'file:' ? url + '?t=' + Date.now() : url; }
 
 // A static x-y plot as inline SVG. o: W, H, x and y as [lo, hi], xl and yl axis titles, pts [{x, y, label, now, faint, miss, cls}],
-// diag for the y = x line, join for a line through consecutive points not separated by a `cut`, marks [{x, y}] for short level bars.
+// diag for the y = x line, join for a line through consecutive points not separated by a `cut`, marks [{x, y}] for short level bars,
+// bars [{x, lo, hi}] for spread whiskers, band {x: [lo, hi], label} for a shaded range of x.
 function xy(o) {
   var W = o.W, H = o.H, L = 62, B = 52, T = 12, pw = W - L - (o.right || 18), ph = H - T - B, g = '';
   function X(v) { return L + pw * (v - o.x[0]) / (o.x[1] - o.x[0]); }
   function Y(v) { return T + ph * (1 - (v - o.y[0]) / (o.y[1] - o.y[0])); }
+  if (o.band) g += '<rect class="band" x="' + X(o.band.x[0]) + '" y="' + T + '" width="' + (X(o.band.x[1]) - X(o.band.x[0])) + '" height="' + ph + '"/>' +
+    '<text class="bandlab" transform="translate(' + (X(o.band.x[1]) - 5) + ' ' + (T + 6) + ') rotate(90)">' + o.band.label + '</text>';
   nice(o.x[0], o.x[1], o.nx || 6).v.forEach(function (v) {
     g += '<line class="grid" x1="' + X(v) + '" y1="' + T + '" x2="' + X(v) + '" y2="' + (T + ph) + '"/><text x="' + X(v) + '" y="' + (T + ph + 18) + '" text-anchor="middle">' + v + '</text>';
   });
@@ -27,6 +30,9 @@ function xy(o) {
   if (o.join) o.pts.forEach(function (p, i) {
     var q = o.pts[i + 1];
     if (q && !p.miss && !q.miss && !p.cut) g += '<line class="join" x1="' + X(p.x) + '" y1="' + Y(p.y) + '" x2="' + X(q.x) + '" y2="' + Y(q.y) + '"/>';
+  });
+  (o.bars || []).forEach(function (b) {
+    g += '<path class="whisk" d="M' + X(b.x) + ' ' + Y(b.lo) + 'V' + Y(b.hi) + 'M' + (X(b.x) - 6) + ' ' + Y(b.lo) + 'h12M' + (X(b.x) - 6) + ' ' + Y(b.hi) + 'h12"/>';
   });
   o.pts.forEach(function (p) {
     var cls = (p.miss ? 'miss' : 'pt') + (p.now ? ' now' : '') + (p.faint ? ' faint' : '') + (p.cls ? ' ' + p.cls : '');
