@@ -339,11 +339,14 @@ def same_drip(path, hits, beats):
 
 
 def trim(hits, g):
-    """hits without a first or last drop whose gap to its neighbour is no whole number of periods g: the speed still ramps there."""
-    off = lambda a, b: abs((b - a) / g - round((b - a) / g)) > REGULAR
-    while len(hits) > 2 and off(hits[0], hits[1]):
+    """hits without a first or last drop whose gap to its neighbour is no whole number of drip periods, each the next gap in
+    split into whole periods g, so a drip that slows over the clip keeps its ends: the speed still ramps there."""
+    def off(a, b, c):
+        x = abs(b - a) / (abs(c - b) / max(1, round(abs(c - b) / g)))
+        return round(x) < 1 or abs(x - round(x)) > REGULAR
+    while len(hits) > 2 and off(*hits[:3]):
         hits = hits[1:]
-    while len(hits) > 2 and off(hits[-2], hits[-1]):
+    while len(hits) > 2 and off(*hits[:-4:-1]):
         hits = hits[:-1]
     return hits
 
@@ -420,12 +423,14 @@ def analyse(x, p=None, free=False):
 
 def on_beat(rows):
     """Indices of the drops among free clicks: every one FREE_DB over the room, and in a steady drip each quieter one, down to
-    END_DB, that lands on the beat in a gap between those, as a quiet liquid's drops do and stray clicks seldom do."""
+    END_DB, that lands on the beat in a gap between those, as a quiet liquid's drops do and stray clicks seldom do. A steady
+    drip's run is also trimmed of clicks off its beat at either end, which are the phone being handled."""
     loud = [r['t'] for r in rows if r['db'] >= FREE_DB]
     p = tap_period(np.diff(loud)) / RATE if len(loud) > 2 else np.inf
     k = np.diff(loud) / p
     if not len(k) or np.mean(np.abs(k - 1) < REGULAR) < STEADY:   # an irregular drip has no beat to land on
-        p = np.inf
+        return [i for i, r in enumerate(rows) if r['db'] >= FREE_DB]
+    loud = trim(loud, p)
 
     def fits(t):
         i = np.searchsorted(loud, t)
@@ -433,7 +438,7 @@ def on_beat(rows):
             return False
         k = (t - loud[i - 1]) / ((loud[i] - loud[i - 1]) / n)
         return abs(k - round(k)) < REGULAR
-    return [i for i, r in enumerate(rows) if r['db'] >= FREE_DB or r['db'] >= END_DB and fits(r['t'])]
+    return [i for i, r in enumerate(rows) if r['t'] in loud or r['db'] >= END_DB and fits(r['t'])]
 
 
 def steadiest(times, span, duration):
@@ -630,6 +635,9 @@ def selftest():
     assert len(got) == 3 and all(abs(g - h) < 0.002 for g, h in zip(got, hit)), f'impacts at {hit[:3]} s read as {got}'
     assert fill([0, 1, 3, 4], 1) == [0, 1, 2, 3, 4], 'a missed drop not put back'
     assert trim([0, 1.3, 2.3, 4.3, 5.6], 1) == [1.3, 2.3, 4.3], 'drops in the speed ramps kept'
+    slowing = list(np.cumsum([0, 3.3, 3.4, 3.6, 3.8, 4.0, 4.2, 4.3]))
+    assert trim(slowing, 3.7) == slowing, f'a slowing drip trimmed to {trim(slowing, 3.7)}'
+    assert trim([0.0, 0.3, 3.8, 7.3, 10.8], 3.5) == [0.3, 3.8, 7.3, 10.8], 'a click just before the first drop kept'
     hits = [1.0, 4.0, 7.0, 10.0, 13.0, 16.0]
     heard = [3.0, 6.004, 9.0, 15.2, 18.003, 25.0]   # 2 s later; 12 s missed; one timed 0.2 s late; a stray sound
     got = sync(hits, heard)
@@ -672,6 +680,13 @@ def selftest():
         x[int((t + 1.3) * FS):int((t + 1.3) * FS) + 24] += 0.012 * np.random.default_rng(4).standard_normal(24)
     got = [r['t'] for r in analyse(x, free=True)[1]]
     assert len(got) == 15 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'{len(got)} kept for 15 quiet drops: {got}'
+    at = [2.6 + 3.5 * i for i in range(12)]
+    x, truth = synth(n=0, ring_every=1, at=at)
+    x = np.r_[x, 0.002 * np.random.default_rng(6).standard_normal(3 * FS)]
+    for t in (0.8, 1.4, at[-1] + 1.1, at[-1] + 1.9):   # knocks of handling the phone as the recording starts and stops
+        x[int(t * FS):int(t * FS) + 480] += 0.3 * np.random.default_rng(6).standard_normal(480)
+    got = [r['t'] for r in analyse(x, free=True)[1]]
+    assert len(got) == 12 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'handling kept as drops: {got}'
     x, truth = synth(n=0, ring_every=1, at=[0.35, 2.0, 4.0])
     x[:int(0.165 * FS)] = 0   # phone voice notes open on digital silence, which no drop's floor may include
     rows = analyse(x, free=True)[1]
