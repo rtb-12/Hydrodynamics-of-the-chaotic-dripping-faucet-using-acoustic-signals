@@ -1040,6 +1040,8 @@ tr.sub td { font-family: var(--display); font-size: 0.78rem; font-weight: 600; l
 .xy .whisk { stroke: var(--ink-2); stroke-width: 1.5; fill: none; }
 .formation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin: 0 0 1.5rem; font-family: var(--display); }
 .fclip { margin: 0; padding: 0.6rem; display: grid; gap: 0.5rem; align-content: start; min-width: 0; }
+.fvid { position: relative; }
+.fbar { position: absolute; left: 10px; bottom: 8px; border-top: 3px solid #111; padding-top: 2px; font: 600 0.7rem var(--display); color: #111; text-shadow: 0 0 2px #fff, 0 0 4px #fff; white-space: nowrap; }
 .fclip video { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: contain; background: #000; border-radius: 4px; }
 .fclip figcaption { font-size: 0.8rem; font-weight: 550; }
 .fctl { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; font-size: 0.8rem; }

@@ -115,15 +115,20 @@
     <p>Backlit shadowgraph clips from a Phantom Miro C110 at 1280&nbsp;&times;&nbsp;1024: the drop arrives, opens a crater, and the crater&rsquo;s collapse throws up a Worthington jet that pinches off a droplet.
     The clips were cleaned of the camera software&rsquo;s tracking marks, denoised and upscaled 2&times; with every frame kept.
     Step frame by frame, or click a still to jump to that stage.
-    Times assume 900 fps, the camera&rsquo;s rate at full resolution; the pre-contact fall speed of the 25&nbsp;cm take 0 drop agrees with it.
+    Every clip comes from the same 5&nbsp;mm nozzle, so the impacting drop has one diameter D throughout, and D measured in each clip is the ruler that puts the three on one scale: the bar on each video is 1&nbsp;D.
+    Times assume 900 fps, the camera&rsquo;s rate at full resolution, which the files do not record.
+    Fall speed in D per frame checks it only to 5&ndash;10%: the 35&nbsp;cm to 25&nbsp;cm speed ratio comes out 1.05&ndash;1.17 against 1.18 expected, and a 5.0&nbsp;mm drop would imply 940&ndash;1070 fps; lengths in D do not depend on it.
     Both 25&nbsp;cm jets leave the frame, so their starred stills mark the middle of the time off frame, not the apex.</p>
     <div class="bleed formation" id="formationClips"></div>
+    <div class="tablewrap bleed"><table id="formationTable"></table></div>
     <div class="callout">
       <b>Against the literature</b>
       <p>In the Pumphrey&ndash;Phillips mechanism a single bubble pinches off the crater bottom about 24&ndash;27&nbsp;ms after contact and rings at once.
       In the splash regime of 5&nbsp;mm drops the crater bottoms out near 23&nbsp;ms, the jet rises near 140&nbsp;ms and the sounding gas cavities form at 170&ndash;230&nbsp;ms (Chashechkin &amp; Prokhorov 2025, Prokhorov &amp; Chashechkin 2011).
       In all three clips the crater reaches its deepest point 21&ndash;22 frames after contact, 23&ndash;24&nbsp;ms at 900 fps, matching the 23&nbsp;ms crater bottom of Chashechkin &amp; Prokhorov (2025) for a 5&nbsp;mm drop at 2.4&nbsp;m/s.
-      The jet then rises for about 100&nbsp;ms and pinches off its top droplet 130&ndash;150&nbsp;ms after contact, the splash-regime sequence rather than a single bubble at the crater bottom.</p>
+      The jet then rises and pinches off its top droplet 130&ndash;150&nbsp;ms after contact, the splash-regime sequence rather than a single bubble at the crater bottom.
+      Scaled by D, the crater is about 2.3&nbsp;D deep at both heights, but the jets differ: both 25&nbsp;cm jets are thin, rise at 0.22&ndash;0.26&nbsp;D/ms and leave the frame, while the 35&nbsp;cm jet is thicker, rises at 0.14&nbsp;D/ms, tops out at 6.0&nbsp;D and pinches off a droplet of 1.2&nbsp;D instead of 0.7&nbsp;D.
+      No paper in the collection measures jet height, so this is an observation from three clips, not a comparison.</p>
     </div>
 
     <h2 id="limits">Limitations</h2>
@@ -229,7 +234,7 @@
     $('formationClips').innerHTML = Object.keys(F).map(function (slug) {
       var c = F[slug], ms = c.capture_fps ? 1000 / c.capture_fps : null;
       c.contact = c.stages.filter(function (s) { return s.name === 'contact'; }).map(function (s) { return s.frame; })[0];
-      return '<figure class="card fclip" data-slug="' + slug + '"><video muted playsinline preload="metadata" src="recordings/formation/' + slug + '/video.mp4"></video>' +
+      return '<figure class="card fclip" data-slug="' + slug + '"><div class="fvid"><video muted playsinline preload="metadata" src="recordings/formation/' + slug + '/video.mp4"></video><span class="fbar">1 D</span></div>' +
         '<div class="fctl"><button type="button" data-a="play">Play</button><button type="button" data-a="-1" aria-label="Previous frame">&#9664;</button><button type="button" data-a="1" aria-label="Next frame">&#9654;</button>' +
         '<span class="seg">' + [1, 0.25, 0.1].map(function (r) { return '<button type="button" data-r="' + r + '" aria-pressed="' + (r === 0.25) + '">' + r + '&times;</button>'; }).join('') + '</span>' +
         '<span class="fread"></span></div>' +
@@ -239,6 +244,7 @@
         }).join('') + '</div>' +
         '<figcaption>' + TITLES[slug] + (c.capture_fps ? ', ' + c.capture_fps + ' fps capture, ' + c.frames + ' frames' : '') + '</figcaption></figure>';
     }).join('');
+    formationTable(F, TITLES);
     document.querySelectorAll('.fclip').forEach(function (fig) {
       var v = fig.querySelector('video'), c = F[fig.dataset.slug], fps = c.fps_playback, read = fig.querySelector('.fread');
       function show() {
@@ -246,6 +252,13 @@
         read.textContent = 'Frame ' + fr + (c.capture_fps && c.contact != null ? ', ' + ((fr - c.contact) * 1000 / c.capture_fps).toFixed(1) + ' ms from contact' : '');
       }
       v.playbackRate = 0.25;
+      function bar() {   // 1 D in screen pixels, for the video as fitted inside its box
+        if (!v.videoWidth) return;
+        var k = Math.min(v.clientWidth / v.videoWidth, v.clientHeight / v.videoHeight), b = fig.querySelector('.fbar');
+        b.style.width = c.d_px * k + 'px';
+        b.style.left = (v.clientWidth - v.videoWidth * k) / 2 + 10 + 'px'; b.style.bottom = (v.clientHeight - v.videoHeight * k) / 2 + 8 + 'px';
+      }
+      v.addEventListener('loadedmetadata', bar); new ResizeObserver(bar).observe(v);
       v.addEventListener('loadedmetadata', function () { v.currentTime = (c.contact + 0.5) / fps; }, { once: true });   // open on the moment of contact
       v.addEventListener('timeupdate', show); v.addEventListener('seeked', show);
       fig.querySelectorAll('[data-a]').forEach(function (b) {
@@ -261,6 +274,23 @@
       });
       fig.querySelectorAll('[data-t]').forEach(function (b) { b.onclick = function () { v.pause(); v.currentTime = +b.dataset.t + 0.5 / fps; }; });
     });
+  }
+
+  // The three clips side by side in units of the drop diameter D, so heights compare without a calibrated scale.
+  function formationTable(F, TITLES) {
+    var ks = Object.keys(F), m = function (k) { return F[k].metrics; }, f = function (v, d) { return v == null ? '-' : v.toFixed(d); };
+    var rows = [
+      ['Fall speed, D per frame', function (k) { return f(m(k).fall.U_D_per_frame, 3); }],
+      ['Crater depth at its deepest', function (k) { return f(m(k).crater.max_depth_D, 2) + ' D'; }],
+      ['Time of deepest crater', function (k) { return f(m(k).crater.t_max_ms, 1) + ' ms'; }],
+      ['Crater width at its deepest', function (k) { return f(m(k).crater.max_width_D, 1) + ' D'; }],
+      ['Jet tip rise speed, first frames', function (k) { return f(m(k).jet.rise_speed_initial_D_per_ms, 2) + ' D/ms'; }],
+      ['Jet height at its highest', function (k) { var j = m(k).jet; return j.max_height_D != null ? f(j.max_height_D, 1) + ' D' : 'over ' + f(j.max_height_lower_bound_D, 1) + ' D (leaves frame)'; }],
+      ['Top droplet pinches off', function (k) { return f(m(k).pinch.t_ms, 0) + ' ms'; }],
+      ['Pinched droplet diameter', function (k) { return f(m(k).pinch.drop_d_D, 2) + ' D'; }]
+    ];
+    $('formationTable').innerHTML = '<thead><tr><th>Drop-scaled measure</th>' + ks.map(function (k) { return '<th>' + TITLES[k] + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr><td>' + r[0] + '</td>' + ks.map(function (k) { return '<td>' + r[1](k) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody>';
   }
 
   var fs = document.createElement('script');
