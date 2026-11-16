@@ -62,6 +62,7 @@ RING_TONAL = 0.3
 RING_SNR = 10.0             # ...and that peak is this many times its own frequency's floor
 RING_FRAMES = 3             # a ring is this many tonal frames in a row, each within RING_DF of the last
 RING_DF = 250
+RING_R2 = 0.7               # ...whose power then dies away exponentially, fitting a straight log decay at least this well
 RING_START_MS = 20          # only a ring starting this soon after the impact belongs to it; later ones follow a rebound
 RES_SHARE = 0.3             # a ring pitch shared by this share of a clip's drops...
 RES_PROM = 1.3              # ...and this many times the between-drop spectrum around it is the tank or mic resonating, not a bubble
@@ -258,8 +259,21 @@ def ring(seg, pre, skip=()):
     for i in range(len(t)):
         run = run + [i] if ok[i] and (not run or abs(f[j[i]] - f[j[run[-1]]]) < RING_DF) else ([i] if ok[i] else [])
         if len(run) >= RING_FRAMES:
-            return round(float(np.median(f[j[run]]))) if t[run[0]] * 1000 <= RING_START_MS + RING_WIN / FS * 500 else None
+            soon = t[run[0]] * 1000 <= RING_START_MS + RING_WIN / FS * 500
+            return round(float(np.median(f[j[run]]))) if soon and damped(E[abs(f - f[j[run[0]]]) <= RING_HALF].max(0)[run[0]:], N[j[run[0]], 0]) else None
     return None
+
+
+def damped(tone, floor):
+    """Whether a tone's power, frame by frame from its start, dies away exponentially into the floor, as a ringing bubble's
+    does: its log falls along a straight line, R squared at least RING_R2, until the tone is back under the floor."""
+    k = int(np.argmax(tone[:RING_FRAMES]))
+    end = k + (int(np.argmax(tone[k:] < RING_SNR * floor)) or len(tone) - k)
+    y = np.log(tone[k:end] + 1e-30)
+    if len(y) < RING_FRAMES:
+        return True   # gone within a few frames, as Phillips's airborne ring is in 2 ms
+    c = np.polyfit(np.arange(len(y)), y, 1)
+    return c[0] < 0 and 1 - np.var(y - np.polyval(c, np.arange(len(y)))) / np.var(y) >= RING_R2
 
 
 def snippet(y, t):
@@ -587,6 +601,13 @@ def selftest():
     pitch = [3300 + 300 * i for i in range(14)]   # bubbles' pitch changes from drop to drop
     got = [r['hz'] for r in analyse(resonate(synth(n=14, ring_every=1, hz=pitch)[0]))[1]]
     assert len(got) == 14 and all(g and abs(g - h) < 60 for g, h in zip(got, pitch)), f'rings at {pitch} read as {got}'
+    x, truth = synth(n=12, ring_every=99, faint=0.3)
+    k = np.arange(int(0.14 * FS))
+    for i, (t, _) in enumerate(truth[1:]):   # a tone that holds steady from the impact is no bubble's damped ring
+        x[int(t * FS):int(t * FS) + len(k)] += 0.05 * np.sin(2 * np.pi * (3500 + 300 * i) * k / FS)
+    got = [r['hz'] for r in analyse(x)[1]]
+    assert abs(got[0] - 4000) < 50 and got[1:] == [None] * 11, f'steady tones read as rings: {got}'
+    assert damped(np.r_[100, 40, 0.5, np.zeros(60)], 1) and damped(100 * np.exp(-np.arange(60) / 8), 1), 'a damped tone refused'
     x, truth = synth(n=12, ring_every=1)
     s = int((truth[6][0] - 0.1) * FS)   # talking over one drop
     x[s:s + FS // 2] += 0.1 * bandpass(np.random.default_rng(1).standard_normal(FS // 2), (3000, 8000))
