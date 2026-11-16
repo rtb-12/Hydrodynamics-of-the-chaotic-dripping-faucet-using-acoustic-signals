@@ -170,7 +170,10 @@
 
   function $(id) { return document.getElementById(id); }
   function median(v) { v = v.slice().sort(function (a, b) { return a - b; }); return v.length ? (v[(v.length - 1) >> 1] + v[v.length >> 1]) / 2 : null; }
-  function q(v, p) { v = v.slice().sort(function (a, b) { return a - b; }); return v.length ? v[Math.min(v.length - 1, Math.floor(p * (v.length - 1) + 0.5))] : null; }
+  function q(v, p) {   // linear between ranks, as numpy's percentile, so the page agrees with the report's figures
+    v = v.slice().sort(function (a, b) { return a - b; }); if (!v.length) return null;
+    var i = p * (v.length - 1), j = Math.floor(i); return v[j] + (v[Math.min(j + 1, v.length - 1)] - v[j]) * (i - j);
+  }
   function f1(v) { return v == null ? '-' : v.toFixed(1); }
 
   // One set's data.js sets window.HEIGHTS, so the sets are loaded one after another and each copy kept.
