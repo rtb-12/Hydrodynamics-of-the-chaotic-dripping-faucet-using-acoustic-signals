@@ -71,6 +71,7 @@ uv run analysis/heights.py --selftest    # a synthetic recording with known drop
 Any one thing can differ between recordings, not only height.
 `--var NAME` and `--unit UNIT` say what it is (`"Fall height"` and `cm` by default), and `--clip VALUE AUDIO` gives each recording's value.
 Drops that come at irregular gaps need `--free`, which takes every click at least 12 dB over the room and 0.25 s after the one before, with no drip period assumed; it cannot be combined with `--same-tap`.
+Where most gaps between those clicks are one drip period, a quieter click (down to 6 dB) that lands on the beat in a longer gap counts too, so a liquid whose drops land near 12 dB, such as glycerin, is not cut at the gate.
 Each recording also stores three drops of its usual kind nearest its median loudness and length, to compare shapes.
 
 ```bash

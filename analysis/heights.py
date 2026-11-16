@@ -46,8 +46,9 @@ SNR_CAP = 100.0             # one loud burst cannot drag the drip's beat grid be
 BEAT_STIFF = 150.0          # beat grid penalty on log(interval / period) squared
 SEARCH_S = 0.04             # each drop is looked for this far either side of its beat
 LOOKBACK_S = 0.2            # ...and moved to an earlier event this close before it, in case the beat sat on a rebound
-FREE_DB = 12.0              # with --free a drop is any click this many dB over the room...
+FREE_DB = 12.0              # with --free a drop is any click this many dB over the room, or a quieter one on the drip's beat...
 FREE_GAP_S = 0.25           # ...at least this long after the one before
+STEADY = 0.5                # ...when at least this share of the gaps between louder drops are one drip period
 THR = 3.0                   # a drop must rise this many times above the floor
 CLUSTER = 0.25              # an earlier event counts if it reaches this fraction of the drop's peak
 BUSY = 2.0                  # median level 30-300 ms either side of a drop above this many times the floor is speech or handling
@@ -412,10 +413,27 @@ def analyse(x, p=None, free=False):
     rows, envs = [], []
     for t in times:
         r, env = measure(yb, t)
-        if free and r['db'] < FREE_DB:
-            continue
         rows.append(dict(t=round(t, 4), **r)); envs.append(20 * np.log10(np.maximum(env, 1e-3)))
-    return y, rows, np.array(envs)
+    keep = on_beat(rows) if free else range(len(rows))
+    return y, [rows[i] for i in keep], np.array([envs[i] for i in keep])
+
+
+def on_beat(rows):
+    """Indices of the drops among free clicks: every one FREE_DB over the room, and in a steady drip each quieter one, down to
+    END_DB, that lands on the beat in a gap between those, as a quiet liquid's drops do and stray clicks seldom do."""
+    loud = [r['t'] for r in rows if r['db'] >= FREE_DB]
+    p = tap_period(np.diff(loud)) / RATE if len(loud) > 2 else np.inf
+    k = np.diff(loud) / p
+    if not len(k) or np.mean(np.abs(k - 1) < REGULAR) < STEADY:   # an irregular drip has no beat to land on
+        p = np.inf
+
+    def fits(t):
+        i = np.searchsorted(loud, t)
+        if not 0 < i < len(loud) or (n := round((loud[i] - loud[i - 1]) / p)) < 2:
+            return False
+        k = (t - loud[i - 1]) / ((loud[i] - loud[i - 1]) / n)
+        return abs(k - round(k)) < REGULAR
+    return [i for i, r in enumerate(rows) if r['db'] >= FREE_DB or r['db'] >= END_DB and fits(r['t'])]
 
 
 def steadiest(times, span, duration):
@@ -648,6 +666,12 @@ def selftest():
     rows = analyse(x, free=True)[1]
     assert rows and all(r['db'] >= FREE_DB for r in rows), f'a click under {FREE_DB} dB kept: {[r["db"] for r in rows]}'
     assert len(rows) < len(free_drops(clean(x))), 'no click was found below the limit to leave out'
+    at = [0.6 + 3.5 * i + 0.02 * i * i for i in range(15)]   # a quiet liquid's slowing drip, its drops 10-18 dB
+    x, truth = synth(n=0, ring_every=99, faint=0.02, at=at)
+    for t in at[2:12:3]:   # stray clicks off the beat, as quiet as its quieter drops
+        x[int((t + 1.3) * FS):int((t + 1.3) * FS) + 24] += 0.012 * np.random.default_rng(4).standard_normal(24)
+    got = [r['t'] for r in analyse(x, free=True)[1]]
+    assert len(got) == 15 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'{len(got)} kept for 15 quiet drops: {got}'
     x, truth = synth(n=0, ring_every=1, at=[0.35, 2.0, 4.0])
     x[:int(0.165 * FS)] = 0   # phone voice notes open on digital silence, which no drop's floor may include
     rows = analyse(x, free=True)[1]
