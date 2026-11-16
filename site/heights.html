@@ -81,7 +81,9 @@
     sweep: { name: 'Height sweep, 10 to 35 cm', title: HEAD, note: NOTE },
     nozzle: { name: 'Nozzle size, 2 to 7 mm', title: 'Drop sound and nozzle size', note: 'The same drop falling 25 cm into plain water from nozzles of 2, 5 and 7 mm internal diameter. ' + ROWS, charts: false },
     glycerin: { name: 'Glycerin, 0 to 30 ml', title: 'Drop sound and glycerin', note: 'Glycerin added to 900 ml of water, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0 ml is plain water. ' + ROWS, charts: false },
-    heights3: { name: 'Height, final run, 15 to 35 cm', title: 'Drop sound and fall height, final run', note: 'Fall heights of 15, 25 and 35 cm from a 5 mm nozzle into plain water. ' + ROWS, charts: false }
+    heights3: { name: 'Height, final run, 15 to 35 cm', title: 'Drop sound and fall height, final run', note: 'Fall heights of 15, 25 and 35 cm from a 5 mm nozzle into plain water. ' + ROWS, charts: false },
+    'final-height': { name: 'Fall height, 13 to 60 cm', title: 'Drop sound and fall height', note: 'Fall heights of 13, 15, 25, 33, 35, 43 and 60 cm from a 5 mm nozzle into plain water; 15, 25 and 35 cm are the final run above. ' + ROWS, charts: false },
+    viscosity: { name: 'Viscosity, water to pure glycerin', title: 'Drop sound and viscosity', note: 'Plain water, 50% glycerin by mass and pure glycerin, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0% is the 25 cm water recording of the final run. ' + ROWS, charts: false }
   };
   var SET = SETS[new URLSearchParams(location.search).get('set')] ? new URLSearchParams(location.search).get('set') : 'heights';
   if (new URLSearchParams(location.search).has('embed')) {   // inside final.html: rows and overlays only, sized to its content by the parent
@@ -360,7 +362,7 @@
         '<div class="hcol">' + lane('Waveform', '% of loudest', 'wave') + lane('Loudness', 'dB below the loudest moment', 'loud') + '</div>' +
         '<div class="hcol">' + lane('Spectrogram', 'kHz', 'spec') + lane('Drops', 'dot means it rang', 'drops') + '</div></div>';
       $('rows').appendChild(el);
-      var dir = 'recordings/' + SET + '/' + c.slug + '/', spec = {};
+      var dir = 'recordings/' + SET + '/' + encodeURIComponent(c.slug) + '/', spec = {};
       ['clean', 'raw'].forEach(function (s) { var im = new Image(); im.onload = function () { draw(r); }; im.src = dir + 'spec-' + s + '.png'; spec[s] = im; });
       var r = { c: c, n: n, i: -1, lanes: [].slice.call(el.querySelectorAll('canvas')), audio: new Audio(), read: el.querySelector('.hread'), scrub: el.querySelector('.scrub'),
                 play: el.querySelector('.primary'), wave: { clean: unpack(c.wave.clean), raw: unpack(c.wave.raw) }, spec: spec, dir: dir,
