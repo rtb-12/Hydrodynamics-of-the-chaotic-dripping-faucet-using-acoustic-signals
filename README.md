@@ -84,6 +84,7 @@ A second set goes in its own folder with `--set NAME`, shown on the same page th
 When the tap was left alone between recordings, `--same-tap` finds one drip period from the loud drops of all of them, which a slow drip with few drops per recording needs, and counts ringing against every drip that fell.
 Each recording is cut to its steadiest minute (`--span`), the stretch with the most evenly spaced drops and no missed ones, so every height is judged on its cleanest drops.
 Background music below 1 kHz is filtered out and the steady hiss turned down for listening and for finding faint drops.
+For listening the hiss between drops is then taken out hard, while each drop's own 150 ms keeps the gentle cleaning, since noise reduction across a drop halves its peak.
 Drops are placed one per drip period by dynamic programming, so a run of faint drops cannot lose the beat, and drops inside talking or handling noise are left out.
 Every measure is read from the raw 2 to 9 kHz band, since the phone's codec invents the sound above 9 kHz and the cleaning's gain opens around each drop.
 A ring pitch that recurs in a third of a recording's drops and also stands out of the sound between drops is the tank or microphone resonating, not a bubble, so rings are looked for away from it.

@@ -115,7 +115,7 @@
         : 'Drops are found one per drip period, so faint ones are looked for where the drip says they must be, and drops inside talking or handling noise are left out.',
       'The blue line is now. While playing it sits near the right, so what is to its left has already been heard.'],
     audio: ['Audio tracks', 'Raw is the phone recording as captured.',
-      'Cleaned has the music and hum below 1 kHz filtered out and the steady hiss turned down by at most 10 dB. It is deliberately gentle, so the drops themselves are unchanged and faint ones survive; louder noise reduction halved the drops&rsquo; peaks. The graphs follow whichever track is selected.'],
+      'Cleaned has the music and hum below 1 kHz filtered out and the steady hiss between drops taken out. Around each drop, from 10 ms before it to 140 ms after, only the gentle cleaning applies, so its peak is unchanged; noise reduction across a drop halved its peak. Every measure is read from the raw sound, not this track. The graphs follow whichever track is selected.'],
     all: ['Play all', 'Plays every row at once from the drop each row is showing, with those drops lined up so they land together. The slider moves all rows through their recordings together, still lined up.',
       'Hear picks which rows you listen to while all of them play; the rest play silently so their graphs still move. A row played on its own is always heard.',
       FREE ? 'The drips do not run at the same rate and are irregular, so the rows would drift apart. Halfway between drops, where every row is quiet, each row is moved so its next drop lands with the first row&rsquo;s; only the drops found are used, none is filled in. The sound is never sped up or slowed, so pitches stay true.'

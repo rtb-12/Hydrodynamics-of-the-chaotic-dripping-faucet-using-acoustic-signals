@@ -18,7 +18,7 @@ A slow-motion video filmed with a recording can sit beside it, lined up drop by 
 """
 
 import argparse, base64, collections, json, pathlib, subprocess, sys, tempfile
-import numpy as np, imageio_ffmpeg
+import numpy as np, imageio_ffmpeg, noisereduce as nr
 import scipy.ndimage as nd, scipy.signal as ss
 from scipy.io import wavfile
 from lanes import FS, lanes, scale
@@ -32,6 +32,9 @@ HP_HZ = 1000                # cleaning high-pass: music and hum sit below it, ea
 HP_ORDER = 8                # ...steep enough to keep that burst within 0.3 dB
 NFFT, HOP = 1024, 256       # STFT used to subtract the steady noise left after the high-pass
 NOISE_FLOOR_GAIN = 0.3      # subtraction never cuts a bin by more than this, which keeps faint drops and avoids warbling
+LISTEN_CUT = 0.9            # the listening track takes this share of the steady noise out between drops...
+LISTEN_FADE_MS = 5          # ...fading back to the gently cleaned sound over this long around each drop, so its peak is untouched
+QUIET_SHARE = 0.4           # the noise is profiled on this share of the recording's 50 ms blocks with the lowest peaks
 BAND = (2000, 9000)         # drop sound is measured here; the phone's codec invents what lies above 9 kHz
 DET_BAND = (4000, 9000)     # drops are found here, where the music is quietest
 RATE = 2000                 # detection envelope rate, Hz
@@ -105,6 +108,20 @@ def clean(x):
     noise = np.median(P, axis=1, keepdims=True) / np.log(2)   # median of an exponential power is ln 2 times its mean
     gain = np.sqrt(np.maximum(1 - noise / (P + 1e-30), NOISE_FLOOR_GAIN ** 2))
     return ss.istft(Y * gain, FS, nperseg=NFFT, noverlap=NFFT - HOP)[1][:len(x)]
+
+
+def listen(y, times):
+    """The cleaned sound y for listening: the noise between drops taken out hard, but each drop's own PRE_MS to POST_MS left as
+    y, since noise reduction across a drop halves its peak."""
+    b = FS // 20
+    blocks = y[:len(y) // b * b].reshape(-1, b)
+    quiet = blocks[np.argsort(np.abs(blocks).max(1))[:max(1, int(len(blocks) * QUIET_SHARE))]].ravel()
+    z = nr.reduce_noise(y=y, sr=FS, y_noise=quiet[:5 * FS], stationary=True, prop_decrease=LISTEN_CUT)
+    keep, f = np.zeros(len(y)), FS * LISTEN_FADE_MS // 1000
+    for t in times:
+        keep[max(0, int(t * FS) - FS * PRE_MS // 1000 - f):int(t * FS) + FS * POST_MS // 1000 + f] = 1
+    keep = nd.uniform_filter1d(keep, f)   # ramps half as wide as the margin, so the drop's own stretch stays whole
+    return np.where(keep > 1 - 1e-9, y, keep * y + (1 - keep) * z)
 
 
 def bandpass(x, band):
@@ -519,7 +536,8 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
             b = a + span if span else total
         x = x[int(a * FS):int(b * FS)]
         own = p and own_period(strength(clean(x)), p) / RATE
-        recs.append(dict(slug=slug, v=v, start=round(a, 2), x=x, a=analyse(x, p, free),
+        y, rows, envs = analyse(x, p, free)
+        recs.append(dict(slug=slug, v=v, start=round(a, 2), x=x, a=(listen(y, [w['t'] for w in rows]), rows, envs),
                          drip_s=own and round(own, 3), drips=own and int(round(len(x) / FS / own))))
     ref = dict(clean=scale(*[r['a'][0] for r in recs]), raw=scale(*[r['x'] for r in recs]))
     for r in recs:
@@ -608,6 +626,12 @@ def selftest():
     got = [r['hz'] for r in analyse(x)[1]]
     assert abs(got[0] - 4000) < 50 and got[1:] == [None] * 11, f'steady tones read as rings: {got}'
     assert damped(np.r_[100, 40, 0.5, np.zeros(60)], 1) and damped(100 * np.exp(-np.arange(60) / 8), 1), 'a damped tone refused'
+    x, truth = synth(n=12, ring_every=1)
+    y = clean(x)
+    z, k = listen(y, [t for t, _ in truth]), int(0.5 * FS)
+    level = lambda v, a: 20 * np.log10(np.sqrt(np.mean(v[a:a + FS // 10] ** 2)))
+    assert all(np.array_equal(z[int(t * FS) - 240:int(t * FS) + 6000], y[int(t * FS) - 240:int(t * FS) + 6000]) for t, _ in truth), 'a drop changed'
+    assert level(z, int(truth[3][0] * FS) + k) < level(y, int(truth[3][0] * FS) + k) - 10, 'the hiss between drops was kept'
     x, truth = synth(n=12, ring_every=1)
     s = int((truth[6][0] - 0.1) * FS)   # talking over one drop
     x[s:s + FS // 2] += 0.1 * bandpass(np.random.default_rng(1).standard_normal(FS // 2), (3000, 8000))
