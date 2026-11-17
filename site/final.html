@@ -30,7 +30,7 @@
   <iframe class="embedlanes" id="lanes" title="Recordings as synced lanes" hidden></iframe>
   <section class="intervals" id="filmbox" hidden>
     <h2>On film, with the sound of each video</h2>
-    <p class="note">Water and 50% glycerin filmed at 25 cm with sound. Each row plays the sound of its own video, so every splash lands on its click; these are other takes than the measured recordings above, and the pure glycerin film has no click above the room to show.</p>
+    <p class="note">Water and 50% glycerin filmed at 25 cm. The 50% glycerin row plays the film’s own soundtrack, so its splashes land on their clicks. The water row is a separate recording lined up with its slow-motion film by cross-correlation, and each splash is heard 85 to 230 ms after it is seen, the later ones as the jet’s droplet falls back. These are other takes than the measured recordings above, and the pure glycerin film has no click above the room to show.</p>
     <iframe class="embedlanes" id="lanesFilm" title="Filmed recordings as synced lanes with video"></iframe>
   </section>
 
@@ -46,27 +46,27 @@
   var PAGES = {   // one tab per experiment; set is the folder under recordings/ the lane viewer shows
     height: { name: 'Fall height, 15 to 60 cm', title: 'Drop sound and fall height', set: 'final-height',
       note: 'A 5 mm nozzle releases water drops of about 5 mm into plain water from 15 to 60 cm; 15, 25 and 35 cm are the earlier final run, 33, 43 and 60 cm are new. ' +
-        'Between 35% and 80% of the drops ring at each height, with no steady trend. ' +
-        'Ring pitch scatters between 2.3 and 6.2 kHz with no trend in height, and the level stays at 21-36 dB over the room noise up to 43 cm before falling to 15 dB at 60 cm.',
+        'Between 50% and 80% of the drops ring at each height, with no steady trend. ' +
+        'Ring pitch scatters between 2.3 and 6.8 kHz with no trend in height, and the level stays at 21-40 dB over the room noise up to 43 cm before falling to 15 dB at 60 cm.',
       lit: 'For a 4.5 mm drop, regular entrainment (one bubble and one clean ring per drop) needs U = 1.10-1.42 m/s, about 6-10 cm of fall. Our heights give U = 1.7-3.3 m/s, all above that window, in the splash regime where rings come only irregularly. Our rings decay over 9-17.5 ms, inside the 3-19 ms Chashechkin (2024) reports, but without the growth with impact speed he finds. The 43 cm rings sit close to a 2.15 kHz tone also heard between drops, so that pitch is the least certain.',
       rows: [
         ['Regular entrainment window, 4.5 mm drop', 'U = 1.10-1.42 m/s, h = 6-10 cm', 'Oguz & Prosperetti fit, cited by Phillips 2018', 'all six heights above it'],
-        ['Reproducible tone, 3.9 mm drop at 7-8 cm', 'about 7 kHz', 'Pumphrey & Walton 1988, p. 227', 'no height near the window; 2.3-6.2 kHz'],
-        ['Splash-mode resonance packets, D = 5 mm', 'formed irregularly at 1.98-4.43 m/s, none above 4.6 m/s', 'Chashechkin 2024, Table 4', '35-80% ring at 15-60 cm, no trend: agrees'],
-        ['Air-audible packets at 2.6-4 m/s', '1.6-18 kHz, no trend with height', 'Prokhorov 2011; Chashechkin 2014', '2.3-6.2 kHz, no trend: agrees'],
-        ['Ring peak against impact speed', '26-34 Pa, about +2 dB over 2-4.4 m/s', 'Chashechkin 2024, Table 4', '15-36 dB, no growth with height: agrees'],
+        ['Reproducible tone, 3.9 mm drop at 7-8 cm', 'about 7 kHz', 'Pumphrey & Walton 1988, p. 227', 'no height near the window; 2.3-6.8 kHz'],
+        ['Splash-mode resonance packets, D = 5 mm', 'formed irregularly at 1.98-4.43 m/s, none above 4.6 m/s', 'Chashechkin 2024, Table 4', '50-80% ring at 15-60 cm, no trend: agrees'],
+        ['Air-audible packets at 2.6-4 m/s', '1.6-18 kHz, no trend with height', 'Prokhorov 2011; Chashechkin 2014', '2.3-6.8 kHz, no trend: agrees'],
+        ['Ring peak against impact speed', '26-34 Pa, about +2 dB over 2-4.4 m/s', 'Chashechkin 2024, Table 4', '15-40 dB, no growth with height: agrees'],
         ['Ring decay phase, D = 5 mm', '3-19 ms, growing with U', 'Chashechkin 2024, Table 4', '9-17.5 ms, not growing: disagrees']] },
     nozzle: { name: 'Nozzle diameter, 2 to 7 mm', title: 'Drop sound and nozzle diameter', set: 'nozzle',
       note: 'Nozzles of 2, 5 and 7 mm internal diameter, water falling 25 cm into water. Tate’s law predicts drops of about 3.9, 5.2 and 5.9 mm, only 1.5× apart. ' +
-        'The 2 mm drops are about 9 dB quieter than the 5 and 7 mm drops, which sound alike; with only 9 drops at 2 mm this is the weakest result. Half to four fifths of the drops ring at every size.',
+        'The 2 mm drops are about 9 dB quieter than the 5 and 7 mm drops, which sound alike; with only 9 drops at 2 mm this is the weakest result. Between 56% and 86% of the drops ring at every size.',
       lit: 'At 25 cm (U = 2.2 m/s) none of the three drops is inside its regular entrainment window, and Phillips et al. (2018) report no regular entrainment for drops above 5 mm, which includes the 7 mm nozzle’s drop.',
       rows: [
         ['Drop from a 4 mm nozzle', 'D = 5.0 mm', 'Chashechkin & Prokhorov 2014, p. 3', 'Tate’s law gives 5.0 mm for 4 mm, so 3.9, 5.2, 5.9 mm for ours'],
-        ['Regular entrainment by drop size', 'none for D below 1 mm or above 5 mm', 'Phillips 2018, p. 2', '7 mm drop above it; still rings on 81%'],
+        ['Regular entrainment by drop size', 'none for D below 1 mm or above 5 mm', 'Phillips 2018, p. 2', '7 mm drop above it; still rings on 86%'],
         ['Window at 25 cm (U = 2.18 m/s)', 'D = 4 mm needs 1.19-1.56 m/s; 5 mm needs 1.02-1.30 m/s', 'Oguz & Prosperetti fit, cited by Phillips 2018', 'no nozzle inside it']] },
     viscosity: { name: 'Viscosity, water to pure glycerin', title: 'Drop sound and viscosity', set: 'viscosity',
       note: 'The same 5 mm nozzle and 25 cm fall with water, a 50% glycerin-water mixture and pure glycerin, each falling into a pool of the same liquid. ' +
-        '50% glycerin (Oh ≈ 0.01) sounds much like water, 34 against 30 dB over the room noise with about half the drops ringing, but its rings die away twice as fast, 8.4 against 16.2 ms. ' +
+        '50% glycerin (Oh ≈ 0.01) is at least as loud as water, 39 against 30 dB over the room noise, with about half its drops ringing, but its rings die away twice as fast, 8.4 against 16.2 ms. ' +
         'Pure glycerin (Oh ≈ 2.4) stays at the room noise and none of its 13 drops rings: the impact is silent.',
       lit: 'No paper in the collection measures drop-impact sound in any liquid but water. The viscous damping constant of a 0.4 mm bubble is about 0.0005 in water but about 0.6 in glycerin, so a glycerin bubble would ring for about one cycle, and Re ≈ 9 leaves little inertia to fold a cavity shut. Phillips et al. (2018) silence the impact by blocking entrainment with a rod or a surfactant; glycerin is a third way to lose the bubble and with it the sound.',
       rows: [
@@ -152,7 +152,7 @@
   function films() {
     $('extra').innerHTML = '<div class="duofilm">' +
       '<figure class="card fclip"><video controls playsinline preload="metadata" poster="recordings/viscosity-film/glycerin-100.jpg" src="recordings/viscosity-film/glycerin-100.mp4"></video><figcaption>Pure glycerin, 25 cm, with its own sound: the drops land without a click above the room noise</figcaption></figure></div>' +
-      '<p class="note">Water and 50% glycerin on film, each locked to its own sound, are further down. The numbers on this tab come from the measured recordings.</p>';
+      '<p class="note">Water and 50% glycerin on film, beside their sound, are further down. The numbers on this tab come from the measured recordings.</p>';
   }
 
   function formation() {
