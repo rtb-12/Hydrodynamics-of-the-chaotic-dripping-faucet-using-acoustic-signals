@@ -354,8 +354,8 @@
         '<span class="vmeta">' + c.drops.length + (c.drips ? ' of about ' + c.drips + ' drips heard' : ' drops') + ', ' + Math.round(100 * rang(c) / fell(c)) + '% ring, ' + (FREE ? 'median gap ' : 'one every ') + per(c).toFixed(2) + ' s; ' +
         (c.video && !c.video.slow ? 'the ' + Math.round(c.duration) + ' s on film' : (H.span ? 'its steadiest ' : 'all ') + Math.round(c.duration) + ' s') + ', from ' + Math.round(c.start) + ' s into the recording' +
         (c.video && !c.video.synced ? '; its heard drops do not settle where the video lines up, so it only keeps the drip&rsquo;s rhythm' : '') +
-        (c.video && c.video.by === 'drops' ? '; its slow-motion film, back at real speed, is pinned to the sound at ' + c.video.pins.length + ' drops it heard too' : '') +
-        (c.video && c.video.by === 'room' ? '; its slow-motion film, back at real speed, is placed by room sounds both microphones heard, as its own soundtrack has no drop to pin' : '') + '</span></div>' +
+        (c.video && c.video.by === 'drops' ? '; its slow-motion film, back at real speed, is pinned to the sound at ' + c.video.pins.length + ' drops it heard too, each within 5 ms' : '') +
+        (c.video && c.video.by === 'seen' ? '; its slow-motion film, back at real speed, is pinned at ' + c.video.pins.length + ' drops whose impact shows in the picture, as its own soundtrack has no drop' : '') + '</span></div>' +
         '<div class="transport card"><button class="primary" type="button">Play</button>' +
         '<input type="range" class="scrub" min="0" max="' + c.duration + '" step="0.001" value="0" aria-label="Position in ' + label(c) + '">' +
         '<span class="seg"><button type="button" data-d="-1" aria-label="Previous drop">&lsaquo; Drop</button><button type="button" data-d="0">Typical</button><button type="button" data-d="1" aria-label="Next drop">Drop &rsaquo;</button></span>' +

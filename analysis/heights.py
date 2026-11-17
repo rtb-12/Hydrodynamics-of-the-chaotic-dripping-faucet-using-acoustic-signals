@@ -17,7 +17,7 @@ Each recording is cut to its steadiest stretch of --span seconds, so every clip 
 A slow-motion video filmed with a recording can sit beside it, lined up drop by drop.
 """
 
-import argparse, base64, collections, json, pathlib, subprocess, sys, tempfile
+import argparse, base64, collections, json, pathlib, re, subprocess, sys, tempfile
 import numpy as np, imageio_ffmpeg, noisereduce as nr
 import scipy.ndimage as nd, scipy.signal as ss
 from scipy.io import wavfile
@@ -95,12 +95,10 @@ VID_OUT = (360, 480)        # page video size
 VID_CRF = 26
 MATCH_S = 0.03              # a video drop this close to a heard one is the same drop...
 SYNC_MIN = 3                # ...and this many of them fix the offset; with fewer the video is placed by the drip's rhythm only
-SLOW_RANGE = (3.9, 4.1, 0.002)   # slow-down searched for a slow-motion film with its own slowed sound: 120 fps played at 30
+SLOW_CAPTURE_FPS = 120      # a phone slow-motion film is shot at this rate and played at its file's rate, slowed by the ratio
 SLOW_HEIGHT = 720           # page height of such a film, pixels
-ROOM_BAND = (100, 1000)     # room sounds both microphones hear (voices, knocks), below most of a drop's sound...
-ROOM_RATE = 100             # ...followed as an envelope at this rate, Hz...
-ROOM_PEAK = 1.5             # ...whose best match must beat any other by this factor...
-LOCK_S = 0.5                # ...and then the drops pin the film within this of where the room sounds put it, s
+PIN_S = 0.005               # a film click this close to a heard drop is the same sound, heard by both microphones...
+SEEN_S = 0.1                # ...and an impact read off the film's picture this close
 
 
 def load(path):
@@ -394,56 +392,35 @@ def trim(hits, g):
     return hits
 
 
-def sync(hits, heard, about=None):
+def sync(hits, heard, tol=MATCH_S):
     """(sound s, video s) pins for a video filmed with the sound, or None if the drops heard do not settle it: the one
-    shift that puts the most video drops within MATCH_S of a heard drop, by SYNC_MIN or more and more than any other shift.
-    about limits the shifts to within LOCK_S of a shift found some other way."""
-    near = lambda o: [(min(heard, key=lambda a: abs(a - w - o)), w) for w in hits if heard and min(abs(a - w - o) for a in heard) < MATCH_S]
-    count = sorted(((len(near(a - w)), a - w) for a in heard for w in hits if about is None or abs(a - w - about) < LOCK_S), reverse=True)
-    if not count or count[0][0] < SYNC_MIN or any(n == count[0][0] and abs(o - count[0][1]) > 2 * MATCH_S for n, o in count[1:]):
+    shift that puts the most video drops within tol of a heard drop, by SYNC_MIN or more and more than any other shift."""
+    near = lambda o: [(min(heard, key=lambda a: abs(a - w - o)), w) for w in hits if heard and min(abs(a - w - o) for a in heard) < tol]
+    count = sorted(((len(near(a - w)), a - w) for a in heard for w in hits), reverse=True)
+    if not count or count[0][0] < SYNC_MIN or any(n == count[0][0] and abs(o - count[0][1]) > 2 * tol for n, o in count[1:]):
         return None
     return [[round(a, 4), round(w, 4)] for a, w in near(count[0][1])]
 
 
-def room(x, band):
-    """Log envelope of x in band at ROOM_RATE, less its running median: the one-off sounds that stand out of the room."""
-    e = np.abs(ss.hilbert(ss.sosfiltfilt(ss.butter(4, band, 'bandpass', fs=FS, output='sos'), x)))
-    e = np.log(np.maximum(ss.resample_poly(e, ROOM_RATE, FS), 1e-9))
-    return e - ss.medfilt(e, 2 * ROOM_RATE + 1)
-
-
-def rough(xf, x):
-    """(slow-down, s into x where the film starts) from the room sounds both heard, the film's pitched down with it; else None."""
-    er, best = room(x, ROOM_BAND), []
-    for k in np.arange(*SLOW_RANGE):
-        ef = room(xf, (ROOM_BAND[0] / k, ROOM_BAND[1] / k))
-        f = np.interp(np.arange(int(len(ef) / k)) * k, np.arange(len(ef)), ef)
-        c = ss.correlate(er - er.mean(), f - f.mean(), mode='full') / (np.linalg.norm(er - er.mean()) * np.linalg.norm(f - f.mean()) + 1e-12)
-        i = int(np.argmax(c)); w = ROOM_RATE
-        best.append((c[i], k, (i - (len(f) - 1)) / ROOM_RATE, c[i] / max(np.max(c[:max(1, i - w)], initial=0), np.max(c[i + w:], initial=0), 1e-12)))
-    c, k, o, ratio = max(best, key=lambda b: b[3])   # the most distinct match, not merely the strongest
-    return (float(k), float(o)) if ratio >= ROOM_PEAK else None
-
-
-def slowed(path, x, heard):
-    """(slow-down, pins, how) for a slow-motion film whose soundtrack was slowed with it, against recording x and its drops heard
-    (s), pins in (sound s, film s at real speed). The room sounds place it; its own clicks over FREE_DB then pin it drop by
-    drop ('drops'); with too few of them it keeps the room sounds' placement ('room'). None if the room sounds do not settle it."""
+def slowed(path, heard, seen=None):
+    """(slow-down, pins, how) for a phone slow-motion film taken with a recording whose drops were heard at heard (s), pins in
+    (sound s, film s at real speed): its own clicks over FREE_DB pinned within PIN_S ('drops'), or, for a film with no
+    click, the impacts seen in its picture at seen (film s) within SEEN_S ('seen'); None if they do not settle it."""
+    k = SLOW_CAPTURE_FPS / probe_fps(path)
+    if seen is not None:
+        pins = sync([t / k for t in seen], heard, SEEN_S)
+        return pins and (k, pins, 'seen')
     xf = load(path)
-    got = rough(xf, x)
-    if got is None:
-        return None
-    k0, o0 = got
     y, yb = clean(xf), bandpass(xf, BAND)
-    lo = FLOOR_MS[0] / 1000
-    clicks = [c for c in free_drops(y) if lo < c < len(xf) / FS - POST_MS / 1000 and measure(yb, c)[0]['db'] >= FREE_DB]
-    fits = []   # the most pins, then the slow-down whose pins agree best on one start
-    for k in np.arange(SLOW_RANGE[0], SLOW_RANGE[1], 0.0005):
-        pins = sync([c / k for c in clicks], heard, about=o0)
-        if pins:
-            fits.append((len(pins), -float(np.ptp([a - w for a, w in pins])), round(float(k), 4), pins))
-    best = max(fits, key=lambda f: f[:2]) if fits else None
-    return (best[2], best[3], 'drops') if best else (round(k0, 4), [[round(max(o0, 0.0), 4), round(max(-o0, 0.0), 4)]], 'room')
+    clicks = [c for c in free_drops(y) if FLOOR_MS[0] / 1000 < c < len(xf) / FS - POST_MS / 1000 and measure(yb, c)[0]['db'] >= FREE_DB]
+    pins = sync([c / k for c in clicks], heard, PIN_S)
+    return pins and (k, pins, 'drops')
+
+
+def probe_fps(path):
+    """Frames a second the file plays at."""
+    out = subprocess.run([FFMPEG, '-i', str(path)], capture_output=True, text=True).stderr
+    return float(re.search(r'([\d.]+) fps', out).group(1))
 
 
 def encode_slow(path, k, dst):
@@ -566,18 +543,20 @@ def steadiest(times, span, duration):
     return best[1]
 
 
-def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), free=False, var='Fall height', unit='cm', onclock=(), edge=EDGE_S, slowfilms=()):
+def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), free=False, var='Fall height', unit='cm', onclock=(), edge=EDGE_S, slowfilms=(), seen=None):
     """Every clip's steadiest stretch: audio, lanes and drops into out, scaled alike so the clips compare by eye.
     With same_tap the clips share one drip period, found from the loud drops of all of them together.
     videos holds (value, path, x, y) for slow-motion clips of the drip: x is the drop column and y the water line, pixels.
     onclock holds (value, path) for videos on the clip's own clock, such as a video whose soundtrack is the clip.
     edge is how long each recording's own start and end are handled; 0 for clips already cut from longer recordings.
-    slowfilms holds (value, path) for slow-motion films taken with the recording, their soundtrack slowed with them."""
+    slowfilms holds (value, path) for slow-motion films taken with the recording, their soundtrack slowed with them, and seen
+    maps a value to the film times (s) of impacts read off its picture, for a film whose soundtrack has no drop."""
     if free and same_tap:
         raise SystemExit('--free finds drops without a drip period, so --same-tap has none to share')
     vids = {f'{float(v):g}{unit}': (path, int(x), int(y)) for v, path, x, y in videos}
     onclock = {f'{float(v):g}{unit}': path for v, path in onclock}
     slow = {f'{float(v):g}{unit}': path for v, path in slowfilms}
+    seen = {f'{float(v):g}{unit}': ts for v, ts in (seen or {}).items()}
     vs = [float(v) for v, _ in clips]
     if len(set(vs)) != len(vs):
         raise SystemExit(f'one clip per {var.lower()}: keep the take with the steadier drip')
@@ -628,9 +607,9 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
             encode_own(onclock[r['slug']], r['start'], r['duration'], d / 'video.mp4')
             r['video'] = dict(synced=True, pins=[[0.0, 0.0]])
         elif r['slug'] in slow:
-            got = slowed(slow[r['slug']], x, [w['t'] for w in rows])
+            got = slowed(slow[r['slug']], [w['t'] for w in rows], seen.get(r['slug']))
             if not got:
-                raise SystemExit(f'{r["slug"]}: the room sounds the film and the recording share do not settle where it lines up')
+                raise SystemExit(f'{r["slug"]}: the film\'s drops do not settle where it lines up with the recording')
             encode_slow(slow[r['slug']], got[0], d / 'video.mp4')
             r['video'] = dict(synced=True, pins=got[1], slow=got[0], by=got[2])
             print(f'{r["slug"]} film: slowed {got[0]}x, lined up by {got[2]} ({len(got[1])} pins), starting {np.median([a - w for a, w in got[1]]):.2f} s into the recording')
@@ -640,7 +619,7 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
     return data
 
 
-def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=None, hz=4000, pad=EDGE_S):
+def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=None, hz=4000, pad=EDGE_S, jitter=0.01):
     """Hum, noise and a speech-like burst, plus drops that alternate a ringing plink at hz (one per drop if a list) and a faint
     click. at gives the drops' times instead, with no speech."""
     rng = np.random.default_rng(seed)
@@ -649,7 +628,7 @@ def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=N
     x = 0.05 * np.sin(2 * np.pi * 220 * t) + 0.03 * np.sin(2 * np.pi * 440 * t) + 0.002 * rng.standard_normal(len(t))
     truth = []
     for i in range(n):
-        s = int((pad + (at[i] if at else 0.6 + i * period) + 0.01 * rng.standard_normal()) * FS)
+        s = int((pad + (at[i] if at else 0.6 + i * period) + jitter * rng.standard_normal()) * FS)
         k = np.arange(int(0.08 * FS))
         click = np.zeros(len(k)); click[:24] = rng.standard_normal(24)
         if i % ring_every == 0:
@@ -764,35 +743,26 @@ def selftest():
             raise AssertionError('a clip without two drops was accepted')
         except SystemExit:
             pass
-        at = [3.0 + 2.3 * i for i in range(12)]   # a steady drip, a slow-motion film of it 4x slower starting 6 s into the recording,
-        xr, _ = synth(n=0, ring_every=1, at=at)   # its soundtrack slowed with it: the drip alone fits many starts, so room knocks
-        xf, _ = synth(n=0, ring_every=1, at=[4 * (t + EDGE_S - 6.0) for t in at if t + EDGE_S > 6.2], pad=0)   # both hear settle it
+        at = [3.0, 5.4, 7.6, 10.0, 12.2, 17.0, 19.3, 21.5, 24.0, 26.2, 28.7, 31.0]   # a drip, and a 120 fps film of it played at 30
+        xr, truth = synth(n=0, ring_every=1, at=at)   # starting 6 s into the recording, its soundtrack slowed 4x with it
+        film_at = [4 * (t - 6.0) for t, _ in truth if t > 6.2]
+        xf, _ = synth(n=0, ring_every=1, at=film_at, pad=0, jitter=0)
         rng = np.random.default_rng(7)
-        for T in (4.1, 9.7, 13.2, 21.4, 26.0):
-            r, f = int(T * FS), int(4 * (T - 6.0) * FS)
-            xr[r:r + FS * 2 // 5] += 0.3 * bandpass(rng.standard_normal(FS * 2 // 5), (150, 600))
-            if f > 0:
-                xf[f:f + FS * 8 // 5] += 0.3 * bandpass(rng.standard_normal(FS * 8 // 5), (38, 150))
         for c in rng.uniform(0, len(xf) / FS - 1, 60):   # quiet clicks of the film's own room noise
             xf[int(c * FS):int(c * FS) + 24] += 0.01 * rng.standard_normal(24)
         wavfile.write(q, FS, (xr * 20000).astype(np.int16))
         fw, fm = pathlib.Path(tmp) / 'film.wav', pathlib.Path(tmp) / 'slow.mp4'
-        wavfile.write(fw, FS, (xf * 20000).astype(np.int16))
-        subprocess.run([FFMPEG, '-v', 'error', '-y', '-f', 'lavfi', '-i', f'testsrc=size=320x240:rate=30:duration={len(xf) / FS}', '-i', str(fw),
-                        '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', str(fm)], check=True)
-        d = process([('50', q)], pathlib.Path(tmp) / 'slow', span=0, slowfilms=[('50', fm)])
-        v = d['clips'][0].get('video')
-        assert v and v['synced'] and abs(v['slow'] - 4) < 0.02 and len(v['pins']) >= 5, f'slow-motion film pinned as {v}'
-        assert all(abs(a - w - 6.0) < MATCH_S for a, w in v['pins']), f'pins off the 6 s start: {v["pins"]}'
-        xf = np.zeros_like(xf) + 0.002 * rng.standard_normal(len(xf))   # a liquid too viscous to click: only the room knocks are heard
-        for T in (4.1, 9.7, 13.2, 21.4, 26.0):
-            if (f := int(4 * (T - 6.0) * FS)) > 0:
-                xf[f:f + FS * 8 // 5] += 0.3 * bandpass(rng.standard_normal(FS * 8 // 5), (38, 150))
-        wavfile.write(fw, FS, (xf * 20000).astype(np.int16))
-        subprocess.run([FFMPEG, '-v', 'error', '-y', '-f', 'lavfi', '-i', f'testsrc=size=320x240:rate=30:duration={len(xf) / FS}', '-i', str(fw),
-                        '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', str(fm)], check=True)
-        v = process([('50', q)], pathlib.Path(tmp) / 'slow2', span=0, slowfilms=[('50', fm)])['clips'][0].get('video')
-        assert v and v['by'] == 'room' and abs(v['pins'][0][0] - v['pins'][0][1] - 6.0) < 0.1, f'a silent film placed as {v}'
+        def film(x):
+            wavfile.write(fw, FS, (x * 20000).astype(np.int16))
+            subprocess.run([FFMPEG, '-v', 'error', '-y', '-f', 'lavfi', '-i', f'testsrc=size=320x240:rate=30:duration={len(x) / FS}', '-i', str(fw),
+                            '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', str(fm)], check=True)
+        film(xf)
+        v = process([('50', q)], pathlib.Path(tmp) / 'slow', span=0, slowfilms=[('50', fm)])['clips'][0].get('video')
+        assert v and v['by'] == 'drops' and len(v['pins']) >= 6 and all(abs(a - w - 6.0) < 0.01 for a, w in v['pins']), f'slow-motion film pinned as {v}'
+        film(0.002 * rng.standard_normal(len(xf)))   # a liquid too viscous to click: the impacts are only seen, read off the picture
+        seen = [t + 0.05 * rng.standard_normal() for t in film_at]
+        v = process([('50', q)], pathlib.Path(tmp) / 'slow2', span=0, slowfilms=[('50', fm)], seen={'50': seen})['clips'][0].get('video')
+        assert v and v['by'] == 'seen' and len(v['pins']) >= 6 and all(abs(a - w - 6.0) < SEEN_S for a, w in v['pins']), f'a silent film placed as {v}'
 
         x2, _ = synth(n=0, ring_every=1, at=[0.6 + 1.05 * i for i in range(6)], pad=0)   # a clip already cut from a longer recording
         wavfile.write(q, FS, (x2 * 20000).astype(np.int16))
@@ -914,6 +884,8 @@ def main():
                     help='a video on that clip\'s own clock, such as one whose soundtrack is the clip, shown beside it')
     ap.add_argument('--slowfilm', nargs=2, action='append', metavar=('VALUE', 'VIDEO'), default=[],
                     help='a slow-motion film taken with that clip, its soundtrack slowed with it; lined up by its own clicks')
+    ap.add_argument('--seen', nargs=2, action='append', metavar=('VALUE', 'TIMES'), default=[],
+                    help='comma-separated film times (s) of impacts read off a --slowfilm\'s picture, for a film whose soundtrack has no drop')
     ap.add_argument('--edge', type=float, default=EDGE_S, help='seconds at each end of a recording kept clear of drops; 0 for clips already cut')
     ap.add_argument('--span', type=float, default=SPAN_S, help='seconds of each recording to keep, its steadiest stretch; 0 keeps it all')
     ap.add_argument('--set', default='heights', help='name of the recording set, its folder under site/recordings')
@@ -927,7 +899,7 @@ def main():
         return selftest()
     if not a.clip:
         ap.error('give at least one --clip')
-    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap, videos=a.video, free=a.free, var=a.var, unit=a.unit, onclock=a.film, edge=a.edge, slowfilms=a.slowfilm)
+    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap, videos=a.video, free=a.free, var=a.var, unit=a.unit, onclock=a.film, edge=a.edge, slowfilms=a.slowfilm, seen={v: [float(t) for t in ts.split(',')] for v, ts in a.seen})
 
 
 if __name__ == '__main__':
