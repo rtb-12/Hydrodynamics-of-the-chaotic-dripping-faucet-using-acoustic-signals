@@ -102,8 +102,8 @@
     Both glycerin runs were also filmed with sound; the films below play their own soundtrack, recorded with the picture, so each splash and its click arrive together.
     The films are separate takes from the measured recordings: their drips run at a different rate, so neither can be lined up with a recording, and the numbers come from the recordings alone.</p>
     <div class="bleed duofilm">
-      <figure class="card fclip"><video controls playsinline preload="metadata" src="recordings/viscosity-film/glycerin-50.mp4"></video><figcaption>50% glycerin, 25&nbsp;cm, with its own sound: a drop lands about every 9&nbsp;s, first at 1.5&nbsp;s, each followed by a second click as the jet&rsquo;s droplet falls back</figcaption></figure>
-      <figure class="card fclip"><video controls playsinline preload="metadata" src="recordings/viscosity-film/glycerin-100.mp4"></video><figcaption>Pure glycerin, 25&nbsp;cm, with its own sound: the drops land without a click above the room noise</figcaption></figure>
+      <figure class="card fclip"><video controls playsinline preload="metadata" poster="recordings/viscosity-film/glycerin-50.jpg" src="recordings/viscosity-film/glycerin-50.mp4"></video><figcaption>50% glycerin, 25&nbsp;cm, with its own sound: a drop lands about every 9&nbsp;s, first at 1.5&nbsp;s, each followed by a second click as the jet&rsquo;s droplet falls back</figcaption></figure>
+      <figure class="card fclip"><video controls playsinline preload="metadata" poster="recordings/viscosity-film/glycerin-100.jpg" src="recordings/viscosity-film/glycerin-100.mp4"></video><figcaption>Pure glycerin, 25&nbsp;cm, with its own sound: the drops land without a click above the room noise</figcaption></figure>
     </div>
     <div class="tablewrap bleed">
       <table>
@@ -219,7 +219,7 @@
     function bars(f) { return st.filter(function (s) { return f(s)[1] != null; }).map(function (s) { return { x: s.v, lo: f(s)[0], hi: f(s)[2] }; }); }
     var dbs = [].concat.apply([], st.map(function (s) { return s.db; })), hzs = [].concat.apply([], st.map(function (s) { return s.hz; })).filter(function (v) { return v != null; });
     var loud = xy({ W: 400, H: 330, x: xr, y: [0, Math.ceil((Math.max.apply(null, dbs) + 5) / 10) * 10], xl: xl, yl: 'Peak level, dB over room noise', join: true, band: band,
-      pts: pts(function (s) { return s.db; }).map(function (p, n) { p.label = 'n = ' + st[n].n; return p; }), bars: bars(function (s) { return s.db; }) });
+      pts: pts(function (s) { return s.db; }), bars: bars(function (s) { return s.db; }) });
     var share = xy({ W: 400, H: 330, x: xr, y: [0, 100], xl: xl, yl: 'Drops that ring, %', join: true, band: band,
       pts: st.map(function (s, n) { return { x: s.v, y: s.share, cls: 'c' + (n + 1), label: s.ring + ' of ' + s.n, tip: s.v + ' ' + H.unit + ': ' + s.share.toFixed(0) + '%' }; }) });
     var pitch = hzs.length ? xy({ W: 400, H: 330, x: xr, y: [0, Math.ceil(Math.max.apply(null, hzs) + 1)], xl: xl, yl: 'Ring pitch, kHz', band: band,
@@ -259,7 +259,7 @@
     $('formationClips').innerHTML = Object.keys(F).map(function (slug) {
       var c = F[slug], ms = c.capture_fps ? 1000 / c.capture_fps : null;
       c.contact = c.stages.filter(function (s) { return s.name === 'contact'; }).map(function (s) { return s.frame; })[0];
-      return '<figure class="card fclip" data-slug="' + slug + '"><div class="fvid"><video muted playsinline preload="metadata" src="recordings/formation/' + slug + '/video.mp4"></video><span class="fbar">1 D</span></div>' +
+      return '<figure class="card fclip" data-slug="' + slug + '"><div class="fvid"><video muted playsinline preload="metadata" poster="recordings/formation/' + slug + '/stage-contact.jpg" src="recordings/formation/' + slug + '/video.mp4"></video><span class="fbar">1 D</span></div>' +
         '<div class="fctl"><button type="button" data-a="play">Play</button><button type="button" data-a="-1" aria-label="Previous frame">&#9664;</button><button type="button" data-a="1" aria-label="Next frame">&#9654;</button>' +
         '<span class="seg">' + [1, 0.25, 0.1].map(function (r) { return '<button type="button" data-r="' + r + '" aria-pressed="' + (r === 0.25) + '">' + r + '&times;</button>'; }).join('') + '</span>' +
         '<span class="fread"></span></div>' +
