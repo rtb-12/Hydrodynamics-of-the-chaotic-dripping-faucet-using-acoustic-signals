@@ -84,8 +84,7 @@
     glycerin: { name: 'Glycerin, 0 to 30 ml', title: 'Drop sound and glycerin', note: 'Glycerin added to 900 ml of water, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0 ml is plain water. ' + ROWS, charts: false },
     heights3: { name: 'Height, final run, 15 to 35 cm', title: 'Drop sound and fall height, final run', note: 'Fall heights of 15, 25 and 35 cm from a 5 mm nozzle into plain water. ' + ROWS, charts: false },
     'final-height': { name: 'Fall height, 15 to 60 cm', title: 'Drop sound and fall height', note: 'Fall heights of 15, 25, 33, 35, 43 and 60 cm from a 5 mm nozzle into plain water; 15, 25 and 35 cm are the final run above. ' + ROWS, charts: ['loud'] },
-    viscosity: { name: 'Viscosity, water to pure glycerin', title: 'Drop sound and viscosity', note: 'Plain water, 50% glycerin by mass and pure glycerin, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0% is the 25 cm water recording of the final run. ' + ROWS, charts: ['loud'] },
-    'viscosity-film': { name: 'Viscosity on film, water and 50% glycerin', title: 'Drop sound and viscosity, on film', note: 'The 25 cm water and 50% glycerin drips on film. The 50% glycerin row is the film\u2019s own soundtrack, so its splashes land on their clicks. The water row is a separate recording lined up with its slow-motion film by cross-correlation; each splash is heard 85 to 230 ms after it is seen, the later ones as the jet\u2019s droplet falls back. These are other takes than the measured viscosity set; pure glycerin is left out because its film has no click above the room. ' + ROWS, charts: false }
+    viscosity: { name: 'Viscosity, water to pure glycerin', title: 'Drop sound and viscosity', note: 'Plain water, 50% glycerin by mass and pure glycerin, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0% is the 25 cm water recording of the final run. The glycerin rows show the slow-motion film shot with each recording, back at real speed and lined up as each row says. ' + ROWS, charts: ['loud'] }
   };
   var SET = SETS[new URLSearchParams(location.search).get('set')] ? new URLSearchParams(location.search).get('set') : 'heights';
   if (new URLSearchParams(location.search).has('embed')) {   // inside final.html: everything but the page header, sized to its content by the parent
@@ -353,8 +352,10 @@
       el.className = 'hrow';
       el.innerHTML = '<div class="hhead"><b class="hname" style="--c: var(--h' + (n + 1) + ')">' + label(c) + '</b>' +
         '<span class="vmeta">' + c.drops.length + (c.drips ? ' of about ' + c.drips + ' drips heard' : ' drops') + ', ' + Math.round(100 * rang(c) / fell(c)) + '% ring, ' + (FREE ? 'median gap ' : 'one every ') + per(c).toFixed(2) + ' s; ' +
-        (c.video ? 'the ' + Math.round(c.duration) + ' s on film' : (H.span ? 'its steadiest ' : 'all ') + Math.round(c.duration) + ' s') + ', from ' + Math.round(c.start) + ' s into the recording' +
-        (c.video && !c.video.synced ? '; its heard drops do not settle where the video lines up, so it only keeps the drip&rsquo;s rhythm' : '') + '</span></div>' +
+        (c.video && !c.video.slow ? 'the ' + Math.round(c.duration) + ' s on film' : (H.span ? 'its steadiest ' : 'all ') + Math.round(c.duration) + ' s') + ', from ' + Math.round(c.start) + ' s into the recording' +
+        (c.video && !c.video.synced ? '; its heard drops do not settle where the video lines up, so it only keeps the drip&rsquo;s rhythm' : '') +
+        (c.video && c.video.by === 'drops' ? '; its slow-motion film, back at real speed, is pinned to the sound at ' + c.video.pins.length + ' drops it heard too' : '') +
+        (c.video && c.video.by === 'room' ? '; its slow-motion film, back at real speed, is placed by room sounds both microphones heard, as its own soundtrack has no drop to pin' : '') + '</span></div>' +
         '<div class="transport card"><button class="primary" type="button">Play</button>' +
         '<input type="range" class="scrub" min="0" max="' + c.duration + '" step="0.001" value="0" aria-label="Position in ' + label(c) + '">' +
         '<span class="seg"><button type="button" data-d="-1" aria-label="Previous drop">&lsaquo; Drop</button><button type="button" data-d="0">Typical</button><button type="button" data-d="1" aria-label="Next drop">Drop &rsaquo;</button></span>' +
