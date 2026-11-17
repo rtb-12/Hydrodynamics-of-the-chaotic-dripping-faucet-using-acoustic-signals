@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Final Results</title>
+<link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
+<script src="plots.js"></script>
+</head>
+<body>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">Dripping&nbsp;Faucet <span>Acoustics</span></a>
+  <span class="masthead-meta">B.Tech project, 2026&ndash;27</span>
+  <button id="themeBtn" class="themetoggle" type="button">System</button>
+</header>
+
+<main class="viewer">
+  <div class="vhead">
+    <div class="vtitle">
+      <h1 id="title"></h1>
+      <select id="pick" aria-label="Experiment"></select>
+      <span class="vmeta" id="meta"></span>
+    </div>
+    <p class="note" id="intro"></p>
+  </div>
+
+  <div class="vbody" id="extra"></div>
+  <iframe class="embedlanes" id="lanes" title="Recordings as synced lanes" hidden></iframe>
+
+  <section class="intervals" id="litbox">
+    <h2>Against the literature</h2>
+    <p class="note" id="litnote"></p>
+    <div class="tablewrap"><table id="lit"></table></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var PAGES = {   // one tab per experiment; set is the folder under recordings/ the lane viewer shows
+    height: { name: 'Fall height, 13 to 60 cm', title: 'Drop sound and fall height', set: 'final-height',
+      note: 'A 5 mm nozzle releases water drops of about 5 mm into plain water from 13 to 60 cm; 15, 25 and 35 cm are the earlier final run, 13, 33, 43 and 60 cm are new. ' +
+        'Only at 13 cm, the height nearest the regular entrainment window, does every drop ring (21 of 21); from 15 to 60 cm the share falls to 35-80% with no steady trend. ' +
+        'Ring pitch scatters between 2.3 and 6.2 kHz with no trend in height, and the level stays at 20-36 dB over the room noise up to 43 cm before falling to 15 dB at 60 cm.',
+      lit: 'For a 4.5 mm drop, regular entrainment (one bubble and one clean ring per drop) needs U = 1.10-1.42 m/s, about 6-10 cm of fall. Our heights give U = 1.6-3.3 m/s, all above that window, in the splash regime where rings come only irregularly. Our rings decay over 7-17.5 ms, inside the 3-19 ms Chashechkin (2024) reports, but without the growth with impact speed he finds. The 43 cm rings sit close to a 2.15 kHz tone also heard between drops, so that pitch is the least certain.',
+      rows: [
+        ['Regular entrainment window, 4.5 mm drop', 'U = 1.10-1.42 m/s, h = 6-10 cm', 'Oguz & Prosperetti fit, cited by Phillips 2018', '13 cm, the nearest, rings on every drop'],
+        ['Reproducible tone, 3.9 mm drop at 7-8 cm', 'about 7 kHz', 'Pumphrey & Walton 1988, p. 227', '3.35 kHz at 13 cm'],
+        ['Splash-mode resonance packets, D = 5 mm', 'formed irregularly at 1.98-4.43 m/s, none above 4.6 m/s', 'Chashechkin 2024, Table 4', '35-80% ring at 15-60 cm, no trend: agrees'],
+        ['Air-audible packets at 2.6-4 m/s', '1.6-18 kHz, no trend with height', 'Prokhorov 2011; Chashechkin 2014', '2.3-6.2 kHz, no trend: agrees'],
+        ['Ring peak against impact speed', '26-34 Pa, about +2 dB over 2-4.4 m/s', 'Chashechkin 2024, Table 4', '15-36 dB, no growth with height: agrees'],
+        ['Ring decay phase, D = 5 mm', '3-19 ms, growing with U', 'Chashechkin 2024, Table 4', '7-17.5 ms, not growing: disagrees']] },
+    nozzle: { name: 'Nozzle diameter, 2 to 7 mm', title: 'Drop sound and nozzle diameter', set: 'nozzle',
+      note: 'Nozzles of 2, 5 and 7 mm internal diameter, water falling 25 cm into water. Tate’s law predicts drops of about 3.9, 5.2 and 5.9 mm, only 1.5× apart. ' +
+        'The 2 mm drops are about 9 dB quieter than the 5 and 7 mm drops, which sound alike; with only 9 drops at 2 mm this is the weakest result. Half to four fifths of the drops ring at every size.',
+      lit: 'At 25 cm (U = 2.2 m/s) none of the three drops is inside its regular entrainment window, and Phillips et al. (2018) report no regular entrainment for drops above 5 mm, which includes the 7 mm nozzle’s drop.',
+      rows: [
+        ['Drop from a 4 mm nozzle', 'D = 5.0 mm', 'Chashechkin & Prokhorov 2014, p. 3', 'Tate’s law gives 5.0 mm for 4 mm, so 3.9, 5.2, 5.9 mm for ours'],
+        ['Regular entrainment by drop size', 'none for D below 1 mm or above 5 mm', 'Phillips 2018, p. 2', '7 mm drop above it; still rings on 81%'],
+        ['Window at 25 cm (U = 2.18 m/s)', 'D = 4 mm needs 1.19-1.56 m/s; 5 mm needs 1.02-1.30 m/s', 'Oguz & Prosperetti fit, cited by Phillips 2018', 'no nozzle inside it']] },
+    viscosity: { name: 'Viscosity, water to pure glycerin', title: 'Drop sound and viscosity', set: 'viscosity',
+      note: 'The same 5 mm nozzle and 25 cm fall with water, a 50% glycerin-water mixture and pure glycerin, each falling into a pool of the same liquid. ' +
+        '50% glycerin (Oh ≈ 0.01) sounds much like water, 34 against 30 dB over the room noise with about half the drops ringing, but its rings die away twice as fast, 8.4 against 16.2 ms. ' +
+        'Pure glycerin (Oh ≈ 2.4) stays at the room noise and none of its 13 drops rings: the impact is silent.',
+      lit: 'No paper in the collection measures drop-impact sound in any liquid but water. The viscous damping constant of a 0.4 mm bubble is about 0.0005 in water but about 0.6 in glycerin, so a glycerin bubble would ring for about one cycle, and Re ≈ 9 leaves little inertia to fold a cavity shut. Phillips et al. (2018) silence the impact by blocking entrainment with a rod or a surfactant; glycerin is a third way to lose the bubble and with it the sound.',
+      rows: [
+        ['Impact sound in liquids other than water', 'not measured in any paper in the collection', '-', 'pure glycerin: no ring, 12.3 dB over room'],
+        ['Entrainment blocked (rod or surfactant)', 'no sound', 'Phillips 2018, p. 6', 'glycerin reaches the same through viscosity'],
+        ['Dripping regime by Ohnesorge number', 'chaos at Oh = 0.01, none at 0.1, jetting at O(1)', 'Ambravaneswaran 2000, p. 5335', '50%: Oh = 0.010; pure: Oh = 2.4']] },
+    formation: { name: 'Drop formation, high-speed video', title: 'Drop formation and impact, high-speed video',
+      note: 'Backlit shadowgraph clips from a Phantom Miro C110 at 1280 × 1024, cleaned of the camera software’s marks, denoised and upscaled 2× with every frame kept. ' +
+        'Every clip comes from the same 5 mm nozzle, so the drop diameter D measured in each clip is the ruler that puts the three on one scale; the bar on each video is 1 D. ' +
+        'Times assume 900 fps, the camera’s rate at full resolution, which the files do not record; fall speed in D per frame checks it only to 5-10%, and lengths in D do not depend on it. Both 25 cm jets leave the frame, so their starred stills mark the middle of the time off frame, not the apex.',
+      lit: 'In all three clips the crater is deepest 21-22 frames after contact, 23-24 ms at 900 fps, matching the 23 ms crater bottom of Chashechkin & Prokhorov (2025) for a 5 mm drop at 2.4 m/s. The jet then rises and pinches off its top droplet 130-150 ms after contact, the splash-regime sequence rather than one bubble pinching off the crater bottom at 24-27 ms (Pumphrey & Walton 1988, Phillips et al. 2018). No paper in the collection measures jet height, so the contrast between the thin, fast 25 cm jets and the thicker 35 cm jet is an observation from three clips, not a comparison.',
+      rows: [
+        ['Single-bubble pinch-off at the crater bottom', '24-27 ms after contact', 'Pumphrey & Walton 1988; Phillips 2018', 'deepest crater at 23-24 ms'],
+        ['Crater bottom, 5 mm drop at 2.4 m/s', '23.2 ms', 'Chashechkin & Prokhorov 2025', '23.3, 23.3 and 24.4 ms: agrees'],
+        ['Splash jet and sounding cavities', 'jet near 140 ms, cavities at 170-230 ms', 'Chashechkin & Prokhorov 2025; Prokhorov 2011', 'top droplet pinches off at 131-151 ms']] }
+  };
+  var TITLES = { '25cm-a': '25 cm fall, take 0', '25cm-b': '25 cm fall, take 1', '35cm': '35 cm fall' };
+
+  function $(id) { return document.getElementById(id); }
+  var key = new URLSearchParams(location.search).get('set'), P;
+  if (!PAGES[key]) key = 'height';
+  P = PAGES[key];
+  document.title = 'Final Results: ' + P.title;
+  $('title').textContent = P.title; $('intro').textContent = P.note; $('litnote').textContent = P.lit;
+  Object.keys(PAGES).forEach(function (k) { $('pick').add(new Option(PAGES[k].name, k, false, k === key)); });
+  $('pick').onchange = function () { location.search = '?set=' + this.value; };
+  $('lit').innerHTML = '<thead><tr><th>Reading</th><th>Literature</th><th>Source</th><th>This work</th></tr></thead><tbody>' +
+    P.rows.map(function (r) { return '<tr>' + r.map(function (v) { return '<td>' + v + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody>';
+
+  if (P.set) {   // the lane viewer itself, embedded whole and sized to its content
+    $('lanes').src = 'heights.html?set=' + P.set + '&embed=1'; $('lanes').hidden = false;
+    addEventListener('message', function (e) { if (e.data && e.data.lanes === P.set) $('lanes').style.height = e.data.h + 'px'; });
+  }
+  if (key === 'viscosity') films();
+  if (key === 'formation') { var fs = document.createElement('script'); fs.src = fresh('recordings/formation/stages.js'); fs.onload = fs.onerror = formation; document.head.appendChild(fs); }
+
+  function films() {
+    $('extra').innerHTML = '<div class="duofilm">' +
+      '<figure class="card fclip"><video controls playsinline preload="metadata" poster="recordings/viscosity-film/glycerin-50.jpg" src="recordings/viscosity-film/glycerin-50.mp4"></video><figcaption>50% glycerin, 25 cm, with its own sound: a drop lands about every 9 s, first at 1.5 s, each followed by a second click as the jet’s droplet falls back</figcaption></figure>' +
+      '<figure class="card fclip"><video controls playsinline preload="metadata" poster="recordings/viscosity-film/glycerin-100.jpg" src="recordings/viscosity-film/glycerin-100.mp4"></video><figcaption>Pure glycerin, 25 cm, with its own sound: the drops land without a click above the room noise</figcaption></figure></div>' +
+      '<p class="note">The films play their own soundtrack, recorded with the picture, so each splash and its click arrive together. They are separate takes from the measured recordings below, with a different drip rate, so the numbers come from the recordings alone.</p>';
+  }
+
+  function formation() {
+    var F = window.FORMATION;
+    if (!F) { $('extra').innerHTML = '<p class="note">No high-speed clips yet.</p>'; return; }
+    $('meta').innerHTML = '<b>3</b> impacts filmed';
+    $('extra').innerHTML = '<div class="formation">' + Object.keys(F).map(function (slug) {
+      var c = F[slug], ms = 1000 / c.capture_fps;
+      c.contact = c.stages.filter(function (s) { return s.name === 'contact'; })[0].frame;
+      return '<figure class="card fclip" data-slug="' + slug + '"><div class="fvid"><video muted playsinline preload="metadata" poster="recordings/formation/' + slug + '/stage-contact.jpg" src="recordings/formation/' + slug + '/video.mp4"></video><span class="fbar">1 D</span></div>' +
+        '<div class="fctl"><button type="button" data-a="play">Play</button><button type="button" data-a="-1" aria-label="Previous frame">&#9664;</button><button type="button" data-a="1" aria-label="Next frame">&#9654;</button>' +
+        '<span class="seg">' + [1, 0.25, 0.1].map(function (r) { return '<button type="button" data-r="' + r + '" aria-pressed="' + (r === 0.25) + '">' + r + '&times;</button>'; }).join('') + '</span>' +
+        '<span class="fread"></span></div>' +
+        '<div class="fstrip">' + c.stages.map(function (s) {
+          return '<button type="button" data-t="' + s.t_playback_s + '"' + (s.note ? ' title="' + s.note + '"' : '') + '><img src="recordings/formation/' + slug + '/stage-' + s.name + '.jpg" alt="' + s.name.replace('_', ' ') + '" loading="lazy"><span>' +
+            s.name.replace('_', ' ') + (s.note ? '*' : '') + '<br>' + ((s.frame - c.contact) * ms).toFixed(1) + ' ms</span></button>';
+        }).join('') + '</div><figcaption>' + TITLES[slug] + ', ' + c.capture_fps + ' fps capture, ' + c.frames + ' frames</figcaption></figure>';
+    }).join('') + '</div><div class="tablewrap"><table id="ftable"></table></div>';
+    formationTable(F);
+    document.querySelectorAll('.fclip').forEach(function (fig) {
+      var v = fig.querySelector('video'), c = F[fig.dataset.slug], fps = c.fps_playback, read = fig.querySelector('.fread');
+      function show() { var fr = Math.floor(v.currentTime * fps); read.textContent = 'Frame ' + fr + ', ' + ((fr - c.contact) * 1000 / c.capture_fps).toFixed(1) + ' ms from contact'; }
+      function bar() {   // 1 D in screen pixels, for the video as fitted inside its box
+        if (!v.videoWidth) return;
+        var k = Math.min(v.clientWidth / v.videoWidth, v.clientHeight / v.videoHeight), b = fig.querySelector('.fbar');
+        b.style.width = c.d_px * k + 'px';
+        b.style.left = (v.clientWidth - v.videoWidth * k) / 2 + 10 + 'px'; b.style.bottom = (v.clientHeight - v.videoHeight * k) / 2 + 8 + 'px';
+      }
+      v.playbackRate = 0.25;
+      v.addEventListener('loadedmetadata', function () { bar(); v.currentTime = (c.contact + 0.5) / fps; }, { once: true });   // open on the moment of contact
+      new ResizeObserver(bar).observe(v);
+      v.addEventListener('timeupdate', show); v.addEventListener('seeked', show);
+      v.addEventListener('play', function () { fig.querySelector('[data-a="play"]').textContent = 'Pause'; });
+      v.addEventListener('pause', function () { fig.querySelector('[data-a="play"]').textContent = 'Play'; });
+      fig.querySelectorAll('[data-a]').forEach(function (b) {
+        b.onclick = function () {
+          if (b.dataset.a === 'play') { if (v.paused) v.play(); else v.pause(); return; }
+          v.pause(); v.currentTime = Math.max(0, (Math.floor(v.currentTime * fps) + +b.dataset.a + 0.5) / fps);
+        };
+      });
+      fig.querySelectorAll('[data-r]').forEach(function (b) {
+        b.onclick = function () { fig.querySelectorAll('[data-r]').forEach(function (o) { o.setAttribute('aria-pressed', o === b); }); v.playbackRate = +b.dataset.r; };
+      });
+      fig.querySelectorAll('[data-t]').forEach(function (b) { b.onclick = function () { v.pause(); v.currentTime = +b.dataset.t + 0.5 / fps; }; });
+    });
+  }
+
+  // The three clips side by side in units of the drop diameter D, so heights compare without a calibrated scale.
+  function formationTable(F) {
+    var ks = Object.keys(F), m = function (k) { return F[k].metrics; }, f = function (v, d) { return v == null ? '-' : v.toFixed(d); };
+    var rows = [
+      ['Fall speed, D per frame', function (k) { return f(m(k).fall.U_D_per_frame, 3); }],
+      ['Crater depth at its deepest', function (k) { return f(m(k).crater.max_depth_D, 2) + ' D'; }],
+      ['Time of deepest crater', function (k) { return f(m(k).crater.t_max_ms, 1) + ' ms'; }],
+      ['Crater width at its deepest', function (k) { return f(m(k).crater.max_width_D, 1) + ' D'; }],
+      ['Jet tip rise speed, first frames', function (k) { return f(m(k).jet.rise_speed_initial_D_per_ms, 2) + ' D/ms'; }],
+      ['Jet height at its highest', function (k) { var j = m(k).jet; return j.max_height_D != null ? f(j.max_height_D, 1) + ' D' : 'over ' + f(j.max_height_lower_bound_D, 1) + ' D (leaves frame)'; }],
+      ['Top droplet pinches off', function (k) { return f(m(k).pinch.t_ms, 0) + ' ms'; }],
+      ['Pinched droplet diameter', function (k) { return f(m(k).pinch.drop_d_D, 2) + ' D'; }]
+    ];
+    $('ftable').innerHTML = '<thead><tr><th>Drop-scaled measure</th>' + ks.map(function (k) { return '<th>' + TITLES[k] + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr><td>' + r[0] + '</td>' + ks.map(function (k) { return '<td>' + r[1](k) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody>';
+  }
+})();
+</script>
+</body>
+</html>

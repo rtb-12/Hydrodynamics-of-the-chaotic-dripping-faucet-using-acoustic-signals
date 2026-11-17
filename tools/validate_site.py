@@ -76,7 +76,7 @@ def check(page, css_classes):
     for src in re.findall(r'src="([^"]+)"', body):
         if src.startswith(('http', 'data:')):
             continue
-        if not (page.parent / src).resolve().exists():
+        if not (page.parent / src.split('?')[0]).resolve().exists():
             problems.append(f'missing asset: {src}')
 
     # Lookbehind so data-alt= and similar do not count as a real alt attribute.

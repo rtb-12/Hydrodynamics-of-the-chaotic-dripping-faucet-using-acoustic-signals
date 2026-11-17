@@ -71,6 +71,8 @@ uv run analysis/heights.py --selftest    # a synthetic recording with known drop
 Any one thing can differ between recordings, not only height.
 `--var NAME` and `--unit UNIT` say what it is (`"Fall height"` and `cm` by default), and `--clip VALUE AUDIO` gives each recording's value.
 Drops that come at irregular gaps need `--free`, which takes every click at least 12 dB over the room and 0.25 s after the one before, with no drip period assumed; it cannot be combined with `--same-tap`.
+Where most gaps between those clicks are one drip period, a quieter click (down to 6 dB) that lands on the beat in a longer gap counts too, so a liquid whose drops land near 12 dB, such as glycerin, is not cut at the gate.
+In such a steady drip, louder clicks off the beat at either end of the run are left out too: they are the phone being picked up or put down.
 Each recording also stores three drops of its usual kind nearest its median loudness and length, to compare shapes.
 
 ```bash
@@ -82,8 +84,11 @@ A second set goes in its own folder with `--set NAME`, shown on the same page th
 When the tap was left alone between recordings, `--same-tap` finds one drip period from the loud drops of all of them, which a slow drip with few drops per recording needs, and counts ringing against every drip that fell.
 Each recording is cut to its steadiest minute (`--span`), the stretch with the most evenly spaced drops and no missed ones, so every height is judged on its cleanest drops.
 Background music below 1 kHz is filtered out and the steady hiss turned down for listening and for finding faint drops.
+For listening the hiss between drops is then taken out hard, while each drop's own 150 ms keeps the gentle cleaning, since noise reduction across a drop halves its peak.
 Drops are placed one per drip period by dynamic programming, so a run of faint drops cannot lose the beat, and drops inside talking or handling noise are left out.
 Every measure is read from the raw 2 to 9 kHz band, since the phone's codec invents the sound above 9 kHz and the cleaning's gain opens around each drop.
+A ring pitch that recurs in a third of a recording's drops and also stands out of the sound between drops is the tank or microphone resonating, not a bubble, so rings are looked for away from it.
+A ring must also die away: the tone's power, from its start until it is back under the floor, must fall along an exponential, so a steady whistle or hum that starts with a drop is not a bubble.
 
 A slow-motion video of a height's drip goes beside its recording with `--video HEIGHT VIDEO X Y`, where X is the pixel column the drops fall down and Y the water line.
 The clip's slowed stretch is found from its own sound, which is slowed into a low murmur, and its frames are taken as shot at 240 fps; the drip rate the video then shows must match the sound's.

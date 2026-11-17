@@ -81,9 +81,15 @@
     sweep: { name: 'Height sweep, 10 to 35 cm', title: HEAD, note: NOTE },
     nozzle: { name: 'Nozzle size, 2 to 7 mm', title: 'Drop sound and nozzle size', note: 'The same drop falling 25 cm into plain water from nozzles of 2, 5 and 7 mm internal diameter. ' + ROWS, charts: false },
     glycerin: { name: 'Glycerin, 0 to 30 ml', title: 'Drop sound and glycerin', note: 'Glycerin added to 900 ml of water, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0 ml is plain water. ' + ROWS, charts: false },
-    heights3: { name: 'Height, final run, 15 to 35 cm', title: 'Drop sound and fall height, final run', note: 'Fall heights of 15, 25 and 35 cm from a 5 mm nozzle into plain water. ' + ROWS, charts: false }
+    heights3: { name: 'Height, final run, 15 to 35 cm', title: 'Drop sound and fall height, final run', note: 'Fall heights of 15, 25 and 35 cm from a 5 mm nozzle into plain water. ' + ROWS, charts: false },
+    'final-height': { name: 'Fall height, 13 to 60 cm', title: 'Drop sound and fall height', note: 'Fall heights of 13, 15, 25, 33, 35, 43 and 60 cm from a 5 mm nozzle into plain water; 15, 25 and 35 cm are the final run above. ' + ROWS, charts: false },
+    viscosity: { name: 'Viscosity, water to pure glycerin', title: 'Drop sound and viscosity', note: 'Plain water, 50% glycerin by mass and pure glycerin, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0% is the 25 cm water recording of the final run. ' + ROWS, charts: false }
   };
   var SET = SETS[new URLSearchParams(location.search).get('set')] ? new URLSearchParams(location.search).get('set') : 'heights';
+  if (new URLSearchParams(location.search).has('embed')) {   // inside final.html: everything but the page header, sized to its content by the parent
+    document.documentElement.classList.add('embed');
+    new ResizeObserver(function () { parent.postMessage({ lanes: SET, h: document.documentElement.scrollHeight }, '*'); }).observe(document.body);
+  }
   document.title = SETS[SET].title;
   document.getElementById('title').textContent = SETS[SET].title; document.getElementById('intro').textContent = SETS[SET].note;
   var pick = document.getElementById('pick');
@@ -111,7 +117,7 @@
         : 'Drops are found one per drip period, so faint ones are looked for where the drip says they must be, and drops inside talking or handling noise are left out.',
       'The blue line is now. While playing it sits near the right, so what is to its left has already been heard.'],
     audio: ['Audio tracks', 'Raw is the phone recording as captured.',
-      'Cleaned has the music and hum below 1 kHz filtered out and the steady hiss turned down by at most 10 dB. It is deliberately gentle, so the drops themselves are unchanged and faint ones survive; louder noise reduction halved the drops&rsquo; peaks. The graphs follow whichever track is selected.'],
+      'Cleaned has the music and hum below 1 kHz filtered out and the steady hiss between drops taken out. Around each drop, from 10 ms before it to 140 ms after, only the gentle cleaning applies, so its peak is unchanged; noise reduction across a drop halved its peak. Every measure is read from the raw sound, not this track. The graphs follow whichever track is selected.'],
     all: ['Play all', 'Plays every row at once from the drop each row is showing, with those drops lined up so they land together. The slider moves all rows through their recordings together, still lined up.',
       'Hear picks which rows you listen to while all of them play; the rest play silently so their graphs still move. A row played on its own is always heard.',
       FREE ? 'The drips do not run at the same rate and are irregular, so the rows would drift apart. Halfway between drops, where every row is quiet, each row is moved so its next drop lands with the first row&rsquo;s; only the drops found are used, none is filled in. The sound is never sped up or slowed, so pitches stay true.'
@@ -142,7 +148,7 @@
   }
   function tokens(n) {
     var s = getComputedStyle(document.documentElement), g = function (v) { return s.getPropertyValue(v).trim(); };
-    var c = [g('--h1'), g('--h2'), g('--h3'), g('--h4'), g('--h5'), g('--h6')];
+    var c = [g('--h1'), g('--h2'), g('--h3'), g('--h4'), g('--h5'), g('--h6'), g('--h7')];
     return { ink: g('--ink'), ink2: g('--ink-2'), ink3: g('--ink-3'), rule: g('--rule'), surface: g('--surface'), hydro: g('--hydro'),
              sans: g('--display'), c: c, chan: c[n || 0] };
   }
@@ -356,7 +362,7 @@
         '<div class="hcol">' + lane('Waveform', '% of loudest', 'wave') + lane('Loudness', 'dB below the loudest moment', 'loud') + '</div>' +
         '<div class="hcol">' + lane('Spectrogram', 'kHz', 'spec') + lane('Drops', 'dot means it rang', 'drops') + '</div></div>';
       $('rows').appendChild(el);
-      var dir = 'recordings/' + SET + '/' + c.slug + '/', spec = {};
+      var dir = 'recordings/' + SET + '/' + encodeURIComponent(c.slug) + '/', spec = {};
       ['clean', 'raw'].forEach(function (s) { var im = new Image(); im.onload = function () { draw(r); }; im.src = dir + 'spec-' + s + '.png'; spec[s] = im; });
       var r = { c: c, n: n, i: -1, lanes: [].slice.call(el.querySelectorAll('canvas')), audio: new Audio(), read: el.querySelector('.hread'), scrub: el.querySelector('.scrub'),
                 play: el.querySelector('.primary'), wave: { clean: unpack(c.wave.clean), raw: unpack(c.wave.raw) }, spec: spec, dir: dir,
@@ -466,7 +472,7 @@
     if (big) legend(g, k);
   }
   function buildShapes() {
-    $('shapes').style.setProperty('--n', H.clips.length);
+    $('shapes').style.setProperty('--n', Math.min(H.clips.length, 4));   // seven recordings wrap rather than squeeze
     $('shapes').innerHTML = H.clips.map(function (c) {
       return '<div class="plot card"><span class="cap">' + label(c) + ' <span>three typical drops</span></span><canvas></canvas></div>';
     }).join('') + '<div class="plot card wide"><span class="cap">Typical drop of every recording <span>each at its own peak</span></span><canvas></canvas></div>';
