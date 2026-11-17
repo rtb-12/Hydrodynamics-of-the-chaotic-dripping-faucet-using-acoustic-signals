@@ -22,6 +22,7 @@
   --h4:      #7a4fa0;
   --h5:      #a8326e;
   --h6:      #8a6d00;
+  --h7:      #13877a;
 
   --display: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
   --body:    "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif Pro", "Palatino Linotype", Georgia, serif;
@@ -50,6 +51,7 @@
     --h4:      #b79ae0;
     --h5:      #ec7fb4;
     --h6:      #e0c341;
+    --h7:      #4dd0b8;
   }
 }
 
@@ -70,6 +72,7 @@
   --h4:      #b79ae0;
   --h5:      #ec7fb4;
   --h6:      #e0c341;
+  --h7:      #4dd0b8;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -1000,6 +1003,7 @@ a:focus-visible, .sidenav a:focus-visible {
 .xy .pt.c4 { fill: var(--h4); }
 .xy .pt.c5 { fill: var(--h5); }
 .xy .pt.c6 { fill: var(--h6); }
+.xy .pt.c7 { fill: var(--h7); }
 
 /* Enlarged plot: the same drawing at dialog size, so it gains real detail. */
 .zoom { width: min(1400px, calc(100vw - 32px)); height: min(860px, calc(100vh - 32px)); max-width: none; max-height: none; padding: 0;
@@ -1031,41 +1035,26 @@ a:focus-visible, .sidenav a:focus-visible {
 
 /* --- final results page --------------------------------------------------- */
 
-main .note { font-size: 0.9rem; color: var(--ink-2); }
-main > .trio { margin: 0 0 1.5rem; font-family: var(--display); }
-.embedlanes { display: block; width: 100%; height: 480px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--ground); margin: 0 0 2rem; }
-tr.sub td { font-family: var(--display); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); background: var(--sunk); }
-.xy .band { fill: var(--water); }
-.xy .bandlab { font-size: 11px; fill: var(--hydro); }
-.xy .whisk { stroke: var(--ink-2); stroke-width: 1.5; fill: none; }
-.formation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin: 0 0 1.5rem; font-family: var(--display); }
+.embed .masthead, .embed .vhead { display: none; }
+.embed .viewer { padding-top: 0; padding-left: 0; padding-right: 0; }
+.embedlanes { display: block; width: 100%; height: 900px; border: 0; background: var(--ground); }
+.formation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+.duofilm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
 .fclip { margin: 0; padding: 0.6rem; display: grid; gap: 0.5rem; align-content: start; min-width: 0; }
 .fvid { position: relative; }
-.fbar { position: absolute; left: 10px; bottom: 8px; border-top: 3px solid #111; padding-top: 2px; font: 600 0.7rem var(--display); color: #111; text-shadow: 0 0 2px #fff, 0 0 4px #fff; white-space: nowrap; }
+.fbar { position: absolute; left: 10px; bottom: 8px; border-top: 3px solid #111; padding-top: 2px; font-size: 0.7rem; font-weight: 600; color: #111; text-shadow: 0 0 2px #fff, 0 0 4px #fff; white-space: nowrap; }
 .fclip video { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: contain; background: #000; border-radius: 4px; }
+.duofilm video { aspect-ratio: 8 / 7; }
 .fclip figcaption { font-size: 0.8rem; font-weight: 550; }
-.fctl { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; font-size: 0.8rem; }
-.fctl button { font-size: 0.78rem; padding: 0.25rem 0.55rem; border-radius: var(--radius); }
+.fctl { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
 .fread { flex-basis: 100%; min-height: 1.2em; font-family: var(--mono); font-size: 0.74rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .fstrip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.3rem; }
 .fstrip button { padding: 0; border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); overflow: hidden; cursor: pointer; display: grid; text-align: center; }
 .fstrip button:hover { border-color: var(--hydro); }
 .fstrip img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
 .fstrip span { font-size: 0.66rem; line-height: 1.25; color: var(--ink-2); padding: 0.2rem 0.1rem; }
-.embed .masthead, .embed .vhead, .embed .noembed { display: none; }
-@media (max-width: 900px) { .formation { grid-template-columns: minmax(0, 1fr); } }
 .fctl .seg button { border-radius: 0; margin-left: -1px; position: relative; }
 .fctl .seg button[aria-pressed="true"] { z-index: 1; }
 .fctl .seg button:first-child { border-radius: var(--radius) 0 0 var(--radius); margin-left: 0; }
 .fctl .seg button:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
-.shell.wide { grid-template-columns: 190px minmax(0, 1fr); max-width: 1640px; }
-@media (max-width: 1080px) { .shell.wide { grid-template-columns: minmax(0, 1fr); } }
-.lanesbox { margin: 0 0 2.25rem; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); font-family: var(--display); }
-.lanesbox summary { cursor: pointer; padding: 0.7rem 1rem; font-size: 0.9rem; font-weight: 600; color: var(--hydro); }
-.lanesbox[open] summary { border-bottom: 1px solid var(--rule); }
-.lanesbox .embedlanes { margin: 0; border: 0; border-radius: 0 0 var(--radius) var(--radius); }
-.duofilm { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin: 0 0 1.5rem; font-family: var(--display); }
-.duofilm video { aspect-ratio: 8 / 7; }
-@media (max-width: 900px) { .duofilm { grid-template-columns: minmax(0, 1fr); } }
-.callout.result { border-left-color: var(--ink-2); }
-.callout.result b { color: var(--ink); }
+@media (max-width: 900px) { .formation, .duofilm { grid-template-columns: minmax(0, 1fr); } }

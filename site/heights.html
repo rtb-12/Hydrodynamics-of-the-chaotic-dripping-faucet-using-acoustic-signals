@@ -56,13 +56,13 @@
       </div>
     </section>
 
-    <section class="intervals noembed">
+    <section class="intervals">
       <h2>Drop shape</h2>
       <p class="note">Each drop is divided by its own peak, so only its shape is compared, not its loudness; drops are lined up at impact, over the first 40 ms. First, three typical drops from each recording; then the typical drop of every recording together.</p>
       <div class="shapes" id="shapes"></div>
     </section>
 
-    <section class="intervals noembed">
+    <section class="intervals">
       <h2 id="changes"></h2>
       <p class="note">A drop <b>rings</b> when it traps a small air bubble that keeps sounding a clear tone for a few milliseconds; without one it only clicks.<span id="featnote"> Below, the share of drops that ring in each recording, then the pitch and the loudness of each drop, spread a little sideways around its value so dots do not hide each other, with a bar at the median.</span></p>
       <div class="tablewrap"><table id="tbl"></table></div>
@@ -86,7 +86,7 @@
     viscosity: { name: 'Viscosity, water to pure glycerin', title: 'Drop sound and viscosity', note: 'Plain water, 50% glycerin by mass and pure glycerin, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0% is the 25 cm water recording of the final run. ' + ROWS, charts: false }
   };
   var SET = SETS[new URLSearchParams(location.search).get('set')] ? new URLSearchParams(location.search).get('set') : 'heights';
-  if (new URLSearchParams(location.search).has('embed')) {   // inside final.html: rows and overlays only, sized to its content by the parent
+  if (new URLSearchParams(location.search).has('embed')) {   // inside final.html: everything but the page header, sized to its content by the parent
     document.documentElement.classList.add('embed');
     new ResizeObserver(function () { parent.postMessage({ lanes: SET, h: document.documentElement.scrollHeight }, '*'); }).observe(document.body);
   }
@@ -148,7 +148,7 @@
   }
   function tokens(n) {
     var s = getComputedStyle(document.documentElement), g = function (v) { return s.getPropertyValue(v).trim(); };
-    var c = [g('--h1'), g('--h2'), g('--h3'), g('--h4'), g('--h5'), g('--h6')];
+    var c = [g('--h1'), g('--h2'), g('--h3'), g('--h4'), g('--h5'), g('--h6'), g('--h7')];
     return { ink: g('--ink'), ink2: g('--ink-2'), ink3: g('--ink-3'), rule: g('--rule'), surface: g('--surface'), hydro: g('--hydro'),
              sans: g('--display'), c: c, chan: c[n || 0] };
   }
@@ -472,7 +472,7 @@
     if (big) legend(g, k);
   }
   function buildShapes() {
-    $('shapes').style.setProperty('--n', H.clips.length);
+    $('shapes').style.setProperty('--n', Math.min(H.clips.length, 4));   // seven recordings wrap rather than squeeze
     $('shapes').innerHTML = H.clips.map(function (c) {
       return '<div class="plot card"><span class="cap">' + label(c) + ' <span>three typical drops</span></span><canvas></canvas></div>';
     }).join('') + '<div class="plot card wide"><span class="cap">Typical drop of every recording <span>each at its own peak</span></span><canvas></canvas></div>';
