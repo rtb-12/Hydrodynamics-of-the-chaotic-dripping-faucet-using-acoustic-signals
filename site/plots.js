@@ -7,7 +7,7 @@ function fresh(url) { return location.protocol === 'file:' ? url + '?t=' + Date.
 
 // A static x-y plot as inline SVG. o: W, H, x and y as [lo, hi], xl and yl axis titles, pts [{x, y, label, now, faint, miss, cls}],
 // diag for the y = x line, join for a line through consecutive points not separated by a `cut`, marks [{x, y}] for short level bars,
-// xticks [[value, label]] in place of evenly spaced x ticks, as on a log axis.
+// xticks [[value, label]] in place of evenly spaced x ticks, as on a log axis, markJoin for a line through the level bars.
 function xy(o) {
   var W = o.W, H = o.H, L = 62, B = 52, T = 12, pw = W - L - (o.right || 18), ph = H - T - B, g = '';
   function X(v) { return L + pw * (v - o.x[0]) / (o.x[1] - o.x[0]); }
@@ -36,6 +36,7 @@ function xy(o) {
     var flip = X(p.x) > L + pw * 0.6;   // a label past here would run off the right edge
     if (p.label) g += '<text class="lab' + (p.now ? ' now' : '') + '" x="' + (X(p.x) + (flip ? -11 : 11)) + '" y="' + (Y(p.y) + 4) + '"' + (flip ? ' text-anchor="end"' : '') + '>' + p.label + '</text>';
   });
+  if (o.markJoin && o.marks && o.marks.length > 1) g += '<polyline class="medline" points="' + o.marks.map(function (m) { return X(m.x) + ',' + Y(m.y); }).join(' ') + '"/>';
   (o.marks || []).forEach(function (m) {   // after the dots, so a median is never hidden
     g += '<line class="mark" x1="' + (X(m.x) - 16) + '" y1="' + Y(m.y) + '" x2="' + (X(m.x) + 16) + '" y2="' + Y(m.y) + '"/>';
   });

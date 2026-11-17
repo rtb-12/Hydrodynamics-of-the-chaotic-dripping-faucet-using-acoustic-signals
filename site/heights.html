@@ -534,7 +534,7 @@
       var v = [];
       c.drops.forEach(function (d, i) {
         ldb.push(d.db);
-        lpts.push({ x: c.v + ((i * 0.618034) % 1 - 0.5) * pad * 0.5, y: d.db, cls: 'c' + (n + 1), tip: label(c) + ', drop ' + (i + 1) + ': ' + d.db.toFixed(1) + ' dB' });
+        lpts.push({ x: c.v + ((i * 0.618034) % 1 - 0.5) * pad * 0.5, y: d.db, cls: 'c' + (n + 1), faint: true, tip: label(c) + ', drop ' + (i + 1) + ': ' + d.db.toFixed(1) + ' dB' });
         if (!d.ring) return;
         var y = d.hz / 1000; v.push(y); all.push(y);
         pts.push({ x: c.v + ((i * 0.618034) % 1 - 0.5) * pad * 0.5, y: y, cls: 'c' + (n + 1), tip: label(c) + ', drop ' + (i + 1) + ': ' + y.toFixed(2) + ' kHz' });
@@ -543,9 +543,9 @@
       lmarks.push({ x: c.v, y: median(c.drops.map(function (d) { return d.db; })) });
     });
     var pitch = xy({ W: 520, H: 400, x: xr, y: span(all, 0.5), xl: H.var + ', ' + H.unit, yl: 'Pitch, kHz', pts: pts, marks: marks });
-    var loud = xy({ W: 520, H: 400, x: xr, y: span(ldb, 1), xl: H.var + ', ' + H.unit, yl: 'Loudness, dB over the room', pts: lpts, marks: lmarks });
+    var loud = xy({ W: 520, H: 400, x: xr, y: span(ldb, 1), xl: H.var + ', ' + H.unit, yl: 'Loudness, dB over the room', pts: lpts, marks: lmarks, markJoin: true });
     var cards = { share: card('Drops that ring', H.clips[0].drips ? 'share of every drip that fell' : 'one point per recording', share), pitch: card('Ring pitch', 'one dot per drop that rang', pitch),
-      loud: card('Loudness of every drop', 'one dot per drop, bar at the median', loud) };
+      loud: card('Loudness of every drop', 'one dot per drop, medians joined', loud) };
     $('feats').innerHTML = which.map(function (k) { return cards[k]; }).join('');
   }
 
@@ -569,7 +569,7 @@
   var CHARTS = SETS[SET].charts;   // false for none, a list for some, absent for all
   if (CHARTS === false) $('featnote').remove();
   else {
-    if (CHARTS && CHARTS.join() === 'loud') $('featnote').textContent = ' Below, the loudness of each drop against ' + H.var.toLowerCase() + ', spread a little sideways around its value so dots do not hide each other, with a bar at the median.';
+    if (CHARTS && CHARTS.join() === 'loud') $('featnote').textContent = ' Below, the loudness of each drop against ' + H.var.toLowerCase() + ', spread a little sideways around its value so dots do not hide each other, with the medians joined by a line.';
     fillFeatures(CHARTS || ['share', 'pitch', 'loud']);
   } buildShapes(); drawEnv(); drawAllShapes();
   seg('wins', 'w', function (v) { WIN = +v; redraw(); });

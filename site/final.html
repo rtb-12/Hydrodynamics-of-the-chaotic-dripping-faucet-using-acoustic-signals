@@ -129,8 +129,8 @@
     var loud = [], lm = [], ring = [], tau = [], tm = [];
     H.clips.forEach(function (c, n) {
       c.drops.forEach(function (d, i) {
-        loud.push({ x: X(c) + jit(i), y: d.db, cls: 'c' + (n + 1), tip: NAME(c) + ': ' + d.db.toFixed(1) + ' dB' });
-        if (d.ring && d.tau != null) tau.push({ x: X(c) + jit(i), y: d.tau, cls: 'c' + (n + 1), tip: NAME(c) + ': ' + d.tau + ' ms' });
+        loud.push({ x: X(c) + jit(i), y: d.db, cls: 'c' + (n + 1), faint: true, tip: NAME(c) + ': ' + d.db.toFixed(1) + ' dB' });
+        if (d.ring && d.tau != null) tau.push({ x: X(c) + jit(i), y: d.tau, cls: 'c' + (n + 1), faint: true, tip: NAME(c) + ': ' + d.tau + ' ms' });
       });
       lm.push({ x: X(c), y: med(c.drops.map(function (d) { return d.db; })) });
       var t = c.drops.filter(function (d) { return d.ring && d.tau != null; }).map(function (d) { return d.tau; });
@@ -142,10 +142,10 @@
     var sec = document.createElement('section');
     sec.className = 'intervals';
     sec.innerHTML = '<h2>' + A.title + '</h2><p class="note">' + A.note +
-      'Loudness and decay show one dot per drop with a bar at the median; a recording with no ringing drop has no decay.</p><div class="trio">' +
-      card('Loudness', 'dB over the room, every drop', chart({ y: [0, top(loud)], yl: 'Loudness, dB over the room', pts: loud, marks: lm })) +
+      'Loudness and decay show one dot per drop, with the medians joined by a line; a recording with no ringing drop has no decay.</p><div class="trio">' +
+      card('Loudness', 'dB over the room, every drop', chart({ y: [0, top(loud)], yl: 'Loudness, dB over the room', pts: loud, marks: lm, markJoin: true })) +
       card('Drops that ring', 'share of each recording\u2019s drops', chart({ y: [0, 100], yl: 'Drops that ring, %', pts: ring, join: true })) +
-      card('Ring decay', 'ms, every ringing drop', chart({ y: [0, top(tau)], yl: 'Ring decay time, ms', pts: tau, marks: tm })) + '</div>';
+      card('Ring decay', 'ms, every ringing drop', chart({ y: [0, top(tau)], yl: 'Ring decay time, ms', pts: tau, marks: tm, markJoin: true })) + '</div>';
     $('litbox').parentNode.insertBefore(sec, $('litbox'));
   }
 
