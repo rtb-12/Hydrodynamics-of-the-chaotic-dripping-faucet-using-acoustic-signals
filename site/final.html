@@ -28,6 +28,11 @@
 
   <div class="vbody" id="extra"></div>
   <iframe class="embedlanes" id="lanes" title="Recordings as synced lanes" hidden></iframe>
+  <section class="intervals" id="filmbox" hidden>
+    <h2>On film, with the sound of each video</h2>
+    <p class="note">Water and 50% glycerin filmed at 25 cm with sound. Each row plays the sound of its own video, so every splash lands on its click; these are other takes than the measured recordings above, and the pure glycerin film has no click above the room to show.</p>
+    <iframe class="embedlanes" id="lanesFilm" title="Filmed recordings as synced lanes with video"></iframe>
+  </section>
 
   <section class="intervals" id="litbox">
     <h2>Against the literature</h2>
@@ -103,9 +108,13 @@
 
   if (P.set) {   // the lane viewer itself, embedded whole and sized to its content
     $('lanes').src = 'heights.html?set=' + P.set + '&embed=1'; $('lanes').hidden = false;
-    addEventListener('message', function (e) { if (e.data && e.data.lanes === P.set) $('lanes').style.height = e.data.h + 'px'; });
+    addEventListener('message', function (e) {
+      if (!e.data) return;
+      if (e.data.lanes === P.set) $('lanes').style.height = e.data.h + 'px';
+      if (e.data.lanes === 'viscosity-film') $('lanesFilm').style.height = e.data.h + 'px';
+    });
   }
-  if (key === 'viscosity') films();
+  if (key === 'viscosity') { films(); $('filmbox').hidden = false; $('lanesFilm').src = 'heights.html?set=viscosity-film&embed=1'; }
   if (AGAINST[key]) { var vs = document.createElement('script'); vs.src = fresh('recordings/' + P.set + '/data.js'); vs.onload = function () { soundAgainst(AGAINST[key]); }; document.head.appendChild(vs); }
   if (key === 'formation') { var fs = document.createElement('script'); fs.src = fresh('recordings/formation/stages.js'); fs.onload = fs.onerror = formation; document.head.appendChild(fs); }
 
@@ -142,9 +151,8 @@
 
   function films() {
     $('extra').innerHTML = '<div class="duofilm">' +
-      '<figure class="card fclip"><video controls playsinline preload="metadata" poster="recordings/viscosity-film/glycerin-50.jpg" src="recordings/viscosity-film/glycerin-50.mp4"></video><figcaption>50% glycerin, 25 cm, with its own sound: a drop lands about every 9 s, first at 1.5 s, each followed by a second click as the jet’s droplet falls back</figcaption></figure>' +
       '<figure class="card fclip"><video controls playsinline preload="metadata" poster="recordings/viscosity-film/glycerin-100.jpg" src="recordings/viscosity-film/glycerin-100.mp4"></video><figcaption>Pure glycerin, 25 cm, with its own sound: the drops land without a click above the room noise</figcaption></figure></div>' +
-      '<p class="note">The films play their own soundtrack, recorded with the picture, so each splash and its click arrive together. They are separate takes from the measured recordings below, with a different drip rate, so the numbers come from the recordings alone.</p>';
+      '<p class="note">Water and 50% glycerin on film, each locked to its own sound, are further down. The numbers on this tab come from the measured recordings.</p>';
   }
 
   function formation() {
