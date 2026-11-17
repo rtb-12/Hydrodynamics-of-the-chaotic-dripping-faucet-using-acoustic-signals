@@ -34,6 +34,7 @@ NFFT, HOP = 1024, 256       # STFT used to subtract the steady noise left after 
 NOISE_FLOOR_GAIN = 0.3      # subtraction never cuts a bin by more than this, which keeps faint drops and avoids warbling
 LISTEN_CUT = 0.9            # the listening track takes this share of the steady noise out between drops...
 LISTEN_FADE_MS = 5          # ...fading back to the gently cleaned sound over this long around each drop, so its peak is untouched
+LISTEN_GATE_DB = 60         # ...and turns everything else between drops down this far: knocks, handling, other drips
 QUIET_SHARE = 0.4           # the noise is profiled on this share of the recording's 50 ms blocks with the lowest peaks
 BAND = (2000, 9000)         # drop sound is measured here; the phone's codec invents what lies above 9 kHz
 DET_BAND = (4000, 9000)     # drops are found here, where the music is quietest
@@ -51,6 +52,8 @@ SEARCH_S = 0.04             # each drop is looked for this far either side of it
 LOOKBACK_S = 0.2            # ...and moved to an earlier event this close before it, in case the beat sat on a rebound
 FREE_DB = 12.0              # with --free a drop is any click this many dB over the room, or a quieter one on the drip's beat...
 FREE_GAP_S = 0.25           # ...at least this long after the one before
+EDGE_S = 2.5                # no drop is taken this close to a recording's start or end, where the recorder is being handled
+FALL_BACK = 0.4             # in a steady drip, a quieter click within this share of a period after a drop is its jet falling back
 STEADY = 0.5                # ...when at least this share of the gaps between louder drops are one drip period
 THR = 3.0                   # a drop must rise this many times above the floor
 CLUSTER = 0.25              # an earlier event counts if it reaches this fraction of the drop's peak
@@ -111,8 +114,8 @@ def clean(x):
 
 
 def listen(y, times):
-    """The cleaned sound y for listening: the noise between drops taken out hard, but each drop's own PRE_MS to POST_MS left as
-    y, since noise reduction across a drop halves its peak."""
+    """The cleaned sound y for listening: the noise between drops taken out hard and the rest turned down by LISTEN_GATE_DB,
+    but each drop's own PRE_MS to POST_MS left as y, since noise reduction across a drop halves its peak."""
     b = FS // 20
     blocks = y[:len(y) // b * b].reshape(-1, b)
     quiet = blocks[np.argsort(np.abs(blocks).max(1))[:max(1, int(len(blocks) * QUIET_SHARE))]].ravel()
@@ -121,7 +124,7 @@ def listen(y, times):
     for t in times:
         keep[max(0, int(t * FS) - FS * PRE_MS // 1000 - f):int(t * FS) + FS * POST_MS // 1000 + f] = 1
     keep = nd.uniform_filter1d(keep, f)   # ramps half as wide as the margin, so the drop's own stretch stays whole
-    return np.where(keep > 1 - 1e-9, y, keep * y + (1 - keep) * z)
+    return np.where(keep > 1 - 1e-9, y, keep * y + (1 - keep) * z * 10 ** (-LISTEN_GATE_DB / 20))
 
 
 def bandpass(x, band):
@@ -221,7 +224,7 @@ def find_drops(y, p=None):
     found = []
     for beat in drip(snr, np.log(np.clip(snr, 1, SNR_CAP)), p):
         k = earliest(snr, max(0, beat - w) + int(np.argmax(snr[max(0, beat - w):beat + w])))
-        if snr[k] >= THR and not busy(snr, k):
+        if snr[k] >= THR and not busy(snr, k) and k not in found:   # two beats in a quiet stretch can reach the same drop
             found.append(k)
     return [onset(y, k / RATE) for k in found]
 
@@ -448,11 +451,11 @@ def ranked(rows):
     return sorted(pool, key=lambda i: abs(rows[i]['db'] - md) / 6 + abs(rows[i]['dur'] - mu) / 10)
 
 
-def analyse(x, p=None, free=False):
+def analyse(x, p=None, free=False, edges=(EDGE_S, EDGE_S)):   # edges: s kept clear at each end, only where x reaches the recording's own ends
     y = clean(x)   # finds faint drops, but its gain opens around each one, so drops are measured on the raw band
     yb = bandpass(x, BAND)
-    lo = np.flatnonzero(x)[:1].sum() / FS + FLOOR_MS[0] / 1000   # a floor must not reach into the recording's opening digital silence
-    times = [t for t in (free_drops(y) if free else find_drops(y, p)) if lo < t < len(y) / FS - POST_MS / 1000]
+    lo = max(edges[0], np.flatnonzero(x)[:1].sum() / FS + FLOOR_MS[0] / 1000)   # nor may a floor reach into the opening digital silence
+    times = [t for t in (free_drops(y) if free else find_drops(y, p)) if lo < t < len(y) / FS - max(edges[1], POST_MS / 1000)]
     rows, envs, skip = [], [], resonances(yb, [measure(yb, t)[0]['hz'] for t in times])
     for t in times:
         r, env = measure(yb, t, skip)
@@ -463,14 +466,13 @@ def analyse(x, p=None, free=False):
 
 def on_beat(rows):
     """Indices of the drops among free clicks: every one FREE_DB over the room, and in a steady drip each quieter one, down to
-    END_DB, that lands on the beat in a gap between those, as a quiet liquid's drops do and stray clicks seldom do. A steady
-    drip's run is also trimmed of clicks off its beat at either end, which are the phone being handled."""
+    END_DB, that lands on the beat in a gap between those, as a quiet liquid's drops do and stray clicks seldom do; a quieter
+    click soon after a drop is its jet falling back."""
     loud = [r['t'] for r in rows if r['db'] >= FREE_DB]
     p = tap_period(np.diff(loud)) / RATE if len(loud) > 2 else np.inf
     k = np.diff(loud) / p
     if not len(k) or np.mean(np.abs(k - 1) < REGULAR) < STEADY:   # an irregular drip has no beat to land on
         return [i for i, r in enumerate(rows) if r['db'] >= FREE_DB]
-    loud = trim(loud, p)
 
     def fits(t):
         i = np.searchsorted(loud, t)
@@ -478,7 +480,8 @@ def on_beat(rows):
             return False
         k = (t - loud[i - 1]) / ((loud[i] - loud[i - 1]) / n)
         return abs(k - round(k)) < REGULAR
-    return [i for i, r in enumerate(rows) if r['t'] in loud or r['db'] >= END_DB and fits(r['t'])]
+    keep = [i for i, r in enumerate(rows) if r['t'] in loud or r['db'] >= END_DB and fits(r['t'])]
+    return [i for j, i in enumerate(keep) if not (j and rows[i]['t'] - rows[keep[j - 1]]['t'] < FALL_BACK * p and rows[i]['db'] < rows[keep[j - 1]]['db'])]
 
 
 def resonances(yb, hz):
@@ -544,7 +547,7 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
             b = a + span if span else total
         x = x[int(a * FS):int(b * FS)]
         own = p and own_period(strength(clean(x)), p) / RATE
-        y, rows, envs = analyse(x, p, free)
+        y, rows, envs = analyse(x, p, free, (max(0.0, EDGE_S - a), max(0.0, EDGE_S - (total - min(b, total)))))
         recs.append(dict(slug=slug, v=v, start=round(a, 2), x=x, a=(listen(y, [w['t'] for w in rows]), rows, envs),
                          drip_s=own and round(own, 3), drips=own and int(round(len(x) / FS / own))))
     ref = dict(clean=scale(*[r['a'][0] for r in recs]), raw=scale(*[r['x'] for r in recs]))
@@ -573,16 +576,16 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
     return data
 
 
-def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=None, hz=4000):
+def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=None, hz=4000, pad=EDGE_S):
     """Hum, noise and a speech-like burst, plus drops that alternate a ringing plink at hz (one per drop if a list) and a faint
     click. at gives the drops' times instead, with no speech."""
     rng = np.random.default_rng(seed)
     n = len(at) if at else n
-    t = np.arange(int(((at[-1] + 1) if at else (n + 1) * period) * FS)) / FS
+    t = np.arange(int(((at[-1] + 1) if at else (n + 1) * period) * FS + 2 * pad * FS)) / FS   # pad: room either side for handling
     x = 0.05 * np.sin(2 * np.pi * 220 * t) + 0.03 * np.sin(2 * np.pi * 440 * t) + 0.002 * rng.standard_normal(len(t))
     truth = []
     for i in range(n):
-        s = int(((at[i] if at else 0.6 + i * period) + 0.01 * rng.standard_normal()) * FS)
+        s = int((pad + (at[i] if at else 0.6 + i * period) + 0.01 * rng.standard_normal()) * FS)
         k = np.arange(int(0.08 * FS))
         click = np.zeros(len(k)); click[:24] = rng.standard_normal(24)
         if i % ring_every == 0:
@@ -593,7 +596,7 @@ def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=N
             r = s + int(0.12 * FS)
             x[r:r + len(k)] += 2 * rebound * np.exp(-k / (0.008 * FS)) * np.sin(2 * np.pi * 6000 * k / FS)
         truth.append((s / FS, i % ring_every == 0))
-    b = int((0.6 + 10.5 * period - 1 / 6) * FS)   # a third of a second of talking, centred between two drops
+    b = int((pad + 0.6 + 10.5 * period - 1 / 6) * FS)   # a third of a second of talking, centred between two drops
     if not at:
         x[b:b + FS // 3] += 0.05 * bandpass(rng.standard_normal(FS // 3), (3000, 8000))
     return x, truth
@@ -643,6 +646,10 @@ def selftest():
     level = lambda v, a: 20 * np.log10(np.sqrt(np.mean(v[a:a + FS // 10] ** 2)))
     assert all(np.array_equal(z[int(t * FS) - 240:int(t * FS) + 6000], y[int(t * FS) - 240:int(t * FS) + 6000]) for t, _ in truth), 'a drop changed'
     assert level(z, int(truth[3][0] * FS) + k) < level(y, int(truth[3][0] * FS) + k) - 10, 'the hiss between drops was kept'
+    m = int((truth[3][0] + truth[4][0]) / 2 * FS)   # a knock between two drops, away from both
+    y[m:m + FS // 20] += 0.3 * np.random.default_rng(3).standard_normal(FS // 20)
+    z = listen(y, [t for t, _ in truth])
+    assert level(z, m - FS // 40) < level(y, m - FS // 40) - 50, 'a knock between drops kept on the listening track'
     x, truth = synth(n=12, ring_every=1)
     s = int((truth[6][0] - 0.1) * FS)   # talking over one drop
     x[s:s + FS // 2] += 0.1 * bandpass(np.random.default_rng(1).standard_normal(FS // 2), (3000, 8000))
@@ -768,16 +775,32 @@ def selftest():
     got = [r['t'] for r in analyse(x, free=True)[1]]
     assert len(got) == 15 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'{len(got)} kept for 15 quiet drops: {got}'
     at = [2.6 + 3.5 * i for i in range(12)]
-    x, truth = synth(n=0, ring_every=1, at=at)
+    x, truth = synth(n=0, ring_every=1, at=at, pad=0)
     x = np.r_[x, 0.002 * np.random.default_rng(6).standard_normal(3 * FS)]
-    for t in (0.8, 1.4, at[-1] + 1.1, at[-1] + 1.9):   # knocks of handling the phone as the recording starts and stops
+    for t in (0.8, 1.4, len(x) / FS - 2.0, len(x) / FS - 1.2):   # knocks of handling the recorder as it starts and stops
         x[int(t * FS):int(t * FS) + 480] += 0.3 * np.random.default_rng(6).standard_normal(480)
     got = [r['t'] for r in analyse(x, free=True)[1]]
     assert len(got) == 12 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'handling kept as drops: {got}'
-    x, truth = synth(n=0, ring_every=1, at=[0.35, 2.0, 4.0])
-    x[:int(0.165 * FS)] = 0   # phone voice notes open on digital silence, which no drop's floor may include
+    at = [0.5, 5.4, 8.65] + [8.65 + 4.1 * i for i in range(1, 12)]   # a steady drip whose first gaps run long and short, as at 25 cm
+    x, truth = synth(n=0, ring_every=1, at=at)
+    got = [r['t'] for r in analyse(x, free=True)[1]]
+    assert len(got) == len(at) and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'real drops off the beat at the start dropped: {got[:4]}'
+    at = [3.5 * i for i in range(12)]
+    x, truth = synth(n=0, ring_every=1, at=at)
+    for t in at[1:11:2]:   # the jet's droplet falling back a third of a second after a drop, quieter than it
+        r = int((h0 := EDGE_S + t + 0.35) * FS)
+        x[r:r + 2400] += 0.08 * np.exp(-np.arange(2400) / 300) * np.sin(2 * np.pi * 5000 * np.arange(2400) / FS)
+    got = [r['t'] for r in analyse(x, free=True)[1]]
+    assert len(got) == 12, f'{len(got)} kept for 12 drops with five fall-backs: {np.round(got, 2)}'
+    x, truth = synth(n=0, ring_every=1, at=[3.15, 5.0, 7.0, 10.0], pad=0)
+    x[:int(3.0 * FS)] = 0   # phone voice notes open on digital silence, which no drop's floor may include
     rows = analyse(x, free=True)[1]
-    assert [round(r['t']) for r in rows] == [2, 4], f'a drop measured against the opening silence kept: {[(r["t"], r["db"]) for r in rows]}'
+    assert [round(r['t']) for r in rows] == [5, 7], f'a drop measured against the opening silence kept: {[(r["t"], r["db"]) for r in rows]}'
+    x, truth = synth(n=0, ring_every=1, at=[3.0, 5.0, 7.0, 9.0, 11.0], pad=0)
+    for e in (0.4, len(x) / FS - 0.6):   # pressing record and stop: a loud knock in the first and last moments
+        x[int(e * FS):int(e * FS) + FS // 50] += 0.8 * np.random.default_rng(4).standard_normal(FS // 50)
+    rows = analyse(x, free=True)[1]
+    assert [round(r['t']) for r in rows] == [3, 5, 7, 9], f'the knocks of starting and stopping the recorder kept: {[(r["t"], r["db"]) for r in rows]}'
     rows = [dict(db=20 - i, dur=40, ring=i < 3) for i in range(7)]
     assert ranked(rows) == [4, 5, 3, 6], f'usual kind ranked as {ranked(rows)}'   # the three ringing drops are left out
     assert len(ranked(rows[:2] + [dict(db=20, dur=40, ring=False)])) == 2, 'fewer than three of the usual kind not kept whole'
