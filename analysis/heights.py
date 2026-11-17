@@ -17,7 +17,7 @@ Each recording is cut to its steadiest stretch of --span seconds, so every clip 
 A slow-motion video filmed with a recording can sit beside it, lined up drop by drop.
 """
 
-import argparse, base64, collections, json, pathlib, subprocess, sys, tempfile
+import argparse, base64, collections, json, pathlib, re, subprocess, sys, tempfile
 import numpy as np, imageio_ffmpeg, noisereduce as nr
 import scipy.ndimage as nd, scipy.signal as ss
 from scipy.io import wavfile
@@ -34,6 +34,7 @@ NFFT, HOP = 1024, 256       # STFT used to subtract the steady noise left after 
 NOISE_FLOOR_GAIN = 0.3      # subtraction never cuts a bin by more than this, which keeps faint drops and avoids warbling
 LISTEN_CUT = 0.9            # the listening track takes this share of the steady noise out between drops...
 LISTEN_FADE_MS = 5          # ...fading back to the gently cleaned sound over this long around each drop, so its peak is untouched
+LISTEN_GATE_DB = 60         # ...and turns everything else between drops down this far: knocks, handling, other drips
 QUIET_SHARE = 0.4           # the noise is profiled on this share of the recording's 50 ms blocks with the lowest peaks
 BAND = (2000, 9000)         # drop sound is measured here; the phone's codec invents what lies above 9 kHz
 DET_BAND = (4000, 9000)     # drops are found here, where the music is quietest
@@ -51,6 +52,8 @@ SEARCH_S = 0.04             # each drop is looked for this far either side of it
 LOOKBACK_S = 0.2            # ...and moved to an earlier event this close before it, in case the beat sat on a rebound
 FREE_DB = 12.0              # with --free a drop is any click this many dB over the room, or a quieter one on the drip's beat...
 FREE_GAP_S = 0.25           # ...at least this long after the one before
+EDGE_S = 2.5                # no drop is taken this close to a recording's start or end, where the recorder is being handled
+FALL_BACK = 0.4             # in a steady drip, a quieter click within this share of a period after a drop is its jet falling back
 STEADY = 0.5                # ...when at least this share of the gaps between louder drops are one drip period
 THR = 3.0                   # a drop must rise this many times above the floor
 CLUSTER = 0.25              # an earlier event counts if it reaches this fraction of the drop's peak
@@ -92,6 +95,10 @@ VID_OUT = (360, 480)        # page video size
 VID_CRF = 26
 MATCH_S = 0.03              # a video drop this close to a heard one is the same drop...
 SYNC_MIN = 3                # ...and this many of them fix the offset; with fewer the video is placed by the drip's rhythm only
+SLOW_CAPTURE_FPS = 120      # a phone slow-motion film is shot at this rate and played at its file's rate, slowed by the ratio
+SLOW_HEIGHT = 720           # page height of such a film, pixels
+PIN_S = 0.005               # a film click this close to a heard drop is the same sound, heard by both microphones...
+SEEN_S = 0.1                # ...and an impact read off the film's picture this close
 
 
 def load(path):
@@ -111,8 +118,8 @@ def clean(x):
 
 
 def listen(y, times):
-    """The cleaned sound y for listening: the noise between drops taken out hard, but each drop's own PRE_MS to POST_MS left as
-    y, since noise reduction across a drop halves its peak."""
+    """The cleaned sound y for listening: the noise between drops taken out hard and the rest turned down by LISTEN_GATE_DB,
+    but each drop's own PRE_MS to POST_MS left as y, since noise reduction across a drop halves its peak."""
     b = FS // 20
     blocks = y[:len(y) // b * b].reshape(-1, b)
     quiet = blocks[np.argsort(np.abs(blocks).max(1))[:max(1, int(len(blocks) * QUIET_SHARE))]].ravel()
@@ -121,7 +128,7 @@ def listen(y, times):
     for t in times:
         keep[max(0, int(t * FS) - FS * PRE_MS // 1000 - f):int(t * FS) + FS * POST_MS // 1000 + f] = 1
     keep = nd.uniform_filter1d(keep, f)   # ramps half as wide as the margin, so the drop's own stretch stays whole
-    return np.where(keep > 1 - 1e-9, y, keep * y + (1 - keep) * z)
+    return np.where(keep > 1 - 1e-9, y, keep * y + (1 - keep) * z * 10 ** (-LISTEN_GATE_DB / 20))
 
 
 def bandpass(x, band):
@@ -221,7 +228,7 @@ def find_drops(y, p=None):
     found = []
     for beat in drip(snr, np.log(np.clip(snr, 1, SNR_CAP)), p):
         k = earliest(snr, max(0, beat - w) + int(np.argmax(snr[max(0, beat - w):beat + w])))
-        if snr[k] >= THR and not busy(snr, k):
+        if snr[k] >= THR and not busy(snr, k) and k not in found:   # two beats in a quiet stretch can reach the same drop
             found.append(k)
     return [onset(y, k / RATE) for k in found]
 
@@ -385,14 +392,41 @@ def trim(hits, g):
     return hits
 
 
-def sync(hits, heard):
+def sync(hits, heard, tol=MATCH_S):
     """(sound s, video s) pins for a video filmed with the sound, or None if the drops heard do not settle it: the one
-    shift that puts the most video drops within MATCH_S of a heard drop, by SYNC_MIN or more and more than any other shift."""
-    near = lambda o: [(min(heard, key=lambda a: abs(a - w - o)), w) for w in hits if heard and min(abs(a - w - o) for a in heard) < MATCH_S]
+    shift that puts the most video drops within tol of a heard drop, by SYNC_MIN or more and more than any other shift."""
+    near = lambda o: [(min(heard, key=lambda a: abs(a - w - o)), w) for w in hits if heard and min(abs(a - w - o) for a in heard) < tol]
     count = sorted(((len(near(a - w)), a - w) for a in heard for w in hits), reverse=True)
-    if not count or count[0][0] < SYNC_MIN or any(n == count[0][0] and abs(o - count[0][1]) > 2 * MATCH_S for n, o in count[1:]):
+    if not count or count[0][0] < SYNC_MIN or any(n == count[0][0] and abs(o - count[0][1]) > 2 * tol for n, o in count[1:]):
         return None
     return [[round(a, 4), round(w, 4)] for a, w in near(count[0][1])]
+
+
+def slowed(path, heard, seen=None):
+    """(slow-down, pins, how) for a phone slow-motion film taken with a recording whose drops were heard at heard (s), pins in
+    (sound s, film s at real speed): its own clicks over FREE_DB pinned within PIN_S ('drops'), or, for a film with no
+    click, the impacts seen in its picture at seen (film s) within SEEN_S ('seen'); None if they do not settle it."""
+    k = SLOW_CAPTURE_FPS / probe_fps(path)
+    if seen is not None:
+        pins = sync([t / k for t in seen], heard, SEEN_S)
+        return pins and (k, pins, 'seen')
+    xf = load(path)
+    y, yb = clean(xf), bandpass(xf, BAND)
+    clicks = [c for c in free_drops(y) if FLOOR_MS[0] / 1000 < c < len(xf) / FS - POST_MS / 1000 and measure(yb, c)[0]['db'] >= FREE_DB]
+    pins = sync([c / k for c in clicks], heard, PIN_S)
+    return pins and (k, pins, 'drops')
+
+
+def probe_fps(path):
+    """Frames a second the file plays at."""
+    out = subprocess.run([FFMPEG, '-i', str(path)], capture_output=True, text=True).stderr
+    return float(re.search(r'([\d.]+) fps', out).group(1))
+
+
+def encode_slow(path, k, dst):
+    """A slow-motion film back at real speed, every frame kept."""
+    subprocess.run([FFMPEG, '-v', 'error', '-y', '-i', str(path), '-an', '-vf', f'setpts=PTS/{k},scale=-2:{SLOW_HEIGHT}', '-fps_mode', 'passthrough',
+                    '-c:v', 'libx264', '-crf', str(VID_CRF), '-preset', 'slow', '-g', '60', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(dst)], check=True)
 
 
 def window(hits, length, heard, g, total):
@@ -427,6 +461,12 @@ def encode_film(path, meta, x, y, v0, v1, dst):
                     '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(dst)], check=True)
 
 
+def encode_own(path, start, length, dst):
+    """The stretch of a video on its clip's own clock that the clip keeps, at real speed and its own framing."""
+    subprocess.run([FFMPEG, '-v', 'error', '-y', '-ss', str(start), '-t', str(length), '-i', str(path), '-an', '-vf', f'scale=-2:{VID_OUT[1]}',
+                    '-c:v', 'libx264', '-crf', str(VID_CRF), '-preset', 'slow', '-g', '30', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(dst)], check=True)
+
+
 def encode(x, path):
     with tempfile.TemporaryDirectory() as tmp:
         wav = pathlib.Path(tmp) / 'a.wav'
@@ -442,11 +482,11 @@ def ranked(rows):
     return sorted(pool, key=lambda i: abs(rows[i]['db'] - md) / 6 + abs(rows[i]['dur'] - mu) / 10)
 
 
-def analyse(x, p=None, free=False):
+def analyse(x, p=None, free=False, edges=(EDGE_S, EDGE_S)):   # edges: s kept clear at each end, only where x reaches the recording's own ends
     y = clean(x)   # finds faint drops, but its gain opens around each one, so drops are measured on the raw band
     yb = bandpass(x, BAND)
-    lo = np.flatnonzero(x)[:1].sum() / FS + FLOOR_MS[0] / 1000   # a floor must not reach into the recording's opening digital silence
-    times = [t for t in (free_drops(y) if free else find_drops(y, p)) if lo < t < len(y) / FS - POST_MS / 1000]
+    lo = max(edges[0], np.flatnonzero(x)[:1].sum() / FS + FLOOR_MS[0] / 1000)   # nor may a floor reach into the opening digital silence
+    times = [t for t in (free_drops(y) if free else find_drops(y, p)) if lo < t < len(y) / FS - max(edges[1], POST_MS / 1000)]
     rows, envs, skip = [], [], resonances(yb, [measure(yb, t)[0]['hz'] for t in times])
     for t in times:
         r, env = measure(yb, t, skip)
@@ -457,14 +497,13 @@ def analyse(x, p=None, free=False):
 
 def on_beat(rows):
     """Indices of the drops among free clicks: every one FREE_DB over the room, and in a steady drip each quieter one, down to
-    END_DB, that lands on the beat in a gap between those, as a quiet liquid's drops do and stray clicks seldom do. A steady
-    drip's run is also trimmed of clicks off its beat at either end, which are the phone being handled."""
+    END_DB, that lands on the beat in a gap between those, as a quiet liquid's drops do and stray clicks seldom do; a quieter
+    click soon after a drop is its jet falling back."""
     loud = [r['t'] for r in rows if r['db'] >= FREE_DB]
     p = tap_period(np.diff(loud)) / RATE if len(loud) > 2 else np.inf
     k = np.diff(loud) / p
     if not len(k) or np.mean(np.abs(k - 1) < REGULAR) < STEADY:   # an irregular drip has no beat to land on
         return [i for i, r in enumerate(rows) if r['db'] >= FREE_DB]
-    loud = trim(loud, p)
 
     def fits(t):
         i = np.searchsorted(loud, t)
@@ -472,7 +511,8 @@ def on_beat(rows):
             return False
         k = (t - loud[i - 1]) / ((loud[i] - loud[i - 1]) / n)
         return abs(k - round(k)) < REGULAR
-    return [i for i, r in enumerate(rows) if r['t'] in loud or r['db'] >= END_DB and fits(r['t'])]
+    keep = [i for i, r in enumerate(rows) if r['t'] in loud or r['db'] >= END_DB and fits(r['t'])]
+    return [i for j, i in enumerate(keep) if not (j and rows[i]['t'] - rows[keep[j - 1]]['t'] < FALL_BACK * p and rows[i]['db'] < rows[keep[j - 1]]['db'])]
 
 
 def resonances(yb, hz):
@@ -503,13 +543,20 @@ def steadiest(times, span, duration):
     return best[1]
 
 
-def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), free=False, var='Fall height', unit='cm'):
+def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), free=False, var='Fall height', unit='cm', onclock=(), edge=EDGE_S, slowfilms=(), seen=None):
     """Every clip's steadiest stretch: audio, lanes and drops into out, scaled alike so the clips compare by eye.
     With same_tap the clips share one drip period, found from the loud drops of all of them together.
-    videos holds (value, path, x, y) for slow-motion clips of the drip: x is the drop column and y the water line, pixels."""
+    videos holds (value, path, x, y) for slow-motion clips of the drip: x is the drop column and y the water line, pixels.
+    onclock holds (value, path) for videos on the clip's own clock, such as a video whose soundtrack is the clip.
+    edge is how long each recording's own start and end are handled; 0 for clips already cut from longer recordings.
+    slowfilms holds (value, path) for slow-motion films taken with the recording, their soundtrack slowed with them, and seen
+    maps a value to the film times (s) of impacts read off its picture, for a film whose soundtrack has no drop."""
     if free and same_tap:
         raise SystemExit('--free finds drops without a drip period, so --same-tap has none to share')
     vids = {f'{float(v):g}{unit}': (path, int(x), int(y)) for v, path, x, y in videos}
+    onclock = {f'{float(v):g}{unit}': path for v, path in onclock}
+    slow = {f'{float(v):g}{unit}': path for v, path in slowfilms}
+    seen = {f'{float(v):g}{unit}': ts for v, ts in (seen or {}).items()}
     vs = [float(v) for v, _ in clips]
     if len(set(vs)) != len(vs):
         raise SystemExit(f'one clip per {var.lower()}: keep the take with the steadier drip')
@@ -519,7 +566,7 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
         print(f'shared drip period {p / RATE:.3f} s')
     recs, films = [], {}
     for v, x in clips:
-        times, total, slug = [r['t'] for r in analyse(x, p, free)[1]], len(x) / FS, f'{v:g}{unit}'
+        times, total, slug = [r['t'] for r in analyse(x, p, free, (edge, edge))[1]], len(x) / FS, f'{v:g}{unit}'
         if len(times) < 2:
             raise SystemExit(f'{slug}: {len(times)} drops found, too few to compare; check the recording')
         if slug in vids:   # only the stretch on film is kept
@@ -536,7 +583,7 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
             b = a + span if span else total
         x = x[int(a * FS):int(b * FS)]
         own = p and own_period(strength(clean(x)), p) / RATE
-        y, rows, envs = analyse(x, p, free)
+        y, rows, envs = analyse(x, p, free, (max(0.0, edge - a), max(0.0, edge - (total - min(b, total)))))
         recs.append(dict(slug=slug, v=v, start=round(a, 2), x=x, a=(listen(y, [w['t'] for w in rows]), rows, envs),
                          drip_s=own and round(own, 3), drips=own and int(round(len(x) / FS / own))))
     ref = dict(clean=scale(*[r['a'][0] for r in recs]), raw=scale(*[r['x'] for r in recs]))
@@ -556,22 +603,32 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
             path, meta, vx, vy, v0, v1, pinned = films[r['slug']]
             encode_film(path, meta, vx, vy, v0, v1, d / 'video.mp4')
             r['video'] = dict(synced=bool(pinned), pins=pinned or [[0.0, 0.0]])
+        elif r['slug'] in onclock:
+            encode_own(onclock[r['slug']], r['start'], r['duration'], d / 'video.mp4')
+            r['video'] = dict(synced=True, pins=[[0.0, 0.0]])
+        elif r['slug'] in slow:
+            got = slowed(slow[r['slug']], [w['t'] for w in rows], seen.get(r['slug']))
+            if not got:
+                raise SystemExit(f'{r["slug"]}: the film\'s drops do not settle where it lines up with the recording')
+            encode_slow(slow[r['slug']], got[0], d / 'video.mp4')
+            r['video'] = dict(synced=True, pins=got[1], slow=got[0], by=got[2])
+            print(f'{r["slug"]} film: slowed {got[0]}x, lined up by {got[2]} ({len(got[1])} pins), starting {np.median([a - w for a, w in got[1]]):.2f} s into the recording')
     data = dict(rate=VIEW_RATE, pre_ms=PRE_MS, post_ms=POST_MS, env_ms=ENV_MS, band=BAND,
                 amax=max(max(c['snip_scale']) for c in recs), var=var, unit=unit, free=free, span=span, clips=recs)
     (out / 'data.js').write_text('window.HEIGHTS = ' + json.dumps(data, separators=(',', ':')) + ';\n')
     return data
 
 
-def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=None, hz=4000):
+def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=None, hz=4000, pad=EDGE_S, jitter=0.01):
     """Hum, noise and a speech-like burst, plus drops that alternate a ringing plink at hz (one per drop if a list) and a faint
     click. at gives the drops' times instead, with no speech."""
     rng = np.random.default_rng(seed)
     n = len(at) if at else n
-    t = np.arange(int(((at[-1] + 1) if at else (n + 1) * period) * FS)) / FS
+    t = np.arange(int(((at[-1] + 1) if at else (n + 1) * period) * FS + 2 * pad * FS)) / FS   # pad: room either side for handling
     x = 0.05 * np.sin(2 * np.pi * 220 * t) + 0.03 * np.sin(2 * np.pi * 440 * t) + 0.002 * rng.standard_normal(len(t))
     truth = []
     for i in range(n):
-        s = int(((at[i] if at else 0.6 + i * period) + 0.01 * rng.standard_normal()) * FS)
+        s = int((pad + (at[i] if at else 0.6 + i * period) + jitter * rng.standard_normal()) * FS)
         k = np.arange(int(0.08 * FS))
         click = np.zeros(len(k)); click[:24] = rng.standard_normal(24)
         if i % ring_every == 0:
@@ -582,7 +639,7 @@ def synth(seed=0, n=40, period=1.05, ring_every=2, faint=0.04, rebound=0.0, at=N
             r = s + int(0.12 * FS)
             x[r:r + len(k)] += 2 * rebound * np.exp(-k / (0.008 * FS)) * np.sin(2 * np.pi * 6000 * k / FS)
         truth.append((s / FS, i % ring_every == 0))
-    b = int((0.6 + 10.5 * period - 1 / 6) * FS)   # a third of a second of talking, centred between two drops
+    b = int((pad + 0.6 + 10.5 * period - 1 / 6) * FS)   # a third of a second of talking, centred between two drops
     if not at:
         x[b:b + FS // 3] += 0.05 * bandpass(rng.standard_normal(FS // 3), (3000, 8000))
     return x, truth
@@ -632,6 +689,10 @@ def selftest():
     level = lambda v, a: 20 * np.log10(np.sqrt(np.mean(v[a:a + FS // 10] ** 2)))
     assert all(np.array_equal(z[int(t * FS) - 240:int(t * FS) + 6000], y[int(t * FS) - 240:int(t * FS) + 6000]) for t, _ in truth), 'a drop changed'
     assert level(z, int(truth[3][0] * FS) + k) < level(y, int(truth[3][0] * FS) + k) - 10, 'the hiss between drops was kept'
+    m = int((truth[3][0] + truth[4][0]) / 2 * FS)   # a knock between two drops, away from both
+    y[m:m + FS // 20] += 0.3 * np.random.default_rng(3).standard_normal(FS // 20)
+    z = listen(y, [t for t, _ in truth])
+    assert level(z, m - FS // 40) < level(y, m - FS // 40) - 50, 'a knock between drops kept on the listening track'
     x, truth = synth(n=12, ring_every=1)
     s = int((truth[6][0] - 0.1) * FS)   # talking over one drop
     x[s:s + FS // 2] += 0.1 * bandpass(np.random.default_rng(1).standard_normal(FS // 2), (3000, 8000))
@@ -682,9 +743,40 @@ def selftest():
             raise AssertionError('a clip without two drops was accepted')
         except SystemExit:
             pass
+        at = [3.0, 5.4, 7.6, 10.0, 12.2, 17.0, 19.3, 21.5, 24.0, 26.2, 28.7, 31.0]   # a drip, and a 120 fps film of it played at 30
+        xr, truth = synth(n=0, ring_every=1, at=at)   # starting 6 s into the recording, its soundtrack slowed 4x with it
+        film_at = [4 * (t - 6.0) for t, _ in truth if t > 6.2]
+        xf, _ = synth(n=0, ring_every=1, at=film_at, pad=0, jitter=0)
+        rng = np.random.default_rng(7)
+        for c in rng.uniform(0, len(xf) / FS - 1, 60):   # quiet clicks of the film's own room noise
+            xf[int(c * FS):int(c * FS) + 24] += 0.01 * rng.standard_normal(24)
+        wavfile.write(q, FS, (xr * 20000).astype(np.int16))
+        fw, fm = pathlib.Path(tmp) / 'film.wav', pathlib.Path(tmp) / 'slow.mp4'
+        def film(x):
+            wavfile.write(fw, FS, (x * 20000).astype(np.int16))
+            subprocess.run([FFMPEG, '-v', 'error', '-y', '-f', 'lavfi', '-i', f'testsrc=size=320x240:rate=30:duration={len(x) / FS}', '-i', str(fw),
+                            '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', str(fm)], check=True)
+        film(xf)
+        v = process([('50', q)], pathlib.Path(tmp) / 'slow', span=0, slowfilms=[('50', fm)])['clips'][0].get('video')
+        assert v and v['by'] == 'drops' and len(v['pins']) >= 6 and all(abs(a - w - 6.0) < 0.01 for a, w in v['pins']), f'slow-motion film pinned as {v}'
+        film(0.002 * rng.standard_normal(len(xf)))   # a liquid too viscous to click: the impacts are only seen, read off the picture
+        seen = [t + 0.05 * rng.standard_normal() for t in film_at]
+        v = process([('50', q)], pathlib.Path(tmp) / 'slow2', span=0, slowfilms=[('50', fm)], seen={'50': seen})['clips'][0].get('video')
+        assert v and v['by'] == 'seen' and len(v['pins']) >= 6 and all(abs(a - w - 6.0) < SEEN_S for a, w in v['pins']), f'a silent film placed as {v}'
+
+        x2, _ = synth(n=0, ring_every=1, at=[0.6 + 1.05 * i for i in range(6)], pad=0)   # a clip already cut from a longer recording
+        wavfile.write(q, FS, (x2 * 20000).astype(np.int16))
+        d = process([('20', q)], pathlib.Path(tmp) / 'precut', span=0, edge=0)
+        assert len(d['clips'][0]['drops']) == 6, f'{len(d["clips"][0]["drops"])} of 6 drops kept in a pre-cut clip'
         d = process([('20', p)], pathlib.Path(tmp) / 'cut', span=6.0)
         c = d['clips'][0]
         assert c['duration'] == 6.0 and len(c['drops']) >= 4, f'cut to {c["duration"]} s with {len(c["drops"])} drops'
+        film = pathlib.Path(tmp) / 'film.mp4'   # a film on the recording's own clock, as a phone video with its soundtrack
+        subprocess.run([FFMPEG, '-v', 'error', '-y', '-f', 'lavfi', '-i', f'testsrc=size=320x240:rate=30:duration={len(x) / FS}', '-pix_fmt', 'yuv420p', str(film)], check=True)
+        d = process([('20', p)], pathlib.Path(tmp) / 'film', span=6.0, onclock=[('20', film)])
+        c = d['clips'][0]
+        shown = float(subprocess.run([FFMPEG, '-i', str(pathlib.Path(tmp) / 'film' / '20cm' / 'video.mp4')], capture_output=True, text=True).stderr.split('Duration: ')[1].split(',')[0].split(':')[2])
+        assert c['video'] == dict(synced=True, pins=[[0.0, 0.0]]) and abs(shown - c['duration']) < 0.1, f'own-clock film kept as {c.get("video")}, {shown} s for {c["duration"]} s'
         tone = np.sin(2 * np.pi * 440 * np.arange(16 * FS) / FS) * np.r_[np.ones(2 * FS), 0.01 * np.ones(12 * FS), np.ones(2 * FS)]
         wavfile.write(p, FS, (tone * 20000).astype(np.int16))
         tone[:FS // 10] = 0   # the encoder's silent first moment
@@ -751,16 +843,32 @@ def selftest():
     got = [r['t'] for r in analyse(x, free=True)[1]]
     assert len(got) == 15 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'{len(got)} kept for 15 quiet drops: {got}'
     at = [2.6 + 3.5 * i for i in range(12)]
-    x, truth = synth(n=0, ring_every=1, at=at)
+    x, truth = synth(n=0, ring_every=1, at=at, pad=0)
     x = np.r_[x, 0.002 * np.random.default_rng(6).standard_normal(3 * FS)]
-    for t in (0.8, 1.4, at[-1] + 1.1, at[-1] + 1.9):   # knocks of handling the phone as the recording starts and stops
+    for t in (0.8, 1.4, len(x) / FS - 2.0, len(x) / FS - 1.2):   # knocks of handling the recorder as it starts and stops
         x[int(t * FS):int(t * FS) + 480] += 0.3 * np.random.default_rng(6).standard_normal(480)
     got = [r['t'] for r in analyse(x, free=True)[1]]
     assert len(got) == 12 and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'handling kept as drops: {got}'
-    x, truth = synth(n=0, ring_every=1, at=[0.35, 2.0, 4.0])
-    x[:int(0.165 * FS)] = 0   # phone voice notes open on digital silence, which no drop's floor may include
+    at = [0.5, 5.4, 8.65] + [8.65 + 4.1 * i for i in range(1, 12)]   # a steady drip whose first gaps run long and short, as at 25 cm
+    x, truth = synth(n=0, ring_every=1, at=at)
+    got = [r['t'] for r in analyse(x, free=True)[1]]
+    assert len(got) == len(at) and all(abs(d - t) < 0.002 for d, (t, _) in zip(got, truth)), f'real drops off the beat at the start dropped: {got[:4]}'
+    at = [3.5 * i for i in range(12)]
+    x, truth = synth(n=0, ring_every=1, at=at)
+    for t in at[1:11:2]:   # the jet's droplet falling back a third of a second after a drop, quieter than it
+        r = int((h0 := EDGE_S + t + 0.35) * FS)
+        x[r:r + 2400] += 0.08 * np.exp(-np.arange(2400) / 300) * np.sin(2 * np.pi * 5000 * np.arange(2400) / FS)
+    got = [r['t'] for r in analyse(x, free=True)[1]]
+    assert len(got) == 12, f'{len(got)} kept for 12 drops with five fall-backs: {np.round(got, 2)}'
+    x, truth = synth(n=0, ring_every=1, at=[3.15, 5.0, 7.0, 10.0], pad=0)
+    x[:int(3.0 * FS)] = 0   # phone voice notes open on digital silence, which no drop's floor may include
     rows = analyse(x, free=True)[1]
-    assert [round(r['t']) for r in rows] == [2, 4], f'a drop measured against the opening silence kept: {[(r["t"], r["db"]) for r in rows]}'
+    assert [round(r['t']) for r in rows] == [5, 7], f'a drop measured against the opening silence kept: {[(r["t"], r["db"]) for r in rows]}'
+    x, truth = synth(n=0, ring_every=1, at=[3.0, 5.0, 7.0, 9.0, 11.0], pad=0)
+    for e in (0.4, len(x) / FS - 0.6):   # pressing record and stop: a loud knock in the first and last moments
+        x[int(e * FS):int(e * FS) + FS // 50] += 0.8 * np.random.default_rng(4).standard_normal(FS // 50)
+    rows = analyse(x, free=True)[1]
+    assert [round(r['t']) for r in rows] == [3, 5, 7, 9], f'the knocks of starting and stopping the recorder kept: {[(r["t"], r["db"]) for r in rows]}'
     rows = [dict(db=20 - i, dur=40, ring=i < 3) for i in range(7)]
     assert ranked(rows) == [4, 5, 3, 6], f'usual kind ranked as {ranked(rows)}'   # the three ringing drops are left out
     assert len(ranked(rows[:2] + [dict(db=20, dur=40, ring=False)])) == 2, 'fewer than three of the usual kind not kept whole'
@@ -772,6 +880,13 @@ def main():
     ap.add_argument('--clip', nargs=2, action='append', metavar=('VALUE', 'AUDIO'), default=[])
     ap.add_argument('--video', nargs=4, action='append', metavar=('VALUE', 'VIDEO', 'X', 'Y'), default=[],
                     help='slow-motion video of that clip\'s drip, with its drop column X and water line Y in pixels')
+    ap.add_argument('--film', nargs=2, action='append', metavar=('VALUE', 'VIDEO'), default=[],
+                    help='a video on that clip\'s own clock, such as one whose soundtrack is the clip, shown beside it')
+    ap.add_argument('--slowfilm', nargs=2, action='append', metavar=('VALUE', 'VIDEO'), default=[],
+                    help='a slow-motion film taken with that clip, its soundtrack slowed with it; lined up by its own clicks')
+    ap.add_argument('--seen', nargs=2, action='append', metavar=('VALUE', 'TIMES'), default=[],
+                    help='comma-separated film times (s) of impacts read off a --slowfilm\'s picture, for a film whose soundtrack has no drop')
+    ap.add_argument('--edge', type=float, default=EDGE_S, help='seconds at each end of a recording kept clear of drops; 0 for clips already cut')
     ap.add_argument('--span', type=float, default=SPAN_S, help='seconds of each recording to keep, its steadiest stretch; 0 keeps it all')
     ap.add_argument('--set', default='heights', help='name of the recording set, its folder under site/recordings')
     ap.add_argument('--same-tap', action='store_true', help='the tap was not touched between clips, so they share one drip period')
@@ -784,7 +899,7 @@ def main():
         return selftest()
     if not a.clip:
         ap.error('give at least one --clip')
-    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap, videos=a.video, free=a.free, var=a.var, unit=a.unit)
+    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap, videos=a.video, free=a.free, var=a.var, unit=a.unit, onclock=a.film, edge=a.edge, slowfilms=a.slowfilm, seen={v: [float(t) for t in ts.split(',')] for v, ts in a.seen})
 
 
 if __name__ == '__main__':

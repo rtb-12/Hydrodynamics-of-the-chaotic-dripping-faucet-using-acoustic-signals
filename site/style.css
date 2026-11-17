@@ -997,6 +997,7 @@ a:focus-visible, .sidenav a:focus-visible {
 .shapes .plot { height: 180px; }
 .shapes .plot.wide { grid-column: 1 / -1; height: 280px; }
 .xy .mark { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.xy .medline { fill: none; stroke: var(--ink); stroke-width: 2; }
 .xy .pt.c1 { fill: var(--h1); }
 .xy .pt.c2 { fill: var(--h2); }
 .xy .pt.c3 { fill: var(--h3); }

@@ -50,6 +50,7 @@
     <section class="intervals">
       <h2>All recordings on top of each other</h2>
       <p class="note">Left, the drop at each row&rsquo;s playhead, lined up at the moment of impact, over the first 40 ms. Right, how loud a drop is in the 2 to 9 kHz band after it hits, as the median of every drop in that recording with the middle half shaded. 0 dB is the room&rsquo;s own noise just before the drop.</p>
+      <div class="optgroup"><span>Compare</span><span class="seg" id="cmp"></span></div>
       <div class="duo">
         <div class="plot card" tabindex="0" data-ov="wave"><span class="cap">Shown drops, overlaid <span>after impact</span></span><span class="expand">Click to enlarge</span><canvas id="ovWave"></canvas></div>
         <div class="plot card" tabindex="0" data-ov="env"><span class="cap">Typical loudness after impact <span>dB over the room</span></span><span class="expand">Click to enlarge</span><canvas id="ovEnv"></canvas></div>
@@ -79,11 +80,11 @@
   var SETS = {   // folders under recordings/
     heights: { name: 'First set, 15 to 35 cm', title: HEAD, note: NOTE },
     sweep: { name: 'Height sweep, 10 to 35 cm', title: HEAD, note: NOTE },
-    nozzle: { name: 'Nozzle size, 2 to 7 mm', title: 'Drop sound and nozzle size', note: 'The same drop falling 25 cm into plain water from nozzles of 2, 5 and 7 mm internal diameter. ' + ROWS, charts: false },
+    nozzle: { name: 'Nozzle size, 2 to 7 mm', title: 'Drop sound and nozzle size', note: 'The same drop falling 25 cm into plain water from nozzles of 2, 5 and 7 mm internal diameter. ' + ROWS, charts: ['loud'] },
     glycerin: { name: 'Glycerin, 0 to 30 ml', title: 'Drop sound and glycerin', note: 'Glycerin added to 900 ml of water, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0 ml is plain water. ' + ROWS, charts: false },
     heights3: { name: 'Height, final run, 15 to 35 cm', title: 'Drop sound and fall height, final run', note: 'Fall heights of 15, 25 and 35 cm from a 5 mm nozzle into plain water. ' + ROWS, charts: false },
-    'final-height': { name: 'Fall height, 13 to 60 cm', title: 'Drop sound and fall height', note: 'Fall heights of 13, 15, 25, 33, 35, 43 and 60 cm from a 5 mm nozzle into plain water; 15, 25 and 35 cm are the final run above. ' + ROWS, charts: false },
-    viscosity: { name: 'Viscosity, water to pure glycerin', title: 'Drop sound and viscosity', note: 'Plain water, 50% glycerin by mass and pure glycerin, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0% is the 25 cm water recording of the final run. ' + ROWS, charts: false }
+    'final-height': { name: 'Fall height, 15 to 60 cm', title: 'Drop sound and fall height', note: 'Fall heights of 15, 25, 33, 35, 43 and 60 cm from a 5 mm nozzle into plain water; 15, 25 and 35 cm are the final run above. ' + ROWS, charts: ['loud'] },
+    viscosity: { name: 'Viscosity, water to pure glycerin', title: 'Drop sound and viscosity', note: 'Plain water, 50% glycerin by mass and pure glycerin, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0% is the 25 cm water recording of the final run. The glycerin rows show the slow-motion film shot with each recording, back at real speed and lined up as each row says. ' + ROWS, charts: ['loud'] }
   };
   var SET = SETS[new URLSearchParams(location.search).get('set')] ? new URLSearchParams(location.search).get('set') : 'heights';
   if (new URLSearchParams(location.search).has('embed')) {   // inside final.html: everything but the page header, sized to its content by the parent
@@ -130,6 +131,7 @@
   };
 
   function $(id) { return document.getElementById(id); }
+  var shown = H ? H.clips.map(function () { return true; }) : [];   // recordings drawn in the overlays, picked under Compare
   var rows = [], WIN = 0.5, gain = 'full', src = 'clean', rate = 1;
   var LEAD = 0.3, QUIET = 0.15, SYNC = 0.01, all = false;   // Play all starts this long before the drops; no row is moved closer than QUIET to a drop, nor by less than SYNC, s
   var HARD_SYNC = 0.2, NUDGE = 0.02, SYNC_HOLD_MS = 300;   // re-seek a video beyond this real-time drift (s); else trim its rate by up to 2%; settle time after a seek
@@ -350,8 +352,10 @@
       el.className = 'hrow';
       el.innerHTML = '<div class="hhead"><b class="hname" style="--c: var(--h' + (n + 1) + ')">' + label(c) + '</b>' +
         '<span class="vmeta">' + c.drops.length + (c.drips ? ' of about ' + c.drips + ' drips heard' : ' drops') + ', ' + Math.round(100 * rang(c) / fell(c)) + '% ring, ' + (FREE ? 'median gap ' : 'one every ') + per(c).toFixed(2) + ' s; ' +
-        (c.video ? 'the ' + Math.round(c.duration) + ' s on film' : (H.span ? 'its steadiest ' : 'all ') + Math.round(c.duration) + ' s') + ', from ' + Math.round(c.start) + ' s into the recording' +
-        (c.video && !c.video.synced ? '; its heard drops do not settle where the video lines up, so it only keeps the drip&rsquo;s rhythm' : '') + '</span></div>' +
+        (c.video && !c.video.slow ? 'the ' + Math.round(c.duration) + ' s on film' : (H.span ? 'its steadiest ' : 'all ') + Math.round(c.duration) + ' s') + ', from ' + Math.round(c.start) + ' s into the recording' +
+        (c.video && !c.video.synced ? '; its heard drops do not settle where the video lines up, so it only keeps the drip&rsquo;s rhythm' : '') +
+        (c.video && c.video.by === 'drops' ? '; its slow-motion film, back at real speed, is pinned to the sound at ' + c.video.pins.length + ' drops it heard too, each within 5 ms' : '') +
+        (c.video && c.video.by === 'seen' ? '; its slow-motion film, back at real speed, is pinned at ' + c.video.pins.length + ' drops whose impact shows in the picture, as its own soundtrack has no drop' : '') + '</span></div>' +
         '<div class="transport card"><button class="primary" type="button">Play</button>' +
         '<input type="range" class="scrub" min="0" max="' + c.duration + '" step="0.001" value="0" aria-label="Position in ' + label(c) + '">' +
         '<span class="seg"><button type="button" data-d="-1" aria-label="Previous drop">&lsaquo; Drop</button><button type="button" data-d="0">Typical</button><button type="button" data-d="1" aria-label="Next drop">Drop &rsaquo;</button></span>' +
@@ -374,6 +378,7 @@
       });
       if (c.video) {
         r.vid = el.querySelector('video'); r.hold = 0;
+        r.vid.addEventListener('loadedmetadata', function () { r.vid.parentNode.style.aspectRatio = r.vid.videoWidth + ' / ' + r.vid.videoHeight; });   // a wide film keeps its shape
         mediaUrl(dir + 'video.mp4').then(function (u) { r.vid.src = u; keepMedia(r.vid, dir + 'video.mp4'); });
         r.vid.addEventListener('loadeddata', function () { draw(r); });
         r.vid.onclick = function () { toggle(r); };
@@ -404,7 +409,7 @@
     g.clearRect(0, 0, W, Hh);
     timeAxis(g, k, t0, span, X, top, bot, W);
     rows.forEach(function (r) {
-      if (r.i < 0) return;
+      if (r.i < 0 || !shown[r.n]) return;
       var y = samples(r.c, r.i), amp = gain === 'full' ? H.amax : r.c.snip_scale[r.i];
       g.strokeStyle = k.c[r.n]; g.globalAlpha = 0.85; g.lineWidth = 1.2; g.beginPath();
       for (var j = 0; j < y.length; j++) {
@@ -422,6 +427,7 @@
   function legend(g, k) {   // on its own line under the caption, so it never runs into it
     var x = GUT;
     rows.forEach(function (r, n) {
+      if (!shown[n]) return;
       var s = label(r.c);
       g.fillStyle = k.c[n]; g.fillRect(x, 26, 8, 8); text(g, k, s, x + 12, 30, 'left');
       g.font = '11px ' + k.sans; x += g.measureText(s).width + 28;
@@ -431,12 +437,13 @@
   function drawEnv(c, span, hover) {
     c = c || $('ovEnv'); span = span || H.post_ms;
     var g = fit(c), k = tokens(), W = c.W, Hh = c.H, top = 48, bot = Hh - 22, upto = Math.min(H.clips[0].env[1].length, Math.floor(span / H.env_ms) + 1);
-    var top_db = Math.ceil(Math.max.apply(null, H.clips.map(function (cl) { return Math.max.apply(null, cl.env[2]); })) / 10) * 10;
+    var top_db = Math.ceil(Math.max.apply(null, H.clips.filter(function (cl, n) { return shown[n]; }).map(function (cl) { return Math.max.apply(null, cl.env[2]); }).concat(10)) / 10) * 10;
     var X = function (t) { return GUT + (W - GUT - 10) * t / span; }, Y = function (v) { return bot - (bot - top) * Math.max(0, v) / top_db; };
     g.clearRect(0, 0, W, Hh);
     timeAxis(g, k, 0, span, X, top, bot, W);
     nice(0, top_db, 5).v.forEach(function (v) { g.strokeStyle = k.rule; g.beginPath(); g.moveTo(GUT, Y(v)); g.lineTo(W - 10, Y(v)); g.stroke(); text(g, k, v + ' dB', GUT - 6, Y(v)); });
     H.clips.forEach(function (cl, n) {
+      if (!shown[n]) return;
       var q = cl.env.map(function (a) { return a.slice(0, upto); }), t = function (j) { return X(j * H.env_ms); };
       g.fillStyle = k.c[n]; g.globalAlpha = 0.14; g.beginPath();
       q[2].forEach(function (v, j) { g[j ? 'lineTo' : 'moveTo'](t(j), Y(v)); });
@@ -480,7 +487,21 @@
   function drawAllShapes() {
     var cv = $('shapes').querySelectorAll('canvas');
     H.clips.forEach(function (c, n) { drawShapes(cv[n], c.shapes.map(function (i, j) { return { n: n, i: i, a: SHAPE_ALPHA[j] }; })); });
-    drawShapes(cv[H.clips.length], H.clips.map(function (c, n) { return { n: n, i: c.typical, a: 0.9 }; }), true);
+    drawShapes(cv[H.clips.length], H.clips.map(function (c, n) { return { n: n, i: c.typical, a: 0.9 }; }).filter(function (l) { return shown[l.n]; }), true);
+  }
+
+  // Compare: All shows every recording again; a recording's button adds or removes it, and the last one shown stays.
+  function wireCompare() {
+    $('cmp').innerHTML = '<button type="button" data-n="all">All</button>' +
+      H.clips.map(function (c, n) { return '<button type="button" data-n="' + n + '" aria-pressed="true">' + label(c) + '</button>'; }).join('');
+    $('cmp').querySelectorAll('button').forEach(function (b) {
+      b.onclick = function () {
+        if (b.dataset.n === 'all') shown = shown.map(function () { return true; });
+        else if (!shown[+b.dataset.n] || shown.filter(Boolean).length > 1) shown[+b.dataset.n] = !shown[+b.dataset.n];
+        $('cmp').querySelectorAll('[data-n]').forEach(function (o) { if (o.dataset.n !== 'all') o.setAttribute('aria-pressed', shown[+o.dataset.n]); });
+        drawOverlay(); drawEnv(); drawAllShapes(); if (zoom.open) drawZoom();
+      };
+    });
   }
 
   // --- what changes ------------------------------------------------------------------
@@ -501,7 +522,7 @@
       body.map(function (r) { return '<tr>' + r.map(function (v) { return '<td>' + v + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody>';
   }
 
-  function fillFeatures() {
+  function fillFeatures(which) {   // which: the charts to draw, from share, pitch and loud
     var hs = H.clips.map(function (c) { return c.v; }), pad = (Math.max.apply(null, hs) - Math.min.apply(null, hs)) / 6 || 1, xr = [Math.min.apply(null, hs) - pad, Math.max.apply(null, hs) + pad];
     function card(title, sub, plot) { return '<div class="card xycard"><span class="xcap">' + title + ' <span>' + sub + '</span></span>' + plot + '</div>'; }
     var share = xy({ W: 520, H: 400, x: xr, y: [0, 100], xl: H.var + ', ' + H.unit, yl: 'Drops that ring, %',
@@ -514,7 +535,7 @@
       var v = [];
       c.drops.forEach(function (d, i) {
         ldb.push(d.db);
-        lpts.push({ x: c.v + ((i * 0.618034) % 1 - 0.5) * pad * 0.5, y: d.db, cls: 'c' + (n + 1), tip: label(c) + ', drop ' + (i + 1) + ': ' + d.db.toFixed(1) + ' dB' });
+        lpts.push({ x: c.v + ((i * 0.618034) % 1 - 0.5) * pad * 0.5, y: d.db, cls: 'c' + (n + 1), faint: true, tip: label(c) + ', drop ' + (i + 1) + ': ' + d.db.toFixed(1) + ' dB' });
         if (!d.ring) return;
         var y = d.hz / 1000; v.push(y); all.push(y);
         pts.push({ x: c.v + ((i * 0.618034) % 1 - 0.5) * pad * 0.5, y: y, cls: 'c' + (n + 1), tip: label(c) + ', drop ' + (i + 1) + ': ' + y.toFixed(2) + ' kHz' });
@@ -523,9 +544,10 @@
       lmarks.push({ x: c.v, y: median(c.drops.map(function (d) { return d.db; })) });
     });
     var pitch = xy({ W: 520, H: 400, x: xr, y: span(all, 0.5), xl: H.var + ', ' + H.unit, yl: 'Pitch, kHz', pts: pts, marks: marks });
-    var loud = xy({ W: 520, H: 400, x: xr, y: span(ldb, 1), xl: H.var + ', ' + H.unit, yl: 'Loudness, dB over the room', pts: lpts, marks: lmarks });
-    $('feats').innerHTML = card('Drops that ring', H.clips[0].drips ? 'share of every drip that fell' : 'one point per recording', share) + card('Ring pitch', 'one dot per drop that rang', pitch) +
-      card('Loudness of every drop', 'one dot per drop, bar at the median', loud);
+    var loud = xy({ W: 520, H: 400, x: xr, y: span(ldb, 1), xl: H.var + ', ' + H.unit, yl: 'Loudness, dB over the room', pts: lpts, marks: lmarks, markJoin: true });
+    var cards = { share: card('Drops that ring', H.clips[0].drips ? 'share of every drip that fell' : 'one point per recording', share), pitch: card('Ring pitch', 'one dot per drop that rang', pitch),
+      loud: card('Loudness of every drop', 'one dot per drop, medians joined', loud) };
+    $('feats').innerHTML = which.map(function (k) { return cards[k]; }).join('');
   }
 
   // --- wiring --------------------------------------------------------------------------
@@ -545,7 +567,12 @@
   $('meta').innerHTML = '<b>' + n + '</b> drops from <b>' + H.clips.length + '</b> recordings';
   $('changes').textContent = 'What changes with ' + H.var.toLowerCase();
   buildRows(); fillTable();
-  if (SETS[SET].charts === false) $('featnote').remove(); else fillFeatures(); buildShapes(); drawEnv(); drawAllShapes();
+  var CHARTS = SETS[SET].charts;   // false for none, a list for some, absent for all
+  if (CHARTS === false) $('featnote').remove();
+  else {
+    if (CHARTS && CHARTS.join() === 'loud') $('featnote').textContent = ' Below, the loudness of each drop against ' + H.var.toLowerCase() + ', spread a little sideways around its value so dots do not hide each other, with the medians joined by a line.';
+    fillFeatures(CHARTS || ['share', 'pitch', 'loud']);
+  } buildShapes(); drawEnv(); drawAllShapes();
   seg('wins', 'w', function (v) { WIN = +v; redraw(); });
   wireZoom();
   document.querySelectorAll('[data-ov]').forEach(function (pl) {
@@ -560,6 +587,7 @@
     hear(n, !n);
     b.onclick = function () { var on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on); hear(n, on); };
   });
+  wireCompare();
   seg('gains', 'g', function (v) { gain = v; redraw(); });
   seg('srcs', 's', function (v) {
     src = v;
