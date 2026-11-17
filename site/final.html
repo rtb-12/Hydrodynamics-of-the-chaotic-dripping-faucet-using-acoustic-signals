@@ -79,6 +79,16 @@
         ['Splash jet and sounding cavities', 'jet near 140 ms, cavities at 170-230 ms', 'Chashechkin & Prokhorov 2025; Prokhorov 2011', 'top droplet pinches off at 131-151 ms']] }
   };
   var TITLES = { '25cm-a': '25 cm fall, take 0', '25cm-b': '25 cm fall, take 1', '35cm': '35 cm fall' };
+  var MU = { 0: 1.0, 50: 6, 100: 1410 };   // glycerin by mass to viscosity, mPa s, textbook values at 20 C
+  var AGAINST = {   // the condition each data tab plots its sound against; x maps a recording's value onto that axis
+    nozzle: { title: 'Sound against nozzle diameter', x: function (v) { return v; }, jit: 0.35, axis: { x: [0, 8.5], xl: 'Nozzle diameter, mm' },
+      name: function (v) { return v + ' mm'; }, note: 'The same drops as the lanes above, placed at the internal diameter of the nozzle they fell from. ' },
+    viscosity: { title: 'Sound against viscosity', x: function (v) { return Math.log10(MU[v]); }, jit: 0.25,
+      axis: { x: [-0.4, 3.6], xl: 'Viscosity, mPa\u00b7s (log scale)', xticks: [[0, '1'], [1, '10'], [2, '100'], [3, '1000']] },
+      name: function (v) { return { 0: 'water', 50: '50% glycerin', 100: 'pure glycerin' }[v]; },
+      note: 'The same drops as the lanes above, placed at the viscosity of each liquid on a log scale (textbook values at 20 \u00b0C: water 1, 50% glycerin about 6, glycerin about 1410 mPa\u00b7s). ' }
+  };
+
 
   function $(id) { return document.getElementById(id); }
   var key = new URLSearchParams(location.search).get('set'), P;
@@ -95,36 +105,37 @@
     $('lanes').src = 'heights.html?set=' + P.set + '&embed=1'; $('lanes').hidden = false;
     addEventListener('message', function (e) { if (e.data && e.data.lanes === P.set) $('lanes').style.height = e.data.h + 'px'; });
   }
-  if (key === 'viscosity') { films(); var vs = document.createElement('script'); vs.src = fresh('recordings/viscosity/data.js'); vs.onload = againstViscosity; document.head.appendChild(vs); }
+  if (key === 'viscosity') films();
+  if (AGAINST[key]) { var vs = document.createElement('script'); vs.src = fresh('recordings/' + P.set + '/data.js'); vs.onload = function () { soundAgainst(AGAINST[key]); }; document.head.appendChild(vs); }
   if (key === 'formation') { var fs = document.createElement('script'); fs.src = fresh('recordings/formation/stages.js'); fs.onload = fs.onerror = formation; document.head.appendChild(fs); }
 
-  // Sound against viscosity itself, on a log axis: glycerin by mass is turned into viscosity with textbook values at 20 C.
-  function againstViscosity() {
-    var H = window.HEIGHTS, MU = { 0: 1.0, 50: 6, 100: 1410 }, NAME = { 0: 'water', 50: '50% glycerin', 100: 'pure glycerin' };
-    var X = function (c) { return Math.log10(MU[c.v]); }, jit = function (i) { return ((i * 0.618034) % 1 - 0.5) * 0.25; };
-    var base = { W: 400, H: 330, x: [-0.4, 3.6], xl: 'Viscosity, mPa\u00b7s (log scale)', xticks: [[0, '1'], [1, '10'], [2, '100'], [3, '1000']] };
+  // Loudness, ring share and ring decay of every drop against the tab's condition.
+  function soundAgainst(A) {
+    var H = window.HEIGHTS, NAME = function (c) { return A.name(c.v); };
+    var X = function (c) { return A.x(c.v); }, jit = function (i) { return ((i * 0.618034) % 1 - 0.5) * A.jit; };
+    var base = { W: 400, H: 330 }; for (var k0 in A.axis) base[k0] = A.axis[k0];
     function med(v) { v = v.slice().sort(function (a, b) { return a - b; }); return (v[(v.length - 1) >> 1] + v[v.length >> 1]) / 2; }
     function chart(o) { var r = {}; for (var k in base) r[k] = base[k]; for (k in o) r[k] = o[k]; return xy(r); }
     function card(t, sub, svg) { return '<div class="card xycard"><span class="xcap">' + t + ' <span>' + sub + '</span></span>' + svg + '</div>'; }
     var loud = [], lm = [], ring = [], tau = [], tm = [];
     H.clips.forEach(function (c, n) {
       c.drops.forEach(function (d, i) {
-        loud.push({ x: X(c) + jit(i), y: d.db, cls: 'c' + (n + 1), tip: NAME[c.v] + ': ' + d.db.toFixed(1) + ' dB' });
-        if (d.ring && d.tau != null) tau.push({ x: X(c) + jit(i), y: d.tau, cls: 'c' + (n + 1), tip: NAME[c.v] + ': ' + d.tau + ' ms' });
+        loud.push({ x: X(c) + jit(i), y: d.db, cls: 'c' + (n + 1), tip: NAME(c) + ': ' + d.db.toFixed(1) + ' dB' });
+        if (d.ring && d.tau != null) tau.push({ x: X(c) + jit(i), y: d.tau, cls: 'c' + (n + 1), tip: NAME(c) + ': ' + d.tau + ' ms' });
       });
       lm.push({ x: X(c), y: med(c.drops.map(function (d) { return d.db; })) });
       var t = c.drops.filter(function (d) { return d.ring && d.tau != null; }).map(function (d) { return d.tau; });
       if (t.length) tm.push({ x: X(c), y: med(t) });
       var r = c.drops.filter(function (d) { return d.ring; }).length;
-      ring.push({ x: X(c), y: 100 * r / c.drops.length, cls: 'c' + (n + 1), label: r + ' of ' + c.drops.length, tip: NAME[c.v] });
+      ring.push({ x: X(c), y: 100 * r / c.drops.length, cls: 'c' + (n + 1), label: r + ' of ' + c.drops.length, tip: NAME(c) });
     });
     function top(pts) { return Math.ceil((Math.max.apply(null, pts.map(function (p) { return p.y; })) + 2) / 10) * 10; }
     var sec = document.createElement('section');
     sec.className = 'intervals';
-    sec.innerHTML = '<h2>Sound against viscosity</h2><p class="note">The same drops as the lanes above, placed at the viscosity of each liquid on a log scale (textbook values at 20 \u00b0C: water 1, 50% glycerin about 6, glycerin about 1410 mPa\u00b7s). ' +
-      'Loudness and decay show one dot per drop with a bar at the median; pure glycerin has no ringing drop, so no decay.</p><div class="trio">' +
+    sec.innerHTML = '<h2>' + A.title + '</h2><p class="note">' + A.note +
+      'Loudness and decay show one dot per drop with a bar at the median; a recording with no ringing drop has no decay.</p><div class="trio">' +
       card('Loudness', 'dB over the room, every drop', chart({ y: [0, top(loud)], yl: 'Loudness, dB over the room', pts: loud, marks: lm })) +
-      card('Drops that ring', 'share of each liquid\u2019s drops', chart({ y: [0, 100], yl: 'Drops that ring, %', pts: ring, join: true })) +
+      card('Drops that ring', 'share of each recording\u2019s drops', chart({ y: [0, 100], yl: 'Drops that ring, %', pts: ring, join: true })) +
       card('Ring decay', 'ms, every ringing drop', chart({ y: [0, top(tau)], yl: 'Ring decay time, ms', pts: tau, marks: tm })) + '</div>';
     $('litbox').parentNode.insertBefore(sec, $('litbox'));
   }
