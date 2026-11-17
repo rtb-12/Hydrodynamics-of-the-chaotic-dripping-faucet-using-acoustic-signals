@@ -427,6 +427,12 @@ def encode_film(path, meta, x, y, v0, v1, dst):
                     '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(dst)], check=True)
 
 
+def encode_own(path, start, length, dst):
+    """The stretch of a video on its clip's own clock that the clip keeps, at real speed and its own framing."""
+    subprocess.run([FFMPEG, '-v', 'error', '-y', '-ss', str(start), '-t', str(length), '-i', str(path), '-an', '-vf', f'scale=-2:{VID_OUT[1]}',
+                    '-c:v', 'libx264', '-crf', str(VID_CRF), '-preset', 'slow', '-g', '30', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(dst)], check=True)
+
+
 def encode(x, path):
     with tempfile.TemporaryDirectory() as tmp:
         wav = pathlib.Path(tmp) / 'a.wav'
@@ -503,13 +509,15 @@ def steadiest(times, span, duration):
     return best[1]
 
 
-def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), free=False, var='Fall height', unit='cm'):
+def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), free=False, var='Fall height', unit='cm', onclock=()):
     """Every clip's steadiest stretch: audio, lanes and drops into out, scaled alike so the clips compare by eye.
     With same_tap the clips share one drip period, found from the loud drops of all of them together.
-    videos holds (value, path, x, y) for slow-motion clips of the drip: x is the drop column and y the water line, pixels."""
+    videos holds (value, path, x, y) for slow-motion clips of the drip: x is the drop column and y the water line, pixels.
+    onclock holds (value, path) for videos on the clip's own clock, such as a video whose soundtrack is the clip."""
     if free and same_tap:
         raise SystemExit('--free finds drops without a drip period, so --same-tap has none to share')
     vids = {f'{float(v):g}{unit}': (path, int(x), int(y)) for v, path, x, y in videos}
+    onclock = {f'{float(v):g}{unit}': path for v, path in onclock}
     vs = [float(v) for v, _ in clips]
     if len(set(vs)) != len(vs):
         raise SystemExit(f'one clip per {var.lower()}: keep the take with the steadier drip')
@@ -556,6 +564,9 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
             path, meta, vx, vy, v0, v1, pinned = films[r['slug']]
             encode_film(path, meta, vx, vy, v0, v1, d / 'video.mp4')
             r['video'] = dict(synced=bool(pinned), pins=pinned or [[0.0, 0.0]])
+        elif r['slug'] in onclock:
+            encode_own(onclock[r['slug']], r['start'], r['duration'], d / 'video.mp4')
+            r['video'] = dict(synced=True, pins=[[0.0, 0.0]])
     data = dict(rate=VIEW_RATE, pre_ms=PRE_MS, post_ms=POST_MS, env_ms=ENV_MS, band=BAND,
                 amax=max(max(c['snip_scale']) for c in recs), var=var, unit=unit, free=free, span=span, clips=recs)
     (out / 'data.js').write_text('window.HEIGHTS = ' + json.dumps(data, separators=(',', ':')) + ';\n')
@@ -685,6 +696,12 @@ def selftest():
         d = process([('20', p)], pathlib.Path(tmp) / 'cut', span=6.0)
         c = d['clips'][0]
         assert c['duration'] == 6.0 and len(c['drops']) >= 4, f'cut to {c["duration"]} s with {len(c["drops"])} drops'
+        film = pathlib.Path(tmp) / 'film.mp4'   # a film on the recording's own clock, as a phone video with its soundtrack
+        subprocess.run([FFMPEG, '-v', 'error', '-y', '-f', 'lavfi', '-i', f'testsrc=size=320x240:rate=30:duration={len(x) / FS}', '-pix_fmt', 'yuv420p', str(film)], check=True)
+        d = process([('20', p)], pathlib.Path(tmp) / 'film', span=6.0, onclock=[('20', film)])
+        c = d['clips'][0]
+        shown = float(subprocess.run([FFMPEG, '-i', str(pathlib.Path(tmp) / 'film' / '20cm' / 'video.mp4')], capture_output=True, text=True).stderr.split('Duration: ')[1].split(',')[0].split(':')[2])
+        assert c['video'] == dict(synced=True, pins=[[0.0, 0.0]]) and abs(shown - c['duration']) < 0.1, f'own-clock film kept as {c.get("video")}, {shown} s for {c["duration"]} s'
         tone = np.sin(2 * np.pi * 440 * np.arange(16 * FS) / FS) * np.r_[np.ones(2 * FS), 0.01 * np.ones(12 * FS), np.ones(2 * FS)]
         wavfile.write(p, FS, (tone * 20000).astype(np.int16))
         tone[:FS // 10] = 0   # the encoder's silent first moment
@@ -772,6 +789,8 @@ def main():
     ap.add_argument('--clip', nargs=2, action='append', metavar=('VALUE', 'AUDIO'), default=[])
     ap.add_argument('--video', nargs=4, action='append', metavar=('VALUE', 'VIDEO', 'X', 'Y'), default=[],
                     help='slow-motion video of that clip\'s drip, with its drop column X and water line Y in pixels')
+    ap.add_argument('--film', nargs=2, action='append', metavar=('VALUE', 'VIDEO'), default=[],
+                    help='a video on that clip\'s own clock, such as one whose soundtrack is the clip, shown beside it')
     ap.add_argument('--span', type=float, default=SPAN_S, help='seconds of each recording to keep, its steadiest stretch; 0 keeps it all')
     ap.add_argument('--set', default='heights', help='name of the recording set, its folder under site/recordings')
     ap.add_argument('--same-tap', action='store_true', help='the tap was not touched between clips, so they share one drip period')
@@ -784,7 +803,7 @@ def main():
         return selftest()
     if not a.clip:
         ap.error('give at least one --clip')
-    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap, videos=a.video, free=a.free, var=a.var, unit=a.unit)
+    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap, videos=a.video, free=a.free, var=a.var, unit=a.unit, onclock=a.film)
 
 
 if __name__ == '__main__':
