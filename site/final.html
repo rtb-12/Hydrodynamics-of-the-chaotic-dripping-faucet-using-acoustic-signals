@@ -39,10 +39,10 @@
 <script>
 (function () {
   var PAGES = {   // one tab per experiment; set is the folder under recordings/ the lane viewer shows
-    height: { name: 'Fall height, 15 to 60 cm', title: 'Drop sound and fall height', set: 'final-height',
-      note: 'A 5 mm nozzle releases water drops of about 5 mm into plain water from 15 to 60 cm; 15, 25 and 35 cm are the earlier final run, 33, 43 and 60 cm are new. ' +
-        'Between 50% and 80% of the drops ring at each height, with no steady trend. ' +
-        'Ring pitch scatters between 2.3 and 6.8 kHz with no trend in height, and the level stays at 21-40 dB over the room noise up to 43 cm before falling to 15 dB at 60 cm.' },
+    height: { name: 'Fall height, 15 to 35 cm', title: 'Drop sound and fall height', set: 'heights',
+      note: 'The same faucet with the tap left alone through the set, so the drip ran at about one drop a second, falling 15, 20 and 35 cm into water. ' +
+        'Of 161 drops, 92% ring at 15 cm, 64% at 20 cm and 4% at 35 cm: the farther the fall above the 6-10 cm where the papers place regular bubble entrainment for a drop this size, the rarer the ring. ' +
+        'The ringing drops at 15 and 20 cm share one pitch, 4.15 kHz, a bubble of about 0.8 mm radius by Minnaert\u2019s formula; at 35 cm the drops mostly only click, 6.6 dB over the room.' },
     nozzle: { name: 'Nozzle diameter, 2 to 7 mm', title: 'Drop sound and nozzle diameter', set: 'nozzle',
       note: 'Nozzles of 2, 5 and 7 mm internal diameter, water falling 25 cm into water. Tate’s law predicts drops of about 3.9, 5.2 and 5.9 mm, only 1.5× apart. ' +
         'The 2 mm drops are about 9 dB quieter than the 5 and 7 mm drops, which sound alike; with only 9 drops at 2 mm this is the weakest result. Between 56% and 86% of the drops ring at every size.' },
