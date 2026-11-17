@@ -39,18 +39,18 @@
 <script>
 (function () {
   var PAGES = {   // one tab per experiment; set is the folder under recordings/ the lane viewer shows
-    height: { name: 'Fall height, 13 to 60 cm', title: 'Drop sound and fall height', set: 'final-height',
-      note: 'A 5 mm nozzle releases water drops of about 5 mm into plain water from 13 to 60 cm; 15, 25 and 35 cm are the earlier final run, 13, 33, 43 and 60 cm are new. ' +
-        'Only at 13 cm, the height nearest the regular entrainment window, does every drop ring (21 of 21); from 15 to 60 cm the share falls to 35-80% with no steady trend. ' +
-        'Ring pitch scatters between 2.3 and 6.2 kHz with no trend in height, and the level stays at 20-36 dB over the room noise up to 43 cm before falling to 15 dB at 60 cm.',
-      lit: 'For a 4.5 mm drop, regular entrainment (one bubble and one clean ring per drop) needs U = 1.10-1.42 m/s, about 6-10 cm of fall. Our heights give U = 1.6-3.3 m/s, all above that window, in the splash regime where rings come only irregularly. Our rings decay over 7-17.5 ms, inside the 3-19 ms Chashechkin (2024) reports, but without the growth with impact speed he finds. The 43 cm rings sit close to a 2.15 kHz tone also heard between drops, so that pitch is the least certain.',
+    height: { name: 'Fall height, 15 to 60 cm', title: 'Drop sound and fall height', set: 'final-height',
+      note: 'A 5 mm nozzle releases water drops of about 5 mm into plain water from 15 to 60 cm; 15, 25 and 35 cm are the earlier final run, 33, 43 and 60 cm are new. ' +
+        'Between 35% and 80% of the drops ring at each height, with no steady trend. ' +
+        'Ring pitch scatters between 2.3 and 6.2 kHz with no trend in height, and the level stays at 21-36 dB over the room noise up to 43 cm before falling to 15 dB at 60 cm.',
+      lit: 'For a 4.5 mm drop, regular entrainment (one bubble and one clean ring per drop) needs U = 1.10-1.42 m/s, about 6-10 cm of fall. Our heights give U = 1.7-3.3 m/s, all above that window, in the splash regime where rings come only irregularly. Our rings decay over 9-17.5 ms, inside the 3-19 ms Chashechkin (2024) reports, but without the growth with impact speed he finds. The 43 cm rings sit close to a 2.15 kHz tone also heard between drops, so that pitch is the least certain.',
       rows: [
-        ['Regular entrainment window, 4.5 mm drop', 'U = 1.10-1.42 m/s, h = 6-10 cm', 'Oguz & Prosperetti fit, cited by Phillips 2018', '13 cm, the nearest, rings on every drop'],
-        ['Reproducible tone, 3.9 mm drop at 7-8 cm', 'about 7 kHz', 'Pumphrey & Walton 1988, p. 227', '3.35 kHz at 13 cm'],
+        ['Regular entrainment window, 4.5 mm drop', 'U = 1.10-1.42 m/s, h = 6-10 cm', 'Oguz & Prosperetti fit, cited by Phillips 2018', 'all six heights above it'],
+        ['Reproducible tone, 3.9 mm drop at 7-8 cm', 'about 7 kHz', 'Pumphrey & Walton 1988, p. 227', 'no height near the window; 2.3-6.2 kHz'],
         ['Splash-mode resonance packets, D = 5 mm', 'formed irregularly at 1.98-4.43 m/s, none above 4.6 m/s', 'Chashechkin 2024, Table 4', '35-80% ring at 15-60 cm, no trend: agrees'],
         ['Air-audible packets at 2.6-4 m/s', '1.6-18 kHz, no trend with height', 'Prokhorov 2011; Chashechkin 2014', '2.3-6.2 kHz, no trend: agrees'],
         ['Ring peak against impact speed', '26-34 Pa, about +2 dB over 2-4.4 m/s', 'Chashechkin 2024, Table 4', '15-36 dB, no growth with height: agrees'],
-        ['Ring decay phase, D = 5 mm', '3-19 ms, growing with U', 'Chashechkin 2024, Table 4', '7-17.5 ms, not growing: disagrees']] },
+        ['Ring decay phase, D = 5 mm', '3-19 ms, growing with U', 'Chashechkin 2024, Table 4', '9-17.5 ms, not growing: disagrees']] },
     nozzle: { name: 'Nozzle diameter, 2 to 7 mm', title: 'Drop sound and nozzle diameter', set: 'nozzle',
       note: 'Nozzles of 2, 5 and 7 mm internal diameter, water falling 25 cm into water. Tate’s law predicts drops of about 3.9, 5.2 and 5.9 mm, only 1.5× apart. ' +
         'The 2 mm drops are about 9 dB quieter than the 5 and 7 mm drops, which sound alike; with only 9 drops at 2 mm this is the weakest result. Half to four fifths of the drops ring at every size.',

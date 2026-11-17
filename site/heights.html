@@ -80,11 +80,11 @@
   var SETS = {   // folders under recordings/
     heights: { name: 'First set, 15 to 35 cm', title: HEAD, note: NOTE },
     sweep: { name: 'Height sweep, 10 to 35 cm', title: HEAD, note: NOTE },
-    nozzle: { name: 'Nozzle size, 2 to 7 mm', title: 'Drop sound and nozzle size', note: 'The same drop falling 25 cm into plain water from nozzles of 2, 5 and 7 mm internal diameter. ' + ROWS, charts: false },
+    nozzle: { name: 'Nozzle size, 2 to 7 mm', title: 'Drop sound and nozzle size', note: 'The same drop falling 25 cm into plain water from nozzles of 2, 5 and 7 mm internal diameter. ' + ROWS, charts: ['loud'] },
     glycerin: { name: 'Glycerin, 0 to 30 ml', title: 'Drop sound and glycerin', note: 'Glycerin added to 900 ml of water, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0 ml is plain water. ' + ROWS, charts: false },
     heights3: { name: 'Height, final run, 15 to 35 cm', title: 'Drop sound and fall height, final run', note: 'Fall heights of 15, 25 and 35 cm from a 5 mm nozzle into plain water. ' + ROWS, charts: false },
-    'final-height': { name: 'Fall height, 13 to 60 cm', title: 'Drop sound and fall height', note: 'Fall heights of 13, 15, 25, 33, 35, 43 and 60 cm from a 5 mm nozzle into plain water; 15, 25 and 35 cm are the final run above. ' + ROWS, charts: false },
-    viscosity: { name: 'Viscosity, water to pure glycerin', title: 'Drop sound and viscosity', note: 'Plain water, 50% glycerin by mass and pure glycerin, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0% is the 25 cm water recording of the final run. ' + ROWS, charts: false }
+    'final-height': { name: 'Fall height, 15 to 60 cm', title: 'Drop sound and fall height', note: 'Fall heights of 15, 25, 33, 35, 43 and 60 cm from a 5 mm nozzle into plain water; 15, 25 and 35 cm are the final run above. ' + ROWS, charts: ['loud'] },
+    viscosity: { name: 'Viscosity, water to pure glycerin', title: 'Drop sound and viscosity', note: 'Plain water, 50% glycerin by mass and pure glycerin, in both the drop and the pool below it, from a 5 mm nozzle falling 25 cm; 0% is the 25 cm water recording of the final run. ' + ROWS, charts: ['loud'] }
   };
   var SET = SETS[new URLSearchParams(location.search).get('set')] ? new URLSearchParams(location.search).get('set') : 'heights';
   if (new URLSearchParams(location.search).has('embed')) {   // inside final.html: everything but the page header, sized to its content by the parent
@@ -519,7 +519,7 @@
       body.map(function (r) { return '<tr>' + r.map(function (v) { return '<td>' + v + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody>';
   }
 
-  function fillFeatures() {
+  function fillFeatures(which) {   // which: the charts to draw, from share, pitch and loud
     var hs = H.clips.map(function (c) { return c.v; }), pad = (Math.max.apply(null, hs) - Math.min.apply(null, hs)) / 6 || 1, xr = [Math.min.apply(null, hs) - pad, Math.max.apply(null, hs) + pad];
     function card(title, sub, plot) { return '<div class="card xycard"><span class="xcap">' + title + ' <span>' + sub + '</span></span>' + plot + '</div>'; }
     var share = xy({ W: 520, H: 400, x: xr, y: [0, 100], xl: H.var + ', ' + H.unit, yl: 'Drops that ring, %',
@@ -542,8 +542,9 @@
     });
     var pitch = xy({ W: 520, H: 400, x: xr, y: span(all, 0.5), xl: H.var + ', ' + H.unit, yl: 'Pitch, kHz', pts: pts, marks: marks });
     var loud = xy({ W: 520, H: 400, x: xr, y: span(ldb, 1), xl: H.var + ', ' + H.unit, yl: 'Loudness, dB over the room', pts: lpts, marks: lmarks });
-    $('feats').innerHTML = card('Drops that ring', H.clips[0].drips ? 'share of every drip that fell' : 'one point per recording', share) + card('Ring pitch', 'one dot per drop that rang', pitch) +
-      card('Loudness of every drop', 'one dot per drop, bar at the median', loud);
+    var cards = { share: card('Drops that ring', H.clips[0].drips ? 'share of every drip that fell' : 'one point per recording', share), pitch: card('Ring pitch', 'one dot per drop that rang', pitch),
+      loud: card('Loudness of every drop', 'one dot per drop, bar at the median', loud) };
+    $('feats').innerHTML = which.map(function (k) { return cards[k]; }).join('');
   }
 
   // --- wiring --------------------------------------------------------------------------
@@ -563,7 +564,12 @@
   $('meta').innerHTML = '<b>' + n + '</b> drops from <b>' + H.clips.length + '</b> recordings';
   $('changes').textContent = 'What changes with ' + H.var.toLowerCase();
   buildRows(); fillTable();
-  if (SETS[SET].charts === false) $('featnote').remove(); else fillFeatures(); buildShapes(); drawEnv(); drawAllShapes();
+  var CHARTS = SETS[SET].charts;   // false for none, a list for some, absent for all
+  if (CHARTS === false) $('featnote').remove();
+  else {
+    if (CHARTS && CHARTS.join() === 'loud') $('featnote').textContent = ' Below, the loudness of each drop against ' + H.var.toLowerCase() + ', spread a little sideways around its value so dots do not hide each other, with a bar at the median.';
+    fillFeatures(CHARTS || ['share', 'pitch', 'loud']);
+  } buildShapes(); drawEnv(); drawAllShapes();
   seg('wins', 'w', function (v) { WIN = +v; redraw(); });
   wireZoom();
   document.querySelectorAll('[data-ov]').forEach(function (pl) {
