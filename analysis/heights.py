@@ -512,11 +512,12 @@ def steadiest(times, span, duration):
     return best[1]
 
 
-def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), free=False, var='Fall height', unit='cm', onclock=()):
+def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), free=False, var='Fall height', unit='cm', onclock=(), edge=EDGE_S):
     """Every clip's steadiest stretch: audio, lanes and drops into out, scaled alike so the clips compare by eye.
     With same_tap the clips share one drip period, found from the loud drops of all of them together.
     videos holds (value, path, x, y) for slow-motion clips of the drip: x is the drop column and y the water line, pixels.
-    onclock holds (value, path) for videos on the clip's own clock, such as a video whose soundtrack is the clip."""
+    onclock holds (value, path) for videos on the clip's own clock, such as a video whose soundtrack is the clip.
+    edge is how long each recording's own start and end are handled; 0 for clips already cut from longer recordings."""
     if free and same_tap:
         raise SystemExit('--free finds drops without a drip period, so --same-tap has none to share')
     vids = {f'{float(v):g}{unit}': (path, int(x), int(y)) for v, path, x, y in videos}
@@ -530,7 +531,7 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
         print(f'shared drip period {p / RATE:.3f} s')
     recs, films = [], {}
     for v, x in clips:
-        times, total, slug = [r['t'] for r in analyse(x, p, free)[1]], len(x) / FS, f'{v:g}{unit}'
+        times, total, slug = [r['t'] for r in analyse(x, p, free, (edge, edge))[1]], len(x) / FS, f'{v:g}{unit}'
         if len(times) < 2:
             raise SystemExit(f'{slug}: {len(times)} drops found, too few to compare; check the recording')
         if slug in vids:   # only the stretch on film is kept
@@ -547,7 +548,7 @@ def process(clips, out=OUT / 'heights', span=SPAN_S, same_tap=False, videos=(), 
             b = a + span if span else total
         x = x[int(a * FS):int(b * FS)]
         own = p and own_period(strength(clean(x)), p) / RATE
-        y, rows, envs = analyse(x, p, free, (max(0.0, EDGE_S - a), max(0.0, EDGE_S - (total - min(b, total)))))
+        y, rows, envs = analyse(x, p, free, (max(0.0, edge - a), max(0.0, edge - (total - min(b, total)))))
         recs.append(dict(slug=slug, v=v, start=round(a, 2), x=x, a=(listen(y, [w['t'] for w in rows]), rows, envs),
                          drip_s=own and round(own, 3), drips=own and int(round(len(x) / FS / own))))
     ref = dict(clean=scale(*[r['a'][0] for r in recs]), raw=scale(*[r['x'] for r in recs]))
@@ -700,6 +701,10 @@ def selftest():
             raise AssertionError('a clip without two drops was accepted')
         except SystemExit:
             pass
+        x2, _ = synth(n=0, ring_every=1, at=[0.6 + 1.05 * i for i in range(6)], pad=0)   # a clip already cut from a longer recording
+        wavfile.write(q, FS, (x2 * 20000).astype(np.int16))
+        d = process([('20', q)], pathlib.Path(tmp) / 'precut', span=0, edge=0)
+        assert len(d['clips'][0]['drops']) == 6, f'{len(d["clips"][0]["drops"])} of 6 drops kept in a pre-cut clip'
         d = process([('20', p)], pathlib.Path(tmp) / 'cut', span=6.0)
         c = d['clips'][0]
         assert c['duration'] == 6.0 and len(c['drops']) >= 4, f'cut to {c["duration"]} s with {len(c["drops"])} drops'
@@ -814,6 +819,7 @@ def main():
                     help='slow-motion video of that clip\'s drip, with its drop column X and water line Y in pixels')
     ap.add_argument('--film', nargs=2, action='append', metavar=('VALUE', 'VIDEO'), default=[],
                     help='a video on that clip\'s own clock, such as one whose soundtrack is the clip, shown beside it')
+    ap.add_argument('--edge', type=float, default=EDGE_S, help='seconds at each end of a recording kept clear of drops; 0 for clips already cut')
     ap.add_argument('--span', type=float, default=SPAN_S, help='seconds of each recording to keep, its steadiest stretch; 0 keeps it all')
     ap.add_argument('--set', default='heights', help='name of the recording set, its folder under site/recordings')
     ap.add_argument('--same-tap', action='store_true', help='the tap was not touched between clips, so they share one drip period')
@@ -826,7 +832,7 @@ def main():
         return selftest()
     if not a.clip:
         ap.error('give at least one --clip')
-    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap, videos=a.video, free=a.free, var=a.var, unit=a.unit, onclock=a.film)
+    process(a.clip, OUT / a.set, span=a.span, same_tap=a.same_tap, videos=a.video, free=a.free, var=a.var, unit=a.unit, onclock=a.film, edge=a.edge)
 
 
 if __name__ == '__main__':
