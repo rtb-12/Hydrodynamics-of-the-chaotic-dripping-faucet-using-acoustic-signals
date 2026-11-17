@@ -6,13 +6,15 @@ var GUT = 46, PAD = 8;   // time lanes' left gutter and right margin
 function fresh(url) { return location.protocol === 'file:' ? url + '?t=' + Date.now() : url; }
 
 // A static x-y plot as inline SVG. o: W, H, x and y as [lo, hi], xl and yl axis titles, pts [{x, y, label, now, faint, miss, cls}],
-// diag for the y = x line, join for a line through consecutive points not separated by a `cut`, marks [{x, y}] for short level bars.
+// diag for the y = x line, join for a line through consecutive points not separated by a `cut`, marks [{x, y}] for short level bars,
+// xticks [[value, label]] in place of evenly spaced x ticks, as on a log axis.
 function xy(o) {
   var W = o.W, H = o.H, L = 62, B = 52, T = 12, pw = W - L - (o.right || 18), ph = H - T - B, g = '';
   function X(v) { return L + pw * (v - o.x[0]) / (o.x[1] - o.x[0]); }
   function Y(v) { return T + ph * (1 - (v - o.y[0]) / (o.y[1] - o.y[0])); }
-  nice(o.x[0], o.x[1], o.nx || 6).v.forEach(function (v) {
-    g += '<line class="grid" x1="' + X(v) + '" y1="' + T + '" x2="' + X(v) + '" y2="' + (T + ph) + '"/><text x="' + X(v) + '" y="' + (T + ph + 18) + '" text-anchor="middle">' + v + '</text>';
+  (o.xticks || nice(o.x[0], o.x[1], o.nx || 6).v.map(function (v) { return [v, v]; })).forEach(function (t) {
+    var v = t[0];
+    g += '<line class="grid" x1="' + X(v) + '" y1="' + T + '" x2="' + X(v) + '" y2="' + (T + ph) + '"/><text x="' + X(v) + '" y="' + (T + ph + 18) + '" text-anchor="middle">' + t[1] + '</text>';
   });
   nice(o.y[0], o.y[1], 6).v.forEach(function (v) {
     g += '<line class="grid" x1="' + L + '" y1="' + Y(v) + '" x2="' + (L + pw) + '" y2="' + Y(v) + '"/><text x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + v + '</text>';
